@@ -1,0 +1,33 @@
+.audio-player {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1.2rem;
+  width: min(100% - 2rem, 440px);
+  z-index: 1000;
+}
+.audio-player .info {
+  flex: 1;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.audio-player .controls button {
+  background: var(--primary);
+  color: #fff;
+}
+.audio-player .controls button:hover {
+  background: var(--primary-light);
+}
+
+@media (max-width: 720px) {
+  .audio-player {
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+  }
+}

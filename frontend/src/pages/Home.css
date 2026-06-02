@@ -1,0 +1,326 @@
+.home-page {
+  display: grid;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2.5rem, 6vw, 5.2rem);
+  font-weight: 700;
+  line-height: 1.02;
+  color: #ffffff;
+}
+
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+  gap: 1.25rem;
+  align-items: stretch;
+  padding-top: 1rem;
+}
+
+.section-kicker {
+  margin: 0;
+  color: #ffd36b;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.76rem;
+}
+
+.home-hero-copy {
+  position: relative;
+  display: grid;
+  gap: 1.1rem;
+  align-content: start;
+  padding: 1.6rem 1.6rem 1.7rem;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top left, rgba(124, 92, 255, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.home-hero-copy::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% -38% auto;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 211, 107, 0.13), transparent 68%);
+  pointer-events: none;
+}
+
+.home-kicker-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.home-kicker-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  background: rgba(255, 211, 107, 0.12);
+  border: 1px solid rgba(255, 211, 107, 0.22);
+}
+
+.home-kicker-note {
+  color: rgba(228, 231, 255, 0.66);
+  font-size: 0.95rem;
+}
+
+.home-copy {
+  max-width: 720px;
+  color: rgba(228, 231, 255, 0.82);
+  line-height: 1.75;
+  margin: 0;
+  font-size: 1.03rem;
+}
+
+.home-hero-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.home-hero-points span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f2f4ff;
+  font-size: 0.92rem;
+}
+
+.home-actions {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.home-secondary-btn {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  text-decoration: none;
+}
+
+.home-highlight {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.9fr);
+  gap: 1.25rem;
+  padding: 1.25rem;
+}
+
+.home-highlight-copy h2 {
+  margin: 0.3rem 0 0.7rem;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+}
+
+.home-highlight-copy p {
+  color: rgba(228, 231, 255, 0.82);
+  line-height: 1.7;
+}
+
+.home-highlight-meta {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin: 1rem 0 1.2rem;
+  color: #bbb;
+}
+
+.home-highlight-visual {
+  position: relative;
+  min-height: 260px;
+  border-radius: 14px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(124, 92, 255, 0.24), transparent 36%),
+    linear-gradient(160deg, rgba(14, 20, 50, 0.96), rgba(34, 18, 42, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.home-highlight-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(1.02);
+}
+
+.home-highlight-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1rem;
+  background: linear-gradient(180deg, rgba(6, 10, 30, 0.12), rgba(6, 10, 30, 0.72));
+}
+
+.home-highlight-chip,
+.home-highlight-duration {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  width: fit-content;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f7f8ff;
+  font-size: 0.78rem;
+  backdrop-filter: blur(10px);
+}
+
+.home-highlight-overlay-copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.home-highlight-overlay-copy strong {
+  font-size: 1.35rem;
+  color: #ffffff;
+}
+
+.home-highlight-overlay-copy span {
+  color: rgba(240, 242, 255, 0.78);
+}
+
+.home-highlight-fallback {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 1rem;
+  padding: 1.2rem;
+  background:
+    radial-gradient(circle at top left, rgba(255, 211, 107, 0.2), transparent 30%),
+    linear-gradient(160deg, rgba(33, 21, 53, 0.98), rgba(14, 18, 44, 0.96));
+}
+
+.home-highlight-fallback-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.home-highlight-fallback-copy {
+  align-self: end;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.home-highlight-fallback-copy span {
+  color: #ffd36b;
+}
+
+.home-highlight-fallback-copy strong {
+  font-size: 1.6rem;
+  color: #ffffff;
+}
+
+.home-highlight-fallback-copy p {
+  margin: 0;
+  color: rgba(233, 236, 255, 0.78);
+  line-height: 1.65;
+}
+
+.home-highlight-fallback-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.home-highlight-fallback-metrics div {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.9rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.home-highlight-fallback-metrics small {
+  color: rgba(228, 231, 255, 0.64);
+  font-size: 0.76rem;
+}
+
+.home-highlight-fallback-metrics strong {
+  font-size: 1.2rem;
+  color: #ffffff;
+}
+
+.home-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.home-public-paths {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.home-path-card {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.2rem;
+}
+
+.home-path-card h2,
+.home-path-card p {
+  margin: 0;
+}
+
+.home-path-card p {
+  color: rgba(228, 231, 255, 0.78);
+  line-height: 1.65;
+}
+
+.section-heading h2 {
+  margin: 0 0 0.25rem;
+}
+
+.section-heading p {
+  margin: 0;
+  color: #bbb;
+}
+
+.sermon-grid {
+  width: 100%;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.page-state {
+  padding: 1rem 0;
+  color: #bbb;
+}
+
+.page-state.error {
+  color: #ffb1b1;
+}
+
+@media (max-width: 860px) {
+  .home-hero,
+  .home-highlight,
+  .home-public-paths {
+    grid-template-columns: 1fr;
+  }
+
+  .home-hero-copy {
+    padding: 1.3rem 1.15rem 1.35rem;
+  }
+}

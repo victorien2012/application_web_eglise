@@ -1,0 +1,32 @@
+import axios from 'axios';
+
+const STORAGE_KEY = 'eglise_auth';
+
+export function lireSession() {
+  try {
+    const brute = window.localStorage.getItem(STORAGE_KEY);
+    return brute ? JSON.parse(brute) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function enregistrerSession(session) {
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+}
+
+export function effacerSession() {
+  window.localStorage.removeItem(STORAGE_KEY);
+}
+
+export const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+});
+
+api.interceptors.request.use((config) => {
+  const session = lireSession();
+  if (session?.accessToken) {
+    config.headers.Authorization = `Bearer ${session.accessToken}`;
+  }
+  return config;
+});

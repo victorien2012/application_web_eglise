@@ -1,0 +1,127 @@
+.app-nav-shell {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(18px);
+  background: rgba(8, 11, 32, 0.84);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 0.9rem 2rem;
+  margin: 0 auto;
+  width: min(100%, 1280px);
+}
+
+.app-nav-links,
+.app-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  color: #f5f6ff;
+  text-decoration: none;
+  min-width: 0;
+}
+
+.app-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c5cff, #a786ff);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.app-brand-copy {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.app-brand-copy strong,
+.app-brand-copy small {
+  line-height: 1.2;
+}
+
+.app-brand-copy small {
+  color: rgba(232, 234, 255, 0.68);
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 36px;
+  padding: 0 0.15rem;
+}
+
+.session-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: rgba(232, 234, 255, 0.84);
+  font-size: 0.92rem;
+}
+
+.session-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.45rem 0.4rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-ghost-button {
+  min-width: 40px;
+  min-height: 40px;
+  justify-content: center;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+@media (max-width: 1080px) {
+  .app-nav {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.9rem 1rem;
+  }
+
+  .app-nav-links,
+  .app-nav-actions {
+    justify-content: space-between;
+  }
+
+  .app-nav-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-brand-copy small {
+    display: none;
+  }
+
+  .app-nav-links {
+    gap: 0.55rem 0.9rem;
+  }
+
+  .nav-link {
+    font-size: 0.95rem;
+  }
+}

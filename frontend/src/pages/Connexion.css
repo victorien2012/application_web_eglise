@@ -1,0 +1,113 @@
+.connexion-page {
+  min-height: calc(100vh - 180px);
+  display: grid;
+  place-items: center;
+}
+
+.connexion-panel {
+  width: min(100%, 460px);
+  padding: 2rem;
+  background:
+    radial-gradient(circle at top right, rgba(255, 202, 88, 0.18), transparent 32%),
+    linear-gradient(155deg, rgba(12, 18, 44, 0.94), rgba(31, 13, 38, 0.9));
+}
+
+.connexion-header h1 {
+  margin: 0.2rem 0 0.6rem;
+  font-size: clamp(2rem, 5vw, 3rem);
+  color: #fff;
+}
+
+.connexion-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  color: #ffd36b;
+}
+
+.connexion-copy {
+  margin: 0 0 1.5rem;
+  color: rgba(232, 234, 255, 0.8);
+  line-height: 1.6;
+}
+
+.connexion-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.champ {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.champ span {
+  font-size: 0.92rem;
+  color: #f4f5ff;
+}
+
+.champ-input {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.9rem 1rem;
+}
+
+.champ-input input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font: inherit;
+  outline: none;
+}
+
+.champ-input input::placeholder {
+  color: rgba(235, 236, 255, 0.45);
+}
+
+.erreur-connexion {
+  margin: 0;
+  color: #ff9b9b;
+}
+
+.btn-large {
+  justify-content: center;
+  min-height: 48px;
+}
+
+.champ-case {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: #f4f5ff;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.champ-case input {
+  width: 18px;
+  height: 18px;
+  accent-color: #ffd36b;
+}
+
+.connexion-pied {
+  margin: 1.4rem 0 0;
+  text-align: center;
+  color: rgba(232, 234, 255, 0.8);
+  font-size: 0.92rem;
+}
+
+.connexion-pied a {
+  color: #ffd36b;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.connexion-pied a:hover {
+  text-decoration: underline;
+}

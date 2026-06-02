@@ -1,0 +1,110 @@
+.decouvrir-page {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.decouvrir-hero {
+  width: min(100%, 980px);
+  padding: 2rem 0 0.5rem;
+}
+
+.decouvrir-hero h1 {
+  margin: 0.25rem 0 0.75rem;
+  font-size: clamp(2.2rem, 5vw, 4.4rem);
+}
+
+.decouvrir-hero p:last-child {
+  max-width: 760px;
+  color: rgba(228, 231, 255, 0.82);
+  line-height: 1.7;
+}
+
+.decouvrir-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  color: rgba(228, 231, 255, 0.74);
+}
+
+.decouvrir-summary span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 0.8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.decouvrir-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem;
+}
+
+.decouvrir-search,
+.decouvrir-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 48px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0 1rem;
+}
+
+.decouvrir-search {
+  flex: 1;
+  min-width: 280px;
+}
+
+.decouvrir-search input,
+.decouvrir-filter select {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #fff;
+  outline: none;
+  font: inherit;
+}
+
+.decouvrir-filter select option {
+  color: #111;
+}
+
+.decouvrir-categories {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.category-pill {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #eef0ff;
+  border-radius: 999px;
+  min-height: 38px;
+  padding: 0 1rem;
+  cursor: pointer;
+}
+
+.category-pill.active {
+  background: rgba(255, 211, 107, 0.16);
+  color: #ffd36b;
+  border-color: rgba(255, 211, 107, 0.3);
+}
+
+.sermon-grid {
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .decouvrir-search,
+  .decouvrir-filter {
+    width: 100%;
+  }
+}

@@ -1,0 +1,173 @@
+.dashboard-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-intro,
+.dashboard-section {
+  max-width: 980px;
+  padding: 1.25rem;
+}
+
+.dashboard-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  max-width: 980px;
+}
+
+.dashboard-kpi {
+  padding: 1rem;
+}
+
+.dashboard-kpi p {
+  margin-bottom: 0.35rem;
+  color: #bbb;
+}
+
+.dashboard-kpi strong {
+  font-size: 1.8rem;
+}
+
+.dashboard-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dashboard-section h2,
+.dashboard-intro h1 {
+  margin-top: 0;
+}
+
+.dashboard-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.dashboard-field span {
+  font-size: 0.92rem;
+  color: #f4f5ff;
+}
+
+.dashboard-field input,
+.dashboard-field select,
+.dashboard-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  padding: 0.9rem 1rem;
+  font: inherit;
+  outline: none;
+}
+
+.dashboard-field option {
+  color: #111;
+}
+
+.dashboard-field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.dashboard-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #e6e8ff;
+}
+
+.dashboard-checkbox input {
+  width: 16px;
+  height: 16px;
+}
+
+.dashboard-status {
+  margin: 0;
+  color: #9ee6b0;
+}
+
+.dashboard-error {
+  margin: 0;
+  color: #ffb1b1;
+}
+
+.dashboard-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.dashboard-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.dashboard-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dashboard-card-top strong {
+  font-size: 1.02rem;
+}
+
+.dashboard-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  background: rgba(255, 211, 107, 0.16);
+  color: #ffd36b;
+  font-size: 0.82rem;
+}
+
+.dashboard-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  color: #bbb;
+  font-size: 0.92rem;
+}
+
+.dashboard-empty {
+  color: #bbb;
+}
+
+@media (max-width: 760px) {
+  .dashboard-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-header-row,
+  .dashboard-card-top {
+    flex-direction: column;
+  }
+}

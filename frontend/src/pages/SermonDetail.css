@@ -1,0 +1,47 @@
+.sermon-detail {
+  width: min(100%, 920px);
+  display: grid;
+  gap: 1rem;
+}
+
+.sermon-detail h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  color: #ffffff;
+}
+
+.byline {
+  margin: 0;
+  color: #bbb;
+}
+
+.byline a {
+  color: #f0f2ff;
+}
+
+.sermon-detail .cover {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.media-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.sermon-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: #b8bddd;
+}
+
+.description {
+  line-height: 1.7;
+  color: #e7e7ff;
+}

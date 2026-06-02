@@ -1,0 +1,72 @@
+/* Global design system – premium dark theme, glassmorphism, smooth transitions */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(124, 92, 255, 0.14), transparent 28%),
+    linear-gradient(180deg, #0a0d28, #111632 52%, #0b0f24 100%);
+  color: #e0e0ff;
+  overflow-x: hidden;
+}
+
+:root {
+  --primary: hsl(260, 80%, 60%);
+  --primary-light: hsl(260, 80%, 70%);
+  --accent: hsl(45, 90%, 55%);
+  --glass-bg: rgba(255,255,255,0.04);
+  --glass-border: rgba(255,255,255,0.1);
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 48px rgba(0,0,0,0.18);
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.75rem 1.25rem; border-radius: 8px; font-weight: 600;
+  cursor: pointer; border: none; transition: background 0.2s ease, transform 0.1s ease;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--primary-light); }
+.btn-primary:active { transform: scale(0.98); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+
+/* Layout utilities */
+.main-layout { display: flex; flex-direction: column; min-height: 100vh; }
+.content {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: min(100%, 1280px);
+}
+
+/* Navigation links */
+nav .nav-link { margin-right: 1.5rem; color: #e0e0ff; text-decoration: none; font-weight: 500; transition: color 0.2s; }
+nav .nav-link.active, nav .nav-link:hover { color: var(--primary); }
+
+@media (max-width: 720px) {
+  .content {
+    padding: 1.25rem 1rem 5rem;
+  }
+}

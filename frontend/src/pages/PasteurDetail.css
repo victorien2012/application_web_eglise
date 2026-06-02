@@ -1,0 +1,93 @@
+.pasteur-detail-page {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.pasteur-detail-hero {
+  width: min(100%, 1080px);
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 1.25rem;
+  padding: 1.4rem;
+}
+
+.pasteur-detail-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 24px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: #24151f;
+  background: linear-gradient(145deg, rgba(255, 211, 107, 0.9), rgba(255, 145, 77, 0.9));
+}
+
+.pasteur-detail-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pasteur-detail-copy h1 {
+  margin: 0.2rem 0 0.5rem;
+  font-size: clamp(2rem, 4vw, 3.7rem);
+}
+
+.pasteur-detail-eglise {
+  margin: 0 0 0.8rem;
+  color: #ffd36b;
+}
+
+.pasteur-detail-bio {
+  margin: 0;
+  max-width: 760px;
+  color: rgba(228, 231, 255, 0.78);
+  line-height: 1.7;
+}
+
+.pasteur-detail-actions {
+  margin-top: 1rem;
+}
+
+.pasteur-detail-stats {
+  width: min(100%, 1080px);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.pasteur-stat {
+  padding: 1rem;
+}
+
+.pasteur-stat span {
+  display: block;
+  color: #bbb;
+  margin-bottom: 0.35rem;
+}
+
+.pasteur-stat strong {
+  font-size: 1.7rem;
+}
+
+.pasteur-detail-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.section-heading h2 {
+  margin: 0 0 0.3rem;
+}
+
+.section-heading p {
+  margin: 0;
+  color: #bbb;
+}
+
+@media (max-width: 720px) {
+  .pasteur-detail-hero {
+    grid-template-columns: 1fr;
+  }
+}
