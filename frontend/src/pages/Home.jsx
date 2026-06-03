@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { HomeHeroPanel } from '../components/HomeHeroPanel';
 import { SermonCard } from '../components/SermonCard';
-import { api } from '../services/api';
+import { api, extraireListe } from '../services/api';
 import './Home.css';
 
 export function Home() {
@@ -18,7 +18,7 @@ export function Home() {
       try {
         const response = await api.get('/predications/');
         if (active) {
-          setPredications(response.data);
+          setPredications(extraireListe(response.data));
           setErreur('');
         }
       } catch (error) {

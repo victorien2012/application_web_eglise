@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { BellRing, BellOff } from 'lucide-react';
 import { SermonCard } from '../components/SermonCard';
-import { api } from '../services/api';
+import { api, extraireListe } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useAbonnement } from '../hooks/useEngagement';
 import './PasteurDetail.css';
 
 export function PasteurDetail() {
   const { id } = useParams();
+  const { estConnecte } = useAuth();
+  const { estAbonne, basculer, pret: abonnementPret } = useAbonnement(id);
   const [pasteur, setPasteur] = useState(null);
   const [predications, setPredications] = useState([]);
   const [chargement, setChargement] = useState(true);
@@ -23,7 +28,7 @@ export function PasteurDetail() {
         ]);
         if (active) {
           setPasteur(pasteurResponse.data);
-          setPredications(predicationsResponse.data);
+          setPredications(extraireListe(predicationsResponse.data));
           setErreur('');
         }
       } catch (error) {
@@ -78,6 +83,17 @@ export function PasteurDetail() {
             <Link to="/decouvrir" className="btn btn-primary">
               Explorer les predications
             </Link>
+            {estConnecte ? (
+              <button
+                type="button"
+                className={`btn${estAbonne ? '' : ' btn-primary'}`}
+                onClick={basculer}
+                disabled={!abonnementPret}
+              >
+                {estAbonne ? <BellOff size={16} /> : <BellRing size={16} />}
+                {estAbonne ? 'Se desabonner' : "S'abonner"}
+              </button>
+            ) : null}
           </div>
         </div>
       </header>

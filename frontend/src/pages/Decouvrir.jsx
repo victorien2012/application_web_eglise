@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { SermonCard } from '../components/SermonCard';
-import { api } from '../services/api';
+import { api, extraireListe } from '../services/api';
 import './Decouvrir.css';
 
 export function Decouvrir() {
@@ -28,7 +28,7 @@ export function Decouvrir() {
 
         const response = await api.get('/predications/', { params });
         if (active) {
-          setPredications(response.data);
+          setPredications(extraireListe(response.data));
           setErreur('');
         }
       } catch (error) {

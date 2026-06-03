@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import { api } from '../services/api';
+import { api, extraireListe } from '../services/api';
 import './Pasteurs.css';
 
 export function Pasteurs() {
@@ -20,7 +20,7 @@ export function Pasteurs() {
           params: recherche.trim() ? { search: recherche.trim() } : {},
         });
         if (active) {
-          setPasteurs(response.data);
+          setPasteurs(extraireListe(response.data));
           setErreur('');
         }
       } catch (error) {

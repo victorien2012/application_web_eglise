@@ -87,12 +87,19 @@
 }
 
 .app-ghost-button {
-  min-width: 40px;
-  min-height: 40px;
-  justify-content: center;
-  padding: 0;
   background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
+}
+
+.app-ghost-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.btn-icon {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  justify-content: center;
 }
 
 @media (max-width: 1080px) {

@@ -59,6 +59,8 @@ export function AuthProvider({ children }) {
       accessToken: response.data.access,
       refreshToken: response.data.refresh,
       pasteur: response.data.pasteur,
+      emailVerifie: response.data.email_verifie,
+      estAdmin: response.data.est_admin,
       username,
     };
     enregistrerSession(prochaineSession);
@@ -72,6 +74,8 @@ export function AuthProvider({ children }) {
       accessToken: response.data.access,
       refreshToken: response.data.refresh,
       pasteur: response.data.pasteur,
+      emailVerifie: response.data.email_verifie,
+      estAdmin: response.data.est_admin,
       username: donnees.username,
     };
     enregistrerSession(prochaineSession);
@@ -84,16 +88,35 @@ export function AuthProvider({ children }) {
     setSession(null);
   }
 
+  function marquerEmailVerifie() {
+    setSession((courante) => {
+      if (!courante) {
+        return courante;
+      }
+      const prochaineSession = { ...courante, emailVerifie: true };
+      enregistrerSession(prochaineSession);
+      return prochaineSession;
+    });
+  }
+
+  async function renvoyerVerification() {
+    await api.post('/auth/renvoyer-verification/');
+  }
+
   const value = {
     session,
     accessToken: session?.accessToken ?? null,
     pasteur: session?.pasteur ?? null,
     estConnecte: Boolean(session?.accessToken),
     estPasteur: Boolean(session?.pasteur),
+    estAdmin: Boolean(session?.estAdmin),
+    emailVerifie: session?.emailVerifie ?? false,
     loading,
     connexion,
     inscription,
     deconnexion,
+    marquerEmailVerifie,
+    renvoyerVerification,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

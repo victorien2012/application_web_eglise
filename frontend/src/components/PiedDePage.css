@@ -1,0 +1,30 @@
+.pied-de-page {
+  margin-top: 3rem;
+  padding: 1.5rem 1rem 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.pied-de-page-liens {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 0.8rem;
+}
+
+.pied-de-page-liens a {
+  color: rgba(232, 234, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.pied-de-page-liens a:hover {
+  color: #ffd36b;
+}
+
+.pied-de-page-copyright {
+  margin: 0;
+  color: #8a8da0;
+  font-size: 0.82rem;
+}

@@ -11,9 +11,17 @@ from .models import (
     Pasteur,
     PieceJointe,
     Predication,
+    ProfilUtilisateur,
     Serie,
     Signalement,
 )
+
+
+@admin.register(ProfilUtilisateur)
+class ProfilUtilisateurAdmin(admin.ModelAdmin):
+    list_display = ('utilisateur', 'email_verifie', 'cree_le')
+    list_filter = ('email_verifie',)
+    search_fields = ('utilisateur__username', 'utilisateur__email')
 
 
 @admin.register(Pasteur)

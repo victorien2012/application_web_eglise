@@ -14,6 +14,7 @@ export function Connexion() {
   const [soumission, setSoumission] = useState(false);
 
   const destination = location.state?.depuis || '/espace-pasteur';
+  const info = location.state?.info;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -41,6 +42,10 @@ export function Connexion() {
             Connectez-vous pour acceder a votre espace pasteur et gerer vos predications.
           </p>
         </div>
+
+        {info ? (
+          <p className="connexion-copy" style={{ color: '#9be29b' }}>{info}</p>
+        ) : null}
 
         <form className="connexion-form" onSubmit={handleSubmit}>
           <label className="champ">
@@ -80,6 +85,9 @@ export function Connexion() {
         </form>
 
         <p className="connexion-pied">
+          <Link to="/mot-de-passe-oublie">Mot de passe oublie ?</Link>
+        </p>
+        <p className="connexion-pied" style={{ marginTop: '0.4rem' }}>
           Pas encore de compte ? <Link to="/inscription">Creer un compte</Link>
         </p>
       </div>

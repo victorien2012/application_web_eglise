@@ -2,6 +2,23 @@ from django.contrib.auth.models import User
 from django.db import models
 
 
+class ProfilUtilisateur(models.Model):
+    utilisateur = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='profil',
+        db_column='utilisateur_id',
+    )
+    email_verifie = models.BooleanField(default=False, db_column='email_verifie')
+    cree_le = models.DateTimeField(auto_now_add=True, db_column='cree_le')
+
+    class Meta:
+        db_table = 'profils_utilisateurs'
+
+    def __str__(self):
+        return f"Profil de {self.utilisateur.username}"
+
+
 class Pasteur(models.Model):
     utilisateur = models.OneToOneField(
         User,
@@ -49,6 +66,12 @@ class Predication(models.Model):
     nombre_vues = models.IntegerField(default=0, db_column='nombre_vues')
     nombre_telechargements = models.IntegerField(default=0, db_column='nombre_telechargements')
     est_publie = models.BooleanField(default=True, db_column='est_publie')
+    date_publication = models.DateTimeField(
+        blank=True,
+        null=True,
+        db_column='date_publication',
+        help_text="Si renseignee et future, la predication n'est publique qu'a partir de cette date.",
+    )
     categories = models.ManyToManyField(
         'Categorie',
         related_name='predications',

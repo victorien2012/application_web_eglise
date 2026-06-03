@@ -1,0 +1,68 @@
+.moderation-liste {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.moderation-info,
+.moderation-erreur {
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
+}
+
+.moderation-info {
+  color: #bbb;
+}
+
+.moderation-erreur {
+  color: #ffb1b1;
+}
+
+.moderation-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.moderation-item-masque {
+  opacity: 0.6;
+}
+
+.moderation-contenu strong {
+  font-size: 0.92rem;
+}
+
+.moderation-contenu p {
+  margin: 0.3rem 0 0;
+  color: #d6d8e6;
+  font-size: 0.92rem;
+}
+
+.moderation-badge {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 150, 150, 0.18);
+  color: #ff9b9b;
+  font-size: 0.75rem;
+}
+
+.moderation-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.moderation-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+}

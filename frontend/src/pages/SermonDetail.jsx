@@ -2,15 +2,20 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { VideoPlayer } from '../components/VideoPlayer';
-import { Play, Download } from 'lucide-react';
+import { SectionCommentaires } from '../components/SectionCommentaires';
+import { Play, Download, Heart } from 'lucide-react';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useFavori } from '../hooks/useEngagement';
 import './SermonDetail.css';
 
 export function SermonDetail() {
   const { id } = useParams();
+  const { estConnecte } = useAuth();
   const [sermon, setSermon] = useState(null);
   const [showVideo, setShowVideo] = useState(false);
   const [erreur, setErreur] = useState('');
+  const { estFavori, basculer, pret: favoriPret } = useFavori(id);
 
   useEffect(() => {
     let active = true;
@@ -34,6 +39,12 @@ export function SermonDetail() {
       active = false;
     };
   }, [id]);
+
+  // Enregistre la lecture dans l'historique de l'utilisateur connecte.
+  useEffect(() => {
+    if (!estConnecte || !id) return;
+    api.post('/historique-lecture/', { predication: Number(id), position_secondes: 0 }).catch(() => {});
+  }, [estConnecte, id]);
 
   if (erreur) {
     return <p className="page-state error">{erreur}</p>;
@@ -78,6 +89,18 @@ export function SermonDetail() {
         {sermon.fichier_video && (
           <button className="btn" onClick={() => download(sermon.fichier_video)} type="button"><Download size={16} /></button>
         )}
+        {estConnecte && (
+          <button
+            className={`btn${estFavori ? ' btn-primary' : ''}`}
+            onClick={basculer}
+            disabled={!favoriPret}
+            type="button"
+            title={estFavori ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          >
+            <Heart size={16} fill={estFavori ? 'currentColor' : 'none'} />
+            {estFavori ? 'Favori' : 'Ajouter aux favoris'}
+          </button>
+        )}
       </div>
       <div className="sermon-detail-meta">
         <span>{sermon.type_media}</span>
@@ -88,6 +111,8 @@ export function SermonDetail() {
         <VideoPlayer src={sermon.fichier_video || sermon.url_video} onClose={() => setShowVideo(false)} />
       )}
       <article className="description" dangerouslySetInnerHTML={{ __html: sermon.description || '<p>Aucune description disponible.</p>' }} />
+
+      <SectionCommentaires predicationId={Number(id)} />
     </section>
   );
 }

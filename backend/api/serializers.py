@@ -14,6 +14,7 @@ from .models import (
     Pasteur,
     PieceJointe,
     Predication,
+    ProfilUtilisateur,
     Serie,
     Signalement,
 )
@@ -36,6 +37,9 @@ class PasteurSerializer(serializers.ModelSerializer):
             'avatar', 'nom_eglise', 'lien_twitter', 'lien_facebook',
             'lien_youtube', 'cree_le', 'est_valide'
         )
+        # La validation d'un pasteur est une action reservee a l'administration
+        # (voir PasteurViewSet.valider); un pasteur ne peut pas s'auto-valider.
+        read_only_fields = ('est_valide',)
 
 
 class PasteurMinimalSerializer(serializers.ModelSerializer):
@@ -71,10 +75,16 @@ class SerieEcritureSerializer(serializers.ModelSerializer):
 
 
 class PieceJointeSerializer(serializers.ModelSerializer):
+    EXTENSIONS_DOCUMENT = {'pdf', 'doc', 'docx', 'odt', 'txt', 'rtf', 'ppt', 'pptx'}
+    TAILLE_MAX_DOCUMENT_MO = 25
+
     class Meta:
         model = PieceJointe
         fields = ('id', 'predication', 'nom', 'fichier', 'cree_le')
         read_only_fields = ('predication',)
+
+    def validate_fichier(self, value):
+        return valider_fichier_uploade(value, self.EXTENSIONS_DOCUMENT, self.TAILLE_MAX_DOCUMENT_MO)
 
 
 class PredicationSerializer(serializers.ModelSerializer):
@@ -86,6 +96,7 @@ class PredicationSerializer(serializers.ModelSerializer):
     url_fichier_audio = serializers.SerializerMethodField()
     url_fichier_video = serializers.SerializerMethodField()
     url_image_couverture = serializers.SerializerMethodField()
+    est_planifiee = serializers.SerializerMethodField()
 
     class Meta:
         model = Predication
@@ -93,9 +104,13 @@ class PredicationSerializer(serializers.ModelSerializer):
             'id', 'pasteur', 'titre', 'description', 'type_media',
             'fichier_audio', 'url_fichier_audio', 'fichier_video', 'url_fichier_video',
             'url_video', 'image_couverture', 'url_image_couverture', 'duree_secondes',
-            'nombre_vues', 'nombre_telechargements', 'est_publie', 'categories',
-            'etiquettes', 'serie', 'pieces_jointes', 'cree_le'
+            'nombre_vues', 'nombre_telechargements', 'est_publie', 'date_publication',
+            'est_planifiee', 'categories', 'etiquettes', 'serie', 'pieces_jointes', 'cree_le'
         ]
+
+    def get_est_planifiee(self, obj):
+        from django.utils import timezone
+        return bool(obj.date_publication and obj.date_publication > timezone.now())
 
     def get_url_fichier_audio(self, obj):
         if obj.fichier_audio:
@@ -122,7 +137,36 @@ class PredicationSerializer(serializers.ModelSerializer):
         return None
 
 
+def valider_fichier_uploade(fichier, extensions_autorisees, taille_max_mo):
+    """Valide l'extension et la taille d'un fichier uploade."""
+    if not fichier:
+        return fichier
+
+    nom = getattr(fichier, 'name', '') or ''
+    extension = nom.rsplit('.', 1)[-1].lower() if '.' in nom else ''
+    if extension not in extensions_autorisees:
+        raise serializers.ValidationError(
+            f"Format non supporte ({extension or 'inconnu'}). "
+            f"Formats acceptes: {', '.join(sorted(extensions_autorisees))}."
+        )
+
+    taille = getattr(fichier, 'size', 0) or 0
+    if taille > taille_max_mo * 1024 * 1024:
+        raise serializers.ValidationError(
+            f"Fichier trop volumineux ({taille / (1024 * 1024):.1f} Mo). "
+            f"Taille maximale: {taille_max_mo} Mo."
+        )
+    return fichier
+
+
 class PredicationEcritureSerializer(serializers.ModelSerializer):
+    EXTENSIONS_AUDIO = {'mp3', 'wav', 'm4a', 'aac', 'ogg', 'oga', 'flac'}
+    EXTENSIONS_VIDEO = {'mp4', 'webm', 'mov', 'm4v', 'mkv'}
+    EXTENSIONS_IMAGE = {'jpg', 'jpeg', 'png', 'webp', 'gif'}
+    TAILLE_MAX_AUDIO_MO = 100
+    TAILLE_MAX_VIDEO_MO = 1024
+    TAILLE_MAX_IMAGE_MO = 5
+
     categories_ids = serializers.PrimaryKeyRelatedField(
         queryset=Categorie.objects.all(),
         many=True,
@@ -143,10 +187,19 @@ class PredicationEcritureSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'pasteur', 'titre', 'description', 'type_media',
             'fichier_audio', 'fichier_video', 'url_video', 'image_couverture',
-            'duree_secondes', 'est_publie', 'serie', 'categories_ids',
-            'etiquettes_ids'
+            'duree_secondes', 'est_publie', 'date_publication', 'serie',
+            'categories_ids', 'etiquettes_ids'
         ]
         read_only_fields = ('pasteur',)
+
+    def validate_fichier_audio(self, value):
+        return valider_fichier_uploade(value, self.EXTENSIONS_AUDIO, self.TAILLE_MAX_AUDIO_MO)
+
+    def validate_fichier_video(self, value):
+        return valider_fichier_uploade(value, self.EXTENSIONS_VIDEO, self.TAILLE_MAX_VIDEO_MO)
+
+    def validate_image_couverture(self, value):
+        return valider_fichier_uploade(value, self.EXTENSIONS_IMAGE, self.TAILLE_MAX_IMAGE_MO)
 
 
 class CommentaireSerializer(serializers.ModelSerializer):
@@ -247,6 +300,7 @@ class InscriptionSerializer(serializers.Serializer):
             email=validated_data['email'],
             password=validated_data['password']
         )
+        ProfilUtilisateur.objects.create(utilisateur=user)
         if validated_data.get('est_pasteur'):
             Pasteur.objects.create(
                 utilisateur=user,
@@ -254,4 +308,26 @@ class InscriptionSerializer(serializers.Serializer):
                 nom_eglise=validated_data.get('nom_eglise', '')
             )
         return user
+
+
+class DemandeReinitialisationSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class ConfirmationReinitialisationSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    nouveau_mot_de_passe = serializers.CharField(write_only=True)
+
+    def validate_nouveau_mot_de_passe(self, value):
+        try:
+            validate_password(value)
+        except DjangoValidationError as erreur:
+            raise serializers.ValidationError(list(erreur.messages))
+        return value
+
+
+class VerificationEmailSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
 

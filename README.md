@@ -47,12 +47,12 @@ Deja present:
 
 Manques principaux:
 
-- Authentification complete cote front.
+- Authentification cote front: inscription, connexion, mot de passe oublie et verification email sont en place.
 - Roles et permissions complets.
 - Back-office pasteur.
 - Interface admin produit/moderation.
 - Recherche avancee et filtres publics complets.
-- Interfaces frontend pour commentaires, favoris, abonnements et historique.
+- Interfaces frontend pour commentaires, favoris, abonnements et historique: en place (voir ticket 6).
 - Upload complet avec validation fichiers.
 - Analytics utilisables.
 - Tests automatises.
@@ -385,3 +385,92 @@ curl http://localhost:8000/api/predications/
 10. Preparer production.
 
 Statut actuel des trois premiers tickets: termine.
+
+Ticket 4 (auth front et routes protegees): termine.
+
+- Inscription: `POST /api/auth/inscription/` renvoie directement les tokens JWT; page `/inscription` avec option "Je suis pasteur".
+- Connexion et routes protegees: en place.
+- Mot de passe oublie: `POST /api/auth/mot-de-passe-oublie/` (envoi du lien) et `POST /api/auth/reinitialiser-mot-de-passe/` (uid + token + nouveau mot de passe); pages `/mot-de-passe-oublie` et `/reinitialiser-mot-de-passe`.
+- Verification email: email envoye a l'inscription, `POST /api/auth/verifier-email/` et `POST /api/auth/renvoyer-verification/`; page `/verifier-email`, banniere de rappel tant que l'email n'est pas verifie. Modele `ProfilUtilisateur` (champ `email_verifie`).
+- En dev, les emails s'affichent dans les logs du conteneur backend (backend console). Configurer un vrai SMTP en production via les variables `EMAIL_*` (voir `.env.example`).
+
+Migrations ajoutees: `0007_pasteur_est_valide` (le champ `est_valide` du modele Pasteur n'avait jamais ete migre) et `0008_profilutilisateur`.
+
+Ticket 5 (back-office pasteur) en cours:
+
+- Creation et **modification** de predications depuis le tableau de bord, avec **upload** audio, video et image de couverture (multipart), lien video externe, choix de serie et categories, statut publie/brouillon.
+- **Suppression** d'une predication (proprietaire uniquement).
+- **Validation des fichiers** cote backend: extensions et tailles maximales (audio 100 Mo, video 1 Go, image 5 Mo, pieces jointes 25 Mo).
+- Correction d'un bug: un pasteur peut desormais consulter/modifier/supprimer ses propres predications **non publiees** via `/api/predications/{id}/` (le filtre `est_publie=True` masquait ses brouillons); le public ne voit toujours que les predications publiees.
+- Tableau de bord et statistiques de base deja en place.
+- **Moderation des commentaires**: le pasteur voit tous les commentaires de ses predications (y compris masques) via `?moderation=true`, peut masquer/reafficher (`POST /api/commentaires/{id}/basculer_masquage/`) et supprimer. Faille corrigee au passage: la suppression d'un commentaire est desormais reservee a son auteur, au pasteur proprietaire de la predication ou a un admin.
+- **Pieces jointes**: ajout/suppression de documents (PDF, doc, odt, txt, ppt...) par predication depuis le dashboard, avec validation de format et de taille; suppression reservee au pasteur proprietaire ou a un admin.
+- **Publication planifiee**: champ `date_publication`; une predication publiee n'est publique qu'a partir de cette date (avant, seul le pasteur la voit, badge "Planifiee"). Champ `date_publication` + indicateur `est_planifiee` exposes par l'API.
+- Restent: statuts avances prive/non liste, previsualisation avant publication.
+
+Pagination (Phases 3 & 8): l'API REST est desormais **paginee** (`PageNumberPagination`, 20 par page). Les reponses de liste ont la forme `{ count, next, previous, results }`. Cote front, le helper `extraireListe` (dans `services/api.js`) accepte indifferemment un tableau brut ou une reponse paginee.
+
+Ticket 6 (engagement utilisateur) cote UI:
+
+- **Favoris**: bouton coeur sur la page predication (ajout/retrait), liste sur la page profil. Hook `useFavori`.
+- **Abonnements**: bouton "S'abonner / Se desabonner" sur la page pasteur, liste sur le profil. Hook `useAbonnement`.
+- **Commentaires**: affichage et ajout sur la page predication (`SectionCommentaires`), moderation cote pasteur deja en place.
+- **Historique de lecture**: enregistre automatiquement a l'ouverture d'une predication par un utilisateur connecte (endpoint rendu idempotent via upsert sur (utilisateur, predication)), liste sur le profil.
+- Restent: signalement depuis l'UI, notifications in-app/email, playlists.
+
+Ticket 7 (administration et moderation) en cours:
+
+- **Validation des pasteurs**: page `/administration` (reservee aux comptes `is_staff`) listant les pasteurs en attente (`GET /api/pasteurs/a_valider/`) avec action de validation (`POST /api/pasteurs/{id}/valider/`). Faille corrigee: `est_valide` est desormais en lecture seule cote serializer; un pasteur ne peut plus s'auto-valider, seule l'administration le peut.
+- **Traitement des signalements**: liste filtrable par statut (`GET /api/signalements/?statut=`), changement de statut reserve aux admins (`POST /api/signalements/{id}/changer_statut/`, statuts NOUVEAU/EN_COURS/TRAITE/REJETE).
+- L'API de connexion expose `est_admin` (is_staff); le front affiche le lien Administration et protege la route (`RouteProtegee adminUniquement`).
+- L'admin Django couvre deja tous les modeles (voir `api/admin.py`).
+- Restent: actions bannir/reouvrir, journal d'audit admin.
+
+Ticket 8 (analytics): endpoint admin `GET /api/admin/statistiques/` (reserve `is_staff`) agregeant utilisateurs, pasteurs (dont valides), predications (dont publiees), vues, telechargements, commentaires, favoris, abonnements, signalements par statut, top 5 predications et serie d'activite sur 30 jours. Affiche en tete de la page `/administration`.
+
+Phase 9 (securite, RGPD, accessibilite) - premiers elements:
+
+- **CORS strict**: `CORS_ALLOWED_ORIGINS` (liste blanche par variable d'environnement, defaut `localhost:5173`) remplace `CORS_ALLOW_ALL_ORIGINS`.
+- **Rate limiting** (DRF `ScopedRateThrottle`): connexion 30/min, inscription 20/min, mot de passe oublie 10/min, publication de commentaires 60/min.
+- **RGPD**: export de ses donnees (`GET /api/auth/mes-donnees/`) et suppression de compte (`DELETE /api/auth/mon-compte/`), accessibles depuis la page profil.
+- **Pages legales**: mentions legales, confidentialite, cookies, conditions (`/mentions-legales`, `/confidentialite`, `/cookies`, `/conditions`) + pied de page; **banniere de consentement cookies**.
+- **En-tetes de securite** (actifs hors DEBUG): redirection HTTPS, HSTS, cookies securises, `X-Frame-Options: DENY`, nosniff, `Referrer-Policy`, `SECURE_PROXY_SSL_HEADER`, `CSRF_TRUSTED_ORIGINS`.
+- **Accessibilite**: lien d'evitement ("Aller au contenu principal"), `aria-label` sur la navigation et les boutons-icones, focus clavier visible (`:focus-visible`).
+- Restent: controle antivirus des uploads, audit d'accessibilite complet (contrastes, lecteurs d'ecran).
+
+## Phase 10 - Preparation production
+
+- **Configuration Django de production** (activee quand `DEBUG=False`): en-tetes de securite, journalisation structuree vers stdout (`LOGGING`), service des fichiers statiques par **WhiteNoise** (compresses + manifeste).
+- **Stockage objet S3 + CDN** (optionnel via `USE_S3=True`): `django-storages` + `boto3`, endpoint et domaine CDN configurables.
+- **Images de production**:
+  - Backend servi par **gunicorn** (3 workers), avec `migrate` + `collectstatic` au demarrage.
+  - Frontend build Vite servi par **nginx** ([frontend/Dockerfile.prod](frontend/Dockerfile.prod) + [frontend/nginx.conf](frontend/nginx.conf)), qui proxifie `/api`, `/admin`, `/static` vers le backend et sert `/media` depuis le volume partage.
+- **Orchestration**: [docker-compose.prod.yml](docker-compose.prod.yml) + [.env.prod.example](.env.prod.example).
+- **Sauvegardes PostgreSQL**: [scripts/backup_db.sh](scripts/backup_db.sh) (avec retention) et [scripts/restore_db.sh](scripts/restore_db.sh).
+- **CI/CD**: [.github/workflows/ci.yml](.github/workflows/ci.yml) lance les tests backend (sur PostgreSQL) et le build frontend a chaque push/PR sur `main`.
+- Restent: monitoring/alerting, CDN reel, sauvegardes planifiees externes.
+
+### Lancer la stack de production
+
+```bash
+cp .env.prod.example .env.prod   # puis completer les secrets
+docker compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
+# Creer un compte administrateur
+docker compose -f docker-compose.prod.yml exec backend python manage.py createsuperuser
+```
+
+L'application est servie sur le port 80 (front + API proxifiee). Stack validee localement: gunicorn + WhiteNoise + nginx, migrations et collectstatic au demarrage.
+
+### Sauvegarde et restauration
+
+```bash
+./scripts/backup_db.sh ./backups            # sauvegarde horodatee + retention (14)
+./scripts/restore_db.sh ./backups/xxx.sql.gz  # restauration
+```
+
+### Procedure de rollback
+
+1. Identifier la version (tag/commit) precedente stable.
+2. `git checkout <tag-precedent>` puis `docker compose -f docker-compose.prod.yml --env-file .env.prod up --build -d`.
+3. Si une migration doit etre annulee: `docker compose -f docker-compose.prod.yml exec backend python manage.py migrate api <numero_migration_precedente>`.
+4. En cas de corruption de donnees: restaurer la derniere sauvegarde via `scripts/restore_db.sh`.

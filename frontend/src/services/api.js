@@ -19,6 +19,20 @@ export function effacerSession() {
   window.localStorage.removeItem(STORAGE_KEY);
 }
 
+/**
+ * Normalise une reponse de liste: accepte un tableau brut (API non paginee)
+ * ou un objet pagine DRF { count, next, previous, results }.
+ */
+export function extraireListe(data) {
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && Array.isArray(data.results)) {
+    return data.results;
+  }
+  return [];
+}
+
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
 });

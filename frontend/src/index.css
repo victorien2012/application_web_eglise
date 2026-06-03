@@ -2,6 +2,34 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
 
+/* Accessibilite: lien d'evitement visible uniquement au focus clavier */
+.lien-evitement {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.6rem 1rem;
+  background: #ffd36b;
+  color: #111;
+  border-radius: 0 0 8px 0;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.lien-evitement:focus {
+  left: 0;
+}
+
+/* Focus clavier visible sur les elements interactifs */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #ffd36b;
+  outline-offset: 2px;
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;

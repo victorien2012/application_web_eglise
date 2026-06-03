@@ -1,0 +1,120 @@
+.admin-page {
+  display: grid;
+  gap: 1rem;
+  max-width: 980px;
+}
+
+.admin-intro,
+.admin-section {
+  padding: 1.25rem;
+}
+
+.admin-intro h1,
+.admin-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0;
+}
+
+.admin-intro p {
+  color: #bbb;
+}
+
+.admin-erreur {
+  color: #ff9b9b;
+}
+
+.admin-info {
+  color: #bbb;
+  margin: 0;
+}
+
+.admin-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.8rem;
+}
+
+.admin-kpi {
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.admin-kpi span {
+  display: block;
+  color: #bbb;
+  font-size: 0.82rem;
+  margin-bottom: 0.3rem;
+}
+
+.admin-kpi strong {
+  font-size: 1.5rem;
+}
+
+.admin-liste {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.admin-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.admin-card strong {
+  font-size: 1rem;
+}
+
+.admin-card p {
+  margin: 0.3rem 0 0;
+  color: #bbb;
+  font-size: 0.9rem;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.admin-statut {
+  display: inline-block;
+  margin-top: 0.4rem;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e6e8ff;
+}
+
+.admin-statut-NOUVEAU {
+  background: rgba(255, 211, 107, 0.18);
+  color: #ffd36b;
+}
+
+.admin-statut-TRAITE {
+  background: rgba(155, 226, 155, 0.18);
+  color: #9be29b;
+}
+
+.admin-statut-REJETE {
+  background: rgba(255, 150, 150, 0.18);
+  color: #ff9b9b;
+}
+
+@media (max-width: 760px) {
+  .admin-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

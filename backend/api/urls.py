@@ -6,16 +6,23 @@ from .views import (
     AbonnementViewSet,
     CategorieViewSet,
     CommentaireViewSet,
+    ConfirmationReinitialisationMotDePasseView,
     ConnexionTokenView,
+    DemandeReinitialisationMotDePasseView,
     EtiquetteViewSet,
     FavoriViewSet,
     HistoriqueLectureViewSet,
     InscriptionView,
+    MesDonneesView,
     PasteurViewSet,
     PieceJointeViewSet,
     PredicationViewSet,
+    RenvoyerVerificationEmailView,
     SerieViewSet,
     SignalementViewSet,
+    StatistiquesGlobalesView,
+    SupprimerCompteView,
+    VerificationEmailView,
 )
 
 router = DefaultRouter()
@@ -36,4 +43,23 @@ urlpatterns = [
     path('auth/inscription/', InscriptionView.as_view(), name='inscription'),
     path('auth/connexion/', ConnexionTokenView.as_view(), name='token_obtain_pair'),
     path('auth/rafraichir/', TokenRefreshView.as_view(), name='token_refresh'),
+    path(
+        'auth/mot-de-passe-oublie/',
+        DemandeReinitialisationMotDePasseView.as_view(),
+        name='mot_de_passe_oublie',
+    ),
+    path(
+        'auth/reinitialiser-mot-de-passe/',
+        ConfirmationReinitialisationMotDePasseView.as_view(),
+        name='reinitialiser_mot_de_passe',
+    ),
+    path('admin/statistiques/', StatistiquesGlobalesView.as_view(), name='statistiques_globales'),
+    path('auth/verifier-email/', VerificationEmailView.as_view(), name='verifier_email'),
+    path(
+        'auth/renvoyer-verification/',
+        RenvoyerVerificationEmailView.as_view(),
+        name='renvoyer_verification',
+    ),
+    path('auth/mes-donnees/', MesDonneesView.as_view(), name='mes_donnees'),
+    path('auth/mon-compte/', SupprimerCompteView.as_view(), name='supprimer_compte'),
 ]
