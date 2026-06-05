@@ -1,10 +1,14 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Play, Download, Image as ImageIcon, UserRound } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { telechargerRessource } from '../services/api';
 import './SermonCard.css';
 
 export function SermonCard({ sermon }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { estConnecte } = useAuth();
 
   const handlePlay = () => {
     if (sermon.fichier_audio) {
@@ -15,11 +19,23 @@ export function SermonCard({ sermon }) {
     }
   };
 
-  const downloadFile = (url) => {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '';
-    a.click();
+  // Telechargement protege : redirige vers la connexion si non connecte.
+  const telecharger = async (format) => {
+    if (!estConnecte) {
+      navigate('/connexion', {
+        state: {
+          depuis: location.pathname,
+          info: 'Connectez-vous ou inscrivez-vous pour telecharger cette ressource.',
+        },
+      });
+      return;
+    }
+    try {
+      await telechargerRessource(sermon.id, format);
+    } catch {
+      // En cas d'echec, on ouvre la fiche detaillee ou un message s'affichera.
+      navigate(`/sermon/${sermon.id}`);
+    }
   };
 
   return (
@@ -63,12 +79,12 @@ export function SermonCard({ sermon }) {
           </button>
         )}
         {sermon.fichier_audio && (
-          <button className="btn" onClick={() => downloadFile(sermon.fichier_audio)}>
+          <button className="btn" onClick={() => telecharger('audio')} title="Telecharger l'audio">
             <Download size={16} />
           </button>
         )}
         {sermon.fichier_video && (
-          <button className="btn" onClick={() => downloadFile(sermon.fichier_video)}>
+          <button className="btn" onClick={() => telecharger('video')} title="Telecharger la video">
             <Download size={16} />
           </button>
         )}

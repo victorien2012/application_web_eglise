@@ -10,3 +10,5 @@ whitenoise>=6.6.0
 # Stockage objet S3 (optionnel, active via USE_S3=True)
 django-storages>=1.14.0
 boto3>=1.34.0
+# Import / synchronisation des videos YouTube (management command import_youtube_videos)
+google-api-python-client>=2.100.0

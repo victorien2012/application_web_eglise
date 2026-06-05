@@ -2,92 +2,79 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  height: 100%;
+
+  border-radius: 18px;
+
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03)),
-    var(--glass-bg);
-}
-.sermon-card .cover {
-  width: 100%;
-  height: 170px;
-  object-fit: cover;
-}
-.sermon-card .info {
-  padding: 1rem;
-  flex: 1;
-  display: grid;
-  gap: 0.65rem;
-}
-.sermon-card-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  align-items: flex-start;
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+
+  border: 1px solid rgba(255,255,255,.08);
+
+  backdrop-filter: blur(14px);
+
+  transition: .35s ease;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
 }
 
+.sermon-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 25px 60px rgba(0,0,0,.45);
+}
+
+/* IMAGE */
+.sermon-card .cover {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+
+  transition: transform .6s ease;
+}
+
+.sermon-card:hover .cover {
+  transform: scale(1.06);
+}
+
+/* INFO */
+.sermon-card .info {
+  padding: 1rem;
+  display: grid;
+  gap: .7rem;
+}
+
+/* TITLE */
 .sermon-card .info h3 {
   margin: 0;
   font-size: 1.1rem;
   color: #fff;
 }
 
+/* TYPE BADGE */
 .sermon-type {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 0 0.7rem;
-  border-radius: 999px;
-  background: rgba(255, 211, 107, 0.16);
+  background: rgba(255,211,107,.14);
   color: #ffd36b;
-  font-size: 0.78rem;
+  border: 1px solid rgba(255,211,107,.25);
 }
 
-.pastor-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  color: #cdd1ff;
-  text-decoration: none;
-  font-size: 0.92rem;
-}
-
+/* DESCRIPTION */
 .sermon-description {
-  margin: 0;
-  color: rgba(228, 231, 255, 0.72);
-  line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  color: rgba(230,235,255,.7);
 }
 
-.sermon-meta,
-.sermon-categories {
-  display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
-
+/* META */
 .sermon-meta {
-  color: #aeb4da;
-  font-size: 0.86rem;
+  color: rgba(200,205,255,.7);
 }
 
+/* CATEGORY */
 .sermon-category {
-  display: inline-flex;
-  align-items: center;
-  min-height: 26px;
-  padding: 0 0.65rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #f0f2ff;
-  font-size: 0.76rem;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
 }
+
+/* ACTIONS */
 .sermon-card .actions {
-  display: flex;
-  gap: 0.4rem;
   padding: 0 1rem 1rem;
+  display: flex;
   justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
 }

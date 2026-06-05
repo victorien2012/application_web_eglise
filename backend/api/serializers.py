@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -103,7 +105,7 @@ class PredicationSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'pasteur', 'titre', 'description', 'type_media',
             'fichier_audio', 'url_fichier_audio', 'fichier_video', 'url_fichier_video',
-            'url_video', 'image_couverture', 'url_image_couverture', 'duree_secondes',
+            'url_video', 'youtube_id', 'image_couverture', 'url_image_couverture', 'duree_secondes',
             'nombre_vues', 'nombre_telechargements', 'est_publie', 'date_publication',
             'est_planifiee', 'categories', 'etiquettes', 'serie', 'pieces_jointes', 'cree_le'
         ]
@@ -135,6 +137,25 @@ class PredicationSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.image_couverture.url)
             return obj.image_couverture.url
         return None
+
+
+_MOTIFS_YOUTUBE = (
+    re.compile(r'youtube\.com/watch\?v=([\w-]{11})'),
+    re.compile(r'youtu\.be/([\w-]{11})'),
+    re.compile(r'youtube\.com/embed/([\w-]{11})'),
+    re.compile(r'youtube\.com/shorts/([\w-]{11})'),
+)
+
+
+def extraire_youtube_id(url):
+    """Extrait l'identifiant d'une video YouTube depuis ses differentes formes d'URL."""
+    if not url:
+        return None
+    for motif in _MOTIFS_YOUTUBE:
+        correspondance = motif.search(url)
+        if correspondance:
+            return correspondance.group(1)
+    return None
 
 
 def valider_fichier_uploade(fichier, extensions_autorisees, taille_max_mo):
@@ -200,6 +221,22 @@ class PredicationEcritureSerializer(serializers.ModelSerializer):
 
     def validate_image_couverture(self, value):
         return valider_fichier_uploade(value, self.EXTENSIONS_IMAGE, self.TAILLE_MAX_IMAGE_MO)
+
+    def validate(self, attrs):
+        # Quand un lien video est fourni, on en derive le youtube_id (coherence avec
+        # les imports) et on empeche les doublons de la meme video YouTube.
+        if 'url_video' in attrs:
+            youtube_id = extraire_youtube_id(attrs.get('url_video'))
+            if youtube_id:
+                doublons = Predication.objects.filter(youtube_id=youtube_id)
+                if self.instance is not None:
+                    doublons = doublons.exclude(pk=self.instance.pk)
+                if doublons.exists():
+                    raise serializers.ValidationError(
+                        {'url_video': "Cette video YouTube est deja publiee sur la plateforme."}
+                    )
+            attrs['youtube_id'] = youtube_id
+        return attrs
 
 
 class CommentaireSerializer(serializers.ModelSerializer):

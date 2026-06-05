@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+
 import { HomeHeroPanel } from '../components/HomeHeroPanel';
 import { SermonCard } from '../components/SermonCard';
 import { api, extraireListe } from '../services/api';
+
 import './Home.css';
 
 export function Home() {
@@ -11,39 +13,51 @@ export function Home() {
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState('');
 
+  /* =========================
+     FETCH DATA
+  ========================= */
   useEffect(() => {
     let active = true;
 
-    async function charger() {
+    const charger = async () => {
       try {
         const response = await api.get('/predications/');
-        if (active) {
-          setPredications(extraireListe(response.data));
-          setErreur('');
-        }
+
+        if (!active) return;
+
+        const data = extraireListe(response.data);
+        setPredications(data);
+        setErreur('');
       } catch (error) {
-        if (active) {
-          setErreur(error.response?.data?.detail || 'Impossible de charger les predications.');
-        }
+        if (!active) return;
+
+        setErreur(
+          error?.response?.data?.detail ||
+          'Impossible de charger les prédications.'
+        );
       } finally {
-        if (active) {
-          setChargement(false);
-        }
+        if (active) setChargement(false);
       }
-    }
+    };
 
     charger();
+
     return () => {
       active = false;
     };
   }, []);
 
-  const aLaUne = predications[0];
+  /* =========================
+     DERIVED DATA
+  ========================= */
+  const aLaUne = predications?.[0];
   const tendances = predications.slice(1, 4);
   const dernieres = predications.slice(0, 6);
+
   const stats = useMemo(() => {
-    const audio = predications.filter((item) => item.type_media === 'AUDIO').length;
-    const video = predications.filter((item) => item.type_media !== 'AUDIO').length;
+    const audio = predications.filter(p => p.type_media === 'AUDIO').length;
+    const video = predications.filter(p => p.type_media !== 'AUDIO').length;
+
     return {
       total: predications.length,
       audio,
@@ -51,145 +65,180 @@ export function Home() {
     };
   }, [predications]);
 
+  const isLoading = chargement;
+  const hasError = !!erreur;
+
+  /* =========================
+     RENDER
+  ========================= */
   return (
-    <section className="home-page">
-      <header className="home-hero">
-        <div className="home-hero-copy">
-          <div className="home-kicker-row">
-            <p className="section-kicker home-kicker-pill">Plateforme web</p>
-            <span className="home-kicker-note">Contenus publics disponibles en audio et video</span>
-          </div>
-          <h1 className="title">Ecouter, regarder et retrouver les predications qui nourrissent votre semaine.</h1>
-          <p className="home-copy">
-            Une experience simple pour explorer les messages publics, suivre les pasteurs et
-            passer de l'audio au video sans friction.
-          </p>
-          <div className="home-hero-points">
-            <span>Predications publiques</span>
-            <span>Navigation par pasteur</span>
-            <span>Lecture immediate</span>
-          </div>
-          <div className="home-actions">
-            <Link to="/decouvrir" className="btn btn-primary">
-              Explorer maintenant
-            </Link>
-            <Link to="/pasteurs" className="btn home-secondary-btn">
-              Voir les pasteurs
-            </Link>
-          </div>
-        </div>
+    <main id="contenu-principal" className="home-layout">
 
-        <HomeHeroPanel total={stats.total} audio={stats.audio} video={stats.video} />
-      </header>
+      <section className="home-page">
 
-      {aLaUne ? (
-        <section className="home-highlight glass-card">
-          <div className="home-highlight-copy">
-            <p className="section-kicker">A la une</p>
-            <h2>{aLaUne.titre}</h2>
-            <p>{aLaUne.description || 'Une predication a retrouver des maintenant sur la plateforme.'}</p>
-            <div className="home-highlight-meta">
-              <span>{aLaUne.pasteur.nom_affichage}</span>
-              <span>{aLaUne.type_media}</span>
-              <span>{aLaUne.duree_secondes}s</span>
+        {/* ================= HERO ================= */}
+        <header className="home-hero">
+
+          <div className="home-hero-copy">
+
+            <div className="home-kicker-row">
+              <p className="section-kicker home-kicker-pill">
+                Plateforme web
+              </p>
+              <span className="home-kicker-note">
+                Contenus audio & vidéo
+              </span>
             </div>
-            <Link to={`/sermon/${aLaUne.id}`} className="btn btn-primary">
-              Ouvrir la predication <ArrowRight size={16} />
-            </Link>
+
+            <h1 className="title">
+              Écouter et découvrir des prédications inspirantes
+            </h1>
+
+            <p className="home-copy">
+              Explore les messages, suis les pasteurs et accède aux contenus
+              audio et vidéo sans friction.
+            </p>
+
+            <div className="home-hero-points">
+              <span>Prédications publiques</span>
+              <span>Navigation intuitive</span>
+              <span>Lecture instantanée</span>
+            </div>
+
+            <div className="home-actions">
+              <Link to="/decouvrir" className="btn btn-primary">
+                Explorer <ArrowRight size={16} />
+              </Link>
+
+              <Link to="/pasteurs" className="btn btn-secondary">
+                Voir les pasteurs
+              </Link>
+            </div>
+
           </div>
-          <div className="home-highlight-visual">
-            {aLaUne.image_couverture ? (
-              <>
-                <img src={aLaUne.image_couverture} alt={aLaUne.titre} />
-                <div className="home-highlight-overlay">
-                  <span className="home-highlight-chip">{aLaUne.type_media}</span>
-                  <div className="home-highlight-overlay-copy">
-                    <strong>{aLaUne.titre}</strong>
-                    <span>{aLaUne.pasteur.nom_affichage}</span>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="home-highlight-fallback">
-                <div className="home-highlight-fallback-top">
-                  <span className="home-highlight-chip">{aLaUne.type_media}</span>
-                  <span className="home-highlight-duration">{aLaUne.duree_secondes}s</span>
-                </div>
-                <div className="home-highlight-fallback-copy">
-                  <span>{aLaUne.pasteur.nom_affichage}</span>
-                  <strong>{aLaUne.titre}</strong>
-                  <p>{aLaUne.description || 'Une predication a retrouver des maintenant sur la plateforme.'}</p>
-                </div>
-                <div className="home-highlight-fallback-metrics">
-                  <div>
-                    <small>Vues</small>
-                    <strong>{aLaUne.nombre_vues}</strong>
-                  </div>
-                  <div>
-                    <small>Telechargements</small>
-                    <strong>{aLaUne.nombre_telechargements}</strong>
-                  </div>
-                </div>
+
+          <HomeHeroPanel
+            total={stats.total}
+            audio={stats.audio}
+            video={stats.video}
+          />
+
+        </header>
+
+        {/* ================= À LA UNE ================= */}
+        {aLaUne && (
+          <section className="home-highlight">
+
+            <div className="home-highlight-copy">
+              <p className="section-kicker">À la une</p>
+
+              <h2>{aLaUne.titre}</h2>
+
+              <p>
+                {aLaUne.description ||
+                  'Une prédication à retrouver dès maintenant.'}
+              </p>
+
+              <div className="home-highlight-meta">
+                <span>{aLaUne.pasteur?.nom_affichage}</span>
+                <span>{aLaUne.type_media}</span>
+                <span>{aLaUne.duree_secondes}s</span>
               </div>
-            )}
+
+              <Link
+                to={`/sermon/${aLaUne.id}`}
+                className="btn btn-primary"
+              >
+                Ouvrir <ArrowRight size={16} />
+              </Link>
+            </div>
+
+          </section>
+        )}
+
+        {/* ================= TENDANCES ================= */}
+        <section className="home-section">
+
+          <div className="section-heading">
+            <h2>Tendances du moment</h2>
+            <p>Une sélection rapide pour commencer l'exploration.</p>
           </div>
+
+          {isLoading && (
+            <p className="page-state">Chargement des prédications...</p>
+          )}
+
+          {hasError && (
+            <p className="page-state error">{erreur}</p>
+          )}
+
+          {!isLoading && !hasError && (
+            tendances.length ? (
+              <div className="grid sermon-grid">
+                {tendances.map(item => (
+                  <SermonCard key={item.id} sermon={item} />
+                ))}
+              </div>
+            ) : (
+              <p className="page-state">
+                Aucune tendance disponible.
+              </p>
+            )
+          )}
+
         </section>
-      ) : null}
 
-      <section className="home-section">
-        <div className="section-heading">
-          <h2>Tendances du moment</h2>
-          <p>Une selection rapide pour commencer l'exploration.</p>
-        </div>
-        {chargement ? <p className="page-state">Chargement des predications...</p> : null}
-        {erreur ? <p className="page-state error">{erreur}</p> : null}
-        {!chargement && !erreur ? (
-          tendances.length ? (
-            <div className="grid sermon-grid">
-              {tendances.map((predication) => (
-                <SermonCard key={predication.id} sermon={predication} />
-              ))}
-            </div>
-          ) : (
-            <p className="page-state">Aucune tendance disponible pour le moment.</p>
-          )
-        ) : null}
+        {/* ================= NAVIGATION CARDS ================= */}
+        <section className="home-section home-public-paths">
+
+          <div className="home-path-card">
+            <h2>Explorer les messages</h2>
+            <p>
+              Utilisez la recherche et les filtres pour trouver une prédication.
+            </p>
+            <Link to="/decouvrir" className="btn btn-primary">
+              Découvrir
+            </Link>
+          </div>
+
+          <div className="home-path-card">
+            <h2>Suivre un ministère</h2>
+            <p>
+              Découvrez les pasteurs et leurs publications.
+            </p>
+            <Link to="/pasteurs" className="btn btn-secondary">
+              Voir
+            </Link>
+          </div>
+
+        </section>
+
+        {/* ================= DERNIERS ================= */}
+        <section className="home-section">
+
+          <div className="section-heading">
+            <h2>Dernières publications</h2>
+            <p>Contenus les plus récents.</p>
+          </div>
+
+          {!isLoading && !hasError && (
+            dernieres.length ? (
+              <div className="grid sermon-grid">
+                {dernieres.map(item => (
+                  <SermonCard key={item.id} sermon={item} />
+                ))}
+              </div>
+            ) : (
+              <p className="page-state">
+                Aucune prédication disponible.
+              </p>
+            )
+          )}
+
+        </section>
+
       </section>
 
-      <section className="home-section home-public-paths">
-        <div className="glass-card home-path-card">
-          <h2>Explorer les messages</h2>
-          <p>Utilisez la recherche publique, les filtres et les categories pour trouver la bonne predication.</p>
-          <Link to="/decouvrir" className="btn btn-primary">
-            Aller vers Decouvrir
-          </Link>
-        </div>
-        <div className="glass-card home-path-card">
-          <h2>Suivre un ministere</h2>
-          <p>Retrouvez les profils des pasteurs, leurs eglises et leurs publications recentes.</p>
-          <Link to="/pasteurs" className="btn home-secondary-btn">
-            Voir les pasteurs
-          </Link>
-        </div>
-      </section>
-
-      <section className="home-section">
-        <div className="section-heading">
-          <h2>Dernieres publications</h2>
-          <p>Les contenus publics les plus recents de la plateforme.</p>
-        </div>
-        {!chargement && !erreur ? (
-          dernieres.length ? (
-            <div className="grid sermon-grid">
-              {dernieres.map((predication) => (
-                <SermonCard key={predication.id} sermon={predication} />
-              ))}
-            </div>
-          ) : (
-            <p className="page-state">Aucune predication publique pour le moment.</p>
-          )
-        ) : null}
-      </section>
-    </section>
+    </main>
   );
 }

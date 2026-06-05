@@ -13,7 +13,7 @@ export function Connexion() {
   const [erreur, setErreur] = useState('');
   const [soumission, setSoumission] = useState(false);
 
-  const destination = location.state?.depuis || '/espace-pasteur';
+  const depuis = location.state?.depuis;
   const info = location.state?.info;
 
   async function handleSubmit(event) {
@@ -23,7 +23,9 @@ export function Connexion() {
 
     try {
       const session = await connexion({ username, password });
-      navigate(session.pasteur ? destination : '/', { replace: true });
+      // Retour a la page d'origine si fournie (ex: ressource a telecharger),
+      // sinon espace pasteur pour un pasteur, accueil pour un fidele.
+      navigate(depuis || (session.pasteur ? '/espace-pasteur' : '/'), { replace: true });
     } catch (error) {
       const message = error.response?.data?.detail || "Connexion impossible avec ces identifiants.";
       setErreur(message);
@@ -39,7 +41,8 @@ export function Connexion() {
           <p className="connexion-kicker">Acces securise</p>
           <h1>Connexion</h1>
           <p className="connexion-copy">
-            Connectez-vous pour acceder a votre espace pasteur et gerer vos predications.
+            Connectez-vous pour telecharger les ressources, suivre vos pasteurs et,
+            si vous etes pasteur, gerer vos predications.
           </p>
         </div>
 
@@ -88,7 +91,10 @@ export function Connexion() {
           <Link to="/mot-de-passe-oublie">Mot de passe oublie ?</Link>
         </p>
         <p className="connexion-pied" style={{ marginTop: '0.4rem' }}>
-          Pas encore de compte ? <Link to="/inscription">Creer un compte</Link>
+          Pas encore de compte ?{' '}
+          <Link to="/inscription" state={depuis ? { depuis } : undefined}>Inscription fidele</Link>
+          {' · '}
+          <Link to="/inscription-pasteur" state={depuis ? { depuis } : undefined}>Inscription pasteur</Link>
         </p>
       </div>
     </section>

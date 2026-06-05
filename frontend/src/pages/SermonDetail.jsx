@@ -1,20 +1,23 @@
 // src/pages/SermonDetail.jsx
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { SectionCommentaires } from '../components/SectionCommentaires';
 import { Play, Download, Heart } from 'lucide-react';
-import { api } from '../services/api';
+import { api, telechargerRessource } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useFavori } from '../hooks/useEngagement';
 import './SermonDetail.css';
 
 export function SermonDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { estConnecte } = useAuth();
   const [sermon, setSermon] = useState(null);
   const [showVideo, setShowVideo] = useState(false);
   const [erreur, setErreur] = useState('');
+  const [erreurTelechargement, setErreurTelechargement] = useState('');
   const { estFavori, basculer, pret: favoriPret } = useFavori(id);
 
   useEffect(() => {
@@ -54,12 +57,29 @@ export function SermonDetail() {
     return <p className="page-state">Chargement de la predication...</p>;
   }
 
-  const download = (url) => {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '';
-    a.click();
-  };
+  // Telechargement protege : si le visiteur n'est pas connecte, on le redirige
+  // vers la connexion (avec retour automatique vers cette ressource ensuite).
+  async function telecharger(format) {
+    setErreurTelechargement('');
+    if (!estConnecte) {
+      navigate('/connexion', {
+        state: {
+          depuis: location.pathname,
+          info: 'Connectez-vous ou inscrivez-vous pour telecharger cette ressource.',
+        },
+      });
+      return;
+    }
+    try {
+      await telechargerRessource(id, format);
+    } catch (error) {
+      setErreurTelechargement(
+        error.response?.status === 404
+          ? "Aucun fichier disponible pour ce format."
+          : "Le telechargement a echoue. Veuillez reessayer."
+      );
+    }
+  }
 
   return (
     <section className="sermon-detail">
@@ -84,10 +104,10 @@ export function SermonDetail() {
           </button>
         )}
         {sermon.fichier_audio && (
-          <button className="btn" onClick={() => download(sermon.fichier_audio)} type="button"><Download size={16} /></button>
+          <button className="btn" onClick={() => telecharger('audio')} type="button" title="Telecharger l'audio"><Download size={16} /> Audio</button>
         )}
         {sermon.fichier_video && (
-          <button className="btn" onClick={() => download(sermon.fichier_video)} type="button"><Download size={16} /></button>
+          <button className="btn" onClick={() => telecharger('video')} type="button" title="Telecharger la video"><Download size={16} /> Video</button>
         )}
         {estConnecte && (
           <button
@@ -102,6 +122,9 @@ export function SermonDetail() {
           </button>
         )}
       </div>
+      {erreurTelechargement ? (
+        <p className="erreur-connexion" style={{ marginTop: '0.5rem' }}>{erreurTelechargement}</p>
+      ) : null}
       <div className="sermon-detail-meta">
         <span>{sermon.type_media}</span>
         <span>{sermon.duree_secondes || 0}s</span>

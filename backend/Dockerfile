@@ -1,4 +1,4 @@
-    FROM python:3.10-slim
+    FROM python:3.11-slim
 
 # Éviter l'écriture de fichiers .pyc et activer le buffering des logs
 ENV PYTHONDONTWRITEBYTECODE=1

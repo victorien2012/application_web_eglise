@@ -61,6 +61,15 @@ class Predication(models.Model):
     fichier_audio = models.FileField(upload_to='audios/', blank=True, null=True, db_column='fichier_audio')
     fichier_video = models.FileField(upload_to='videos/', blank=True, null=True, db_column='fichier_video')
     url_video = models.URLField(blank=True, null=True, help_text="Lien externe (YouTube, Vimeo, etc.)", db_column='url_video')
+    youtube_id = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        unique=True,
+        db_index=True,
+        db_column='youtube_id',
+        help_text="Identifiant de la video YouTube (utilise pour la synchronisation et la deduplication).",
+    )
     image_couverture = models.ImageField(upload_to='covers/', blank=True, null=True, db_column='image_couverture')
     duree_secondes = models.IntegerField(default=0, help_text="Durée en secondes", db_column='duree_secondes')
     nombre_vues = models.IntegerField(default=0, db_column='nombre_vues')

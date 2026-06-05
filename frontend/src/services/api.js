@@ -44,3 +44,29 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+/**
+ * Telecharge un fichier de predication via l'endpoint protege (exige un compte connecte).
+ * Le token JWT est ajoute automatiquement par l'intercepteur ci-dessus.
+ * @param {number|string} predicationId
+ * @param {'audio'|'video'} format
+ */
+export async function telechargerRessource(predicationId, format = 'audio') {
+  const reponse = await api.get(`/predications/${predicationId}/telecharger/?media=${format}`, {
+    responseType: 'blob',
+  });
+
+  // Recupere le nom de fichier suggere par l'en-tete Content-Disposition.
+  const entete = reponse.headers['content-disposition'] || '';
+  const correspondance = entete.match(/filename="?([^"]+)"?/);
+  const nomFichier = correspondance ? correspondance[1] : `predication-${predicationId}`;
+
+  const url = window.URL.createObjectURL(reponse.data);
+  const lien = document.createElement('a');
+  lien.href = url;
+  lien.download = nomFichier;
+  document.body.appendChild(lien);
+  lien.click();
+  lien.remove();
+  window.URL.revokeObjectURL(url);
+}

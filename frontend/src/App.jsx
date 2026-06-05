@@ -11,6 +11,7 @@ import { Decouvrir } from "./pages/Decouvrir";
 import { Home } from "./pages/Home";
 import { Connexion } from "./pages/Connexion";
 import { Inscription } from "./pages/Inscription";
+import { InscriptionPasteur } from "./pages/InscriptionPasteur";
 import { MotDePasseOublie } from "./pages/MotDePasseOublie";
 import { ReinitialiserMotDePasse } from "./pages/ReinitialiserMotDePasse";
 import { VerifierEmail } from "./pages/VerifierEmail";
@@ -106,6 +107,7 @@ export default function App() {
           <Route path="/pasteurs/:id" element={<PasteurDetail />} />
           <Route path="/connexion" element={<Connexion />} />
           <Route path="/inscription" element={<Inscription />} />
+          <Route path="/inscription-pasteur" element={<InscriptionPasteur />} />
           <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
           <Route path="/reinitialiser-mot-de-passe" element={<ReinitialiserMotDePasse />} />
           <Route path="/verifier-email" element={<VerifierEmail />} />

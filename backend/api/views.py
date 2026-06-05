@@ -1,15 +1,21 @@
+import os
+import re
+import threading
 from datetime import timedelta
 
 from django.conf import settings
+from django.core.management import call_command
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import PasswordResetTokenGenerator, default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.text import slugify
 from rest_framework import filters, generics, permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -54,6 +60,55 @@ from .serializers import (
     SignalementSerializer,
     VerificationEmailSerializer,
 )
+
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def resoudre_channel_id_youtube(service, lien):
+    """Deduit l'identifiant de chaine YouTube (UC...) depuis un lien fourni par le pasteur.
+
+    Gere : /channel/UC..., un identifiant UC... brut, un @handle, ou /user/NOM.
+    """
+    correspondance = re.search(r'(UC[\w-]{22})', lien)
+    if correspondance:
+        return correspondance.group(1)
+
+    correspondance = re.search(r'@([\w.\-]+)', lien)
+    if correspondance:
+        reponse = service.channels().list(part='id', forHandle='@' + correspondance.group(1)).execute()
+        elements = reponse.get('items')
+        if elements:
+            return elements[0]['id']
+
+    correspondance = re.search(r'/user/([\w\-]+)', lien)
+    if correspondance:
+        reponse = service.channels().list(part='id', forUsername=correspondance.group(1)).execute()
+        elements = reponse.get('items')
+        if elements:
+            return elements[0]['id']
+
+    return None
+
+
+def lancer_import_youtube_async(channel_id, pasteur_id):
+    """Lance l'import de la chaine dans un thread afin de ne pas bloquer la requete HTTP."""
+    def _tache():
+        from django.db import connection
+        try:
+            call_command('import_youtube_videos', channel_id, pasteur=pasteur_id)
+        except Exception:  # noqa: BLE001 — on journalise sans propager (thread detache)
+            logger.exception(
+                "Echec de l'import YouTube asynchrone (chaine %s, pasteur %s)",
+                channel_id, pasteur_id,
+            )
+        finally:
+            # Liberer la connexion DB ouverte par ce thread.
+            connection.close()
+
+    threading.Thread(target=_tache, daemon=True).start()
 
 
 class GenerateurTokenEmail(PasswordResetTokenGenerator):
@@ -523,7 +578,7 @@ class PasteurViewSet(viewsets.ModelViewSet):
     search_fields = ['nom_affichage', 'nom_eglise']
 
     def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'destroy']:
+        if self.action in ['update', 'partial_update', 'destroy', 'synchroniser_youtube']:
             return [permissions.IsAuthenticated()]
         if self.action in ['valider', 'a_valider']:
             return [permissions.IsAdminUser()]
@@ -573,6 +628,68 @@ class PasteurViewSet(viewsets.ModelViewSet):
                 {"detail": "Profil pasteur non trouvé pour cet utilisateur."},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def synchroniser_youtube(self, request):
+        """Enregistre le lien de chaine YouTube du pasteur et lance l'import en arriere-plan.
+
+        Le 1er import est declenche immediatement (thread serveur) ; les suivants sont
+        geres par la tache planifiee (cron). Voir la commande import_youtube_videos.
+        """
+        try:
+            pasteur = request.user.profil_pasteur
+        except Pasteur.DoesNotExist:
+            return Response(
+                {"detail": "Profil pasteur non trouvé."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        lien = (request.data.get('lien_youtube') or '').strip()
+        if not lien:
+            return Response(
+                {"lien_youtube": "Le lien de la chaîne YouTube est requis."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        api_key = os.environ.get('GOOGLE_API_KEY')
+        if not api_key:
+            return Response(
+                {"detail": "L'import YouTube n'est pas configuré sur le serveur (clé API absente)."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        # Construire le client YouTube et resoudre l'identifiant de chaine.
+        try:
+            from googleapiclient.discovery import build
+            service = build('youtube', 'v3', developerKey=api_key, cache_discovery=False)
+            channel_id = resoudre_channel_id_youtube(service, lien)
+        except Exception as erreur:  # noqa: BLE001
+            logger.exception("Echec resolution chaine YouTube : %s", erreur)
+            return Response(
+                {"detail": "Impossible de joindre YouTube pour le moment. Réessayez plus tard."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        if not channel_id:
+            return Response(
+                {"lien_youtube": "Chaîne introuvable. Vérifiez le lien "
+                                 "(ex : https://www.youtube.com/@votrechaine)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Enregistrer le lien sur le profil puis lancer l'import sans bloquer la reponse.
+        pasteur.lien_youtube = lien
+        pasteur.save(update_fields=['lien_youtube'])
+        lancer_import_youtube_async(channel_id, pasteur.id)
+
+        return Response(
+            {
+                "detail": "Import démarré. Vos vidéos apparaîtront dans la bibliothèque "
+                          "dans quelques instants — rafraîchissez la page.",
+                "channel_id": channel_id,
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def statistiques_tableau_de_bord(self, request):
@@ -738,6 +855,39 @@ class PredicationViewSet(viewsets.ModelViewSet):
             "statut": "téléchargement journalisé",
             "nombre_telechargements": predication.nombre_telechargements,
         })
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def telecharger(self, request, pk=None):
+        """Sert le fichier media en piece jointe — reserve aux utilisateurs connectes.
+
+        Parametre `media` : 'audio' (defaut) ou 'video'. Incremente le compteur
+        et journalise le telechargement. (On evite le nom `format`, reserve par DRF
+        pour la negociation de contenu.)
+        """
+        predication = self.get_object()
+        media_demande = request.query_params.get('media', 'audio')
+
+        if media_demande == 'video':
+            fichier = predication.fichier_video
+        else:
+            fichier = predication.fichier_audio
+
+        if not fichier:
+            raise Http404("Aucun fichier disponible pour ce format.")
+
+        predication.nombre_telechargements += 1
+        predication.save(update_fields=['nombre_telechargements'])
+        JournalAnalytique.objects.create(
+            predication=predication,
+            type_action='DOWNLOAD',
+            adresse_ip=self._get_adresse_ip(request),
+        )
+
+        extension = os.path.splitext(fichier.name)[1]
+        nom_base = slugify(predication.titre) or f"predication-{predication.pk}"
+        nom_fichier = f"{nom_base}{extension}"
+
+        return FileResponse(fichier.open('rb'), as_attachment=True, filename=nom_fichier)
 
     def _get_adresse_ip(self, request):
         forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
