@@ -1,254 +1,670 @@
-.home-page {
-  position: relative;
-  display: grid;
-  gap: 2rem;
-  
-  /* S'étire sur toute la largeur disponible */
+/* ==========================================================================
+   PAGE D'ACCUEIL PREMIUM — VERSION SUPER PREMIUM
+   ========================================================================== */
+
+/* Fond global */
+.home-layout {
+  background-color: var(--bg-alt);
+  min-height: 100vh;
   width: 100%;
-  box-sizing: border-box;
-  padding-bottom: 3rem;
-
-  /* CRÉATION DE L'ESPACE PARFAIT AVEC LE MENU HAUT */
-  margin-top: 1.5rem;       
-  
-  /* REMBOURRAGE LATÉRAL POUR RESPIRER SANS CONTRAINTE */
-  padding-left: 2rem;
-  padding-right: 2rem;
-
-  /* FOND BLANC PUR ET TEXTE ANTHRACITE */
-  background: #ffffff;
-  color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ==========================================================================
-   BACKGROUND SUBTLE PREMIUM (Nettoyé pour rester sur fond blanc pur neutre)
+   ANIMATIONS SCROLL REVEAL
    ========================================================================== */
-.home-page::before {
+
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-cascade {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  height: 100%;
+}
+
+.reveal-on-scroll.is-visible .reveal-cascade {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   SECTION HERO — Bandeau principal
+   ========================================================================== */
+.home-premium-hero-wrapper {
+  background: var(--bg-main);
+  width: 100%;
+  padding: 2.5rem 2rem 2.5rem 2rem;
+  box-sizing: border-box;
+  color: var(--text-main);
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+}
+
+/* Cercles décoratifs animés */
+.home-premium-hero-wrapper::before {
   content: "";
   position: absolute;
-  inset: 0;
-  background: #ffffff;
-  z-index: -1;
+  top: -150px;
+  right: -100px;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.1) 0%, transparent 70%);
   pointer-events: none;
+  animation: heroGlow 12s ease-in-out infinite alternate;
 }
 
-/* ==========================================================================
-   TITLE
-   ========================================================================== */
-.title {
-  margin: 0;
-  font-size: clamp(2.6rem, 5.5vw, 5.2rem);
-  font-weight: 800;
-  line-height: 1.02;
-  letter-spacing: -1.2px;
-  color: #1a1a1a;
+.home-premium-hero-wrapper::after {
+  content: "";
+  position: absolute;
+  bottom: -100px;
+  left: -50px;
+  width: 450px;
+  height: 450px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+  animation: heroGlow 15s ease-in-out infinite alternate-reverse;
 }
 
-/* ==========================================================================
-   HERO (Prend toute la largeur de son espace)
-   ========================================================================== */
+@keyframes heroGlow {
+  from {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.6;
+  }
+
+  to {
+    transform: scale(1.15) translate(30px, -30px);
+    opacity: 1;
+  }
+}
+
+/* Contenu interne du héros */
 .home-hero {
+  max-width: 1200px;
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
-  gap: 2rem; /* Espace équilibré entre le texte et le panneau des statistiques */
-  align-items: stretch;
-  width: 100%;
-}
-
-/* HERO COPY : Épuré au maximum, plus de fond "boîte", plus d'ombres ni de bordures */
-.home-hero-copy {
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+  gap: 5rem;
+  align-items: center;
   position: relative;
-  padding: 1rem 0; /* Aligne le texte parfaitement sur le bord gauche */
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  width: 100%;
+  z-index: 1;
 }
 
-/* Suppression définitive du glow jaune en arrière-plan */
-.home-hero-copy::after {
-  display: none;
-}
-
-/* ==========================================================================
-   KICKER
-   ========================================================================== */
-.section-kicker {
-  color: #b7791f;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-
-/* ==========================================================================
-   TEXT
-   ========================================================================== */
-.home-copy {
-  color: #4a4a4a;
-  line-height: 1.75;
-  max-width: 720px;
-}
-
-/* ==========================================================================
-   TAGS (Pills sous le titre)
-   ========================================================================== */
-.home-hero-points {
+.home-hero-copy {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  flex-direction: column;
+  gap: 1.85rem;
 }
 
-.home-hero-points span {
-  padding: 0.45rem 0.85rem;
-  border-radius: 999px;
-  background: #f1f5f9;
-  border: 1px solid rgba(0,0,0,0.06);
-  color: #2b2b2b;
-  font-size: 0.9rem;
-  transition: 0.25s ease;
+@keyframes floatBible {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-12px) rotate(1deg);
+  }
+
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
 }
 
-.home-hero-points span:hover {
-  transform: translateY(-2px);
-  background: #ffffff;
-  border-color: rgba(124, 92, 255, 0.35);
+.animate-bible {
+  animation: floatBible 6s ease-in-out infinite;
+  transition: transform 0.3s ease;
 }
 
-/* ==========================================================================
-   ACTIONS
-   ========================================================================== */
-.home-actions {
+.animate-bible:hover {
+  transform: scale(1.02) translateY(-5px);
+  animation-play-state: paused;
+}
+
+/* Kicker / badge */
+.home-kicker-row {
   display: flex;
-  gap: 0.8rem;
-  flex-wrap: wrap;
-  margin-top: 0.5rem;
-}
-
-/* ==========================================================================
-   DESIGN SYSTEM BUTTONS (Anti-soulignement forcé)
-   ========================================================================== */
-.home-page a,
-button {
-  text-decoration: none !important;
-}
-
-/* PRIMARY BUTTON */
-.btn-primary {
-  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.75rem 1.1rem;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #ffd36b, #ffb700);
-  color: #111;
-  font-weight: 700;
-  border: none;
-  box-shadow: 0 10px 25px rgba(255,183,0,0.15);
-  transition: all 0.25s ease;
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 35px rgba(255,183,0,0.25);
-}
-
-/* SECONDARY BUTTON */
-.btn-secondary,
-.home-secondary-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.75rem 1.1rem;
-  border-radius: 12px;
-  background: #ffffff;
-  border: 1px solid rgba(0,0,0,0.12);
-  color: #1a1a1a;
-  font-weight: 600;
-  transition: all 0.25s ease;
-}
-
-.btn-secondary:hover,
-.home-secondary-btn:hover {
-  transform: translateY(-2px);
-  background: #f8fafc;
-  border-color: rgba(124, 92, 255, 0.3);
-}
-
-/* ==========================================================================
-   HIGHLIGHT (À la une)
-   ========================================================================== */
-.home-highlight {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 1.2rem;
-  padding: 1.5rem;
-  border-radius: 22px;
-  background: #ffffff;
-  border: 1px solid rgba(0,0,0,0.06);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
-  transition: 0.3s ease;
-}
-
-.home-highlight:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.08);
-}
-
-/* ==========================================================================
-   GRID
-   ========================================================================== */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1.2rem;
-}
-
-/* ==========================================================================
-   PATH CARDS (Cartes d'exploration)
-   ========================================================================== */
-.home-public-paths {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
 }
 
-.home-path-card {
-  padding: 1.3rem;
-  border-radius: 18px;
-  background: #ffffff;
-  border: 1px solid rgba(0,0,0,0.06);
-  transition: 0.3s ease;
+.home-kicker-pill {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
 }
 
-.home-path-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(124, 92, 255, 0.25);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+.home-kicker-note {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Titre principal */
+.title-premium {
+  margin: 0;
+  font-size: clamp(2.6rem, 5.5vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--text-main);
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.text-yellow {
+  color: #d97706;
+  background: linear-gradient(90deg, #b45309, #d97706);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+/* Description */
+.home-copy-premium {
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  line-height: 1.6;
+  max-width: 580px;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Pilules features */
+.home-hero-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.glass-pill {
+  background: rgba(128, 128, 128, 0.1);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.3s, transform 0.3s, border-color 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.glass-pill:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Boutons du Héros */
+.home-actions {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.hero-btn-glow {
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.25);
+}
+
+.hero-btn-glow:hover {
+  box-shadow: 0 12px 32px rgba(245, 158, 11, 0.4);
+}
+
+.home-premium-hero-wrapper .btn-outline-dark {
+  background-color: transparent;
+  color: var(--text-main);
+  border: 1.5px solid var(--border-color);
+  padding: 0.85rem 1.75rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.home-premium-hero-wrapper .btn-outline-dark:hover {
+  background-color: rgba(15, 23, 42, 0.05);
+  border-color: rgba(15, 23, 42, 0.5);
+  transform: translateY(-2px);
 }
 
 /* ==========================================================================
-   STATES
+   PAGE PRINCIPALE (Section sous le héros)
+   ========================================================================== */
+.home-page {
+  max-width: 1200px;
+  margin: -3rem auto 0 auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3.5rem;
+  /* Reduced space between big blocks as requested */
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 10;
+  background-color: transparent;
+}
+
+/* ==========================================================================
+   À LA UNE (SUPER PREMIUM BANNERS)
+   ========================================================================== */
+.premium-featured-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 28px;
+  box-shadow: 0 20px 40px -12px rgba(0, 74, 148, 0.15), 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  min-height: 400px;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  justify-content: flex-end;
+}
+
+.premium-featured-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 30px 60px -15px rgba(0, 74, 148, 0.25);
+}
+
+.featured-image-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+.featured-image-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.8s ease;
+}
+
+.premium-featured-card:hover .featured-image-bg img {
+  transform: scale(1.05);
+}
+
+.featured-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0, 31, 69, 0.95) 0%, rgba(0, 31, 69, 0.6) 50%, rgba(0, 31, 69, 0.1) 100%);
+}
+
+.home-highlight-copy {
+  position: relative;
+  z-index: 2;
+  padding: 3.5rem 3rem;
+  color: #ffffff;
+  max-width: 800px;
+}
+
+/* Si la carte n'a pas d'image, on adapte le style */
+.premium-featured-card:not(:has(.featured-image-bg)) .home-highlight-copy {
+  color: var(--text-main);
+  padding: 3rem;
+}
+
+.featured-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #ffd36b;
+  color: #b45309;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(255, 211, 107, 0.3);
+}
+
+.premium-featured-card:not(:has(.featured-image-bg)) .featured-badge {
+  background: #fef9e7;
+  border: 1px solid #fde68a;
+  box-shadow: none;
+}
+
+.featured-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  margin: 0 0 1rem 0;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.premium-featured-card:not(:has(.featured-image-bg)) .featured-title {
+  color: var(--text-main);
+}
+
+.featured-desc {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin: 0 0 2rem 0;
+  opacity: 0.9;
+  max-width: 600px;
+}
+
+.premium-featured-card:not(:has(.featured-image-bg)) .featured-desc {
+  color: var(--text-muted);
+}
+
+.home-highlight-meta {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+
+.meta-dot {
+  opacity: 0.5;
+}
+
+.meta-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.premium-featured-card:not(:has(.featured-image-bg)) .meta-badge {
+  background: #f1f5f9;
+  color: #475569;
+  backdrop-filter: none;
+}
+
+.premium-featured-card:not(:has(.featured-image-bg)) .home-highlight-meta {
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   EN-TÊTES DE SECTIONS
+   ========================================================================== */
+.home-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.section-heading-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .section-heading-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .section-heading-row .premium-btn {
+    width: 100%;
+  }
+}
+
+.section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.section-heading h2 {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 4px solid #facc15;
+  display: inline-block;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.section-heading p {
+  color: var(--text-muted);
+  margin: 0.5rem 0 0 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   GRILLES DE CONTENU
+   ========================================================================== */
+.sermon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+}
+
+/* ==========================================================================
+   MINISTÈRES (Pasteurs)
+   ========================================================================== */
+.home-pastors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.home-pastor-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  text-decoration: none;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+}
+
+.home-pastor-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 30px rgba(0, 74, 148, 0.08);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.premium-hover-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px -10px rgba(0, 74, 148, 0.15);
+  border-color: #bfdbfe;
+}
+
+.home-pastor-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #004a94, #3b82f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  border: 4px solid #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 74, 148, 0.2);
+  transition: transform 0.4s ease;
+}
+
+.premium-hover-lift:hover .home-pastor-avatar {
+  transform: scale(1.05);
+}
+
+.home-pastor-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.home-pastor-avatar span {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.home-pastor-card h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.home-pastor-card p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   ÉTATS VIDES / ERREURS
    ========================================================================== */
 .page-state {
-  color: #666;
+  color: var(--text-muted);
+  padding: 4rem 2rem;
+  text-align: center;
+  background: var(--bg-card);
+  border-radius: 20px;
+  border: 2px dashed var(--border-color);
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .page-state.error {
-  color: #dc2626;
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
 }
 
 /* ==========================================================================
    RESPONSIVE
    ========================================================================== */
-@media (max-width: 860px) {
-  .home-page {
-    padding-left: 1rem;
-    padding-right: 1rem;
+@media (max-width: 900px) {
+  .home-premium-hero-wrapper {
+    padding: 2rem 1.5rem 2.5rem 1.5rem;
   }
 
-  .home-hero,
-  .home-highlight,
-  .home-public-paths {
+  .home-hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 2.5rem;
+  }
+
+  .home-hero-copy {
+    align-items: center;
+  }
+
+  .home-copy-premium {
+    text-align: center !important;
+  }
+
+  .home-page {
+    margin-top: -2rem;
+    padding: 0 1.5rem 4rem 1.5rem;
+    gap: 4rem;
+  }
+
+  .premium-featured-card {
+    min-height: 450px;
+  }
+
+  .home-highlight-copy {
+    padding: 2.5rem 1.5rem;
+  }
+}
+
+.animate-eagle-fly {
+  animation: eagleFly 8s ease-in-out infinite alternate;
+  transform-origin: center center;
+}
+
+@keyframes eagleFly {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+
+  25% {
+    transform: translateY(-15px) rotate(1.5deg) scale(1.02);
+  }
+
+  50% {
+    transform: translateY(-5px) rotate(-1deg) scale(1.01);
+  }
+
+  75% {
+    transform: translateY(-20px) rotate(1deg) scale(1.03);
+  }
+
+  100% {
+    transform: translateY(-10px) rotate(-0.5deg) scale(1.01);
+  }
+}
+
+@media (max-width: 600px) {
+  .home-pastors-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sermon-grid {
     grid-template-columns: 1fr;
   }
 }

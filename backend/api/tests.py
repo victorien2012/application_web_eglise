@@ -885,3 +885,58 @@ class ModeleMetierTests(APITestCase):
         self.assertEqual(predication.serie_id, serie_response.data["id"])
         self.assertEqual(list(predication.categories.values_list("nom", flat=True)), ["Enseignement"])
         self.assertEqual(list(predication.etiquettes.values_list("nom", flat=True)), ["Bible"])
+
+
+class ExtractionNomPredicateurTests(APITestCase):
+    def test_extraction_directe(self):
+        from api.serializers import extraire_nom_predicateur
+
+        cas_tests = [
+            ("Pasteur Marcello Tunasi - La foi", "Marcello Tunasi"),
+            ("Evangéliste Yvan Castanou : Bâtir sa vie", "Yvan Castanou"),
+            ("Enseignement avec Pasteur Mohammed Sanogo", "Mohammed Sanogo"),
+            ("Révérend Raoul Wafo | Combat spirituel", "Raoul Wafo"),
+            ("Une vie d'impact par le Frère Victorien", "Victorien"),
+            ("La foi chrétienne", None),
+        ]
+
+        for titre, attendu in cas_tests:
+            self.assertEqual(extraire_nom_predicateur(titre), attendu)
+
+    def test_serializer_auto_remplissage(self):
+        utilisateur = User.objects.create_user(
+            username="pasteur_extraction",
+            email="extraction@example.com",
+            password="mot-de-passe-test",
+        )
+        pasteur = Pasteur.objects.create(utilisateur=utilisateur, nom_affichage="Pasteur Test")
+        self.client.force_authenticate(user=utilisateur)
+
+        # 1. Sans nom_predicateur fourni : doit extraire depuis le titre
+        response = self.client.post(
+            "/api/predications/",
+            {
+                "titre": "La puissance de Dieu par Pasteur Marcello Tunasi",
+                "description": "Description de test",
+                "type_media": "AUDIO",
+                "est_publie": True,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["nom_predicateur"], "Marcello Tunasi")
+
+        # 2. Avec nom_predicateur fourni : doit garder la valeur fournie
+        response = self.client.post(
+            "/api/predications/",
+            {
+                "titre": "La puissance de Dieu par Pasteur Marcello Tunasi",
+                "description": "Description de test",
+                "type_media": "AUDIO",
+                "nom_predicateur": "Autre Prédicateur",
+                "est_publie": True,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["nom_predicateur"], "Autre Prédicateur")

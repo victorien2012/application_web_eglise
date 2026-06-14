@@ -1,0 +1,30 @@
+.videos-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 2rem;
+  color: #fff;
+}
+
+.videos-table th, .videos-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.video-row {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.video-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.videos-table a {
+  color: #ffd36b;
+  text-decoration: none;
+}
+
+.videos-table a:hover {
+  text-decoration: underline;
+}

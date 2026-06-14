@@ -1,67 +1,121 @@
+import { ShieldCheck, FileText, Cookie, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import './Legales.css';
 
-function PageLegale({ titre, children }) {
+function PageLegale({ titre, icon: Icon, children }) {
+  const { t } = useTranslation();
   return (
-    <section className="legale-page glass-card">
-      <h1>{titre}</h1>
-      {children}
-      <p className="legale-note">
-        Ce contenu est un modele a completer par l'editeur de la plateforme avant la mise en production.
-      </p>
-    </section>
+    <div className="legale-wrapper">
+      <div className="legale-container">
+        <section className="legale-card">
+          <div className="legale-header">
+            {Icon && (
+              <div className="legale-icon-wrapper">
+                <Icon size={36} className="legale-icon" />
+              </div>
+            )}
+            <h1 className="legale-title">{titre}</h1>
+          </div>
+          
+          <div className="legale-content">
+            {children}
+          </div>
+          
+          <div className="legale-footer">
+            <p>{t('legales.last_updated')} {new Date().toLocaleDateString('fr-FR')}</p>
+          </div>
+        </section>
+      </div>
+    </div>
   );
 }
 
 export function MentionsLegales() {
+  const { t } = useTranslation();
   return (
-    <PageLegale titre="Mentions legales">
-      <p>Editeur du site : [Nom de l'organisation], [adresse].</p>
-      <p>Directeur de la publication : [Nom].</p>
-      <p>Hebergeur : [Nom et adresse de l'hebergeur].</p>
-      <p>Contact : [adresse email].</p>
+    <PageLegale titre={t('legales.legal_notices')} icon={FileText}>
+      <h2>{t('legales.publisher')}</h2>
+      <p>
+        <strong>{t('legales.platform_name')}</strong><br />
+        {t('legales.director')} Koffi Kouassi Victorien<br />
+        {t('legales.location')} Abidjan, Côte d'Ivoire
+      </p>
+
+      <h2>{t('legales.contact')}</h2>
+      <p>
+        {t('legales.phone')} +225 0777355012<br />
+        {t('legales.email')} koffikouassivictorien@gmail.com
+      </p>
+
+      <h2>{t('legales.hosting')}</h2>
+      <p>
+        {t('legales.hosting_desc')}
+      </p>
     </PageLegale>
   );
 }
 
 export function Confidentialite() {
+  const { t } = useTranslation();
   return (
-    <PageLegale titre="Politique de confidentialite">
+    <PageLegale titre={t('legales.privacy_policy')} icon={ShieldCheck}>
+      <h2>{t('legales.data_collection')}</h2>
       <p>
-        Nous collectons les donnees strictement necessaires au fonctionnement du service :
-        identifiants de compte, contenus publies, favoris, abonnements et historique de lecture.
+        {t('legales.data_collection_desc')}
       </p>
+
+      <h2>{t('legales.data_use')}</h2>
+      <p dangerouslySetInnerHTML={{ __html: t('legales.data_use_desc') }} />
+
+      <h2>{t('legales.rights')}</h2>
       <p>
-        Conformement au RGPD, vous disposez d'un droit d'acces, de rectification et d'effacement
-        de vos donnees. Depuis votre profil, vous pouvez a tout moment exporter vos donnees ou
-        supprimer votre compte.
+        {t('legales.rights_desc')}
       </p>
-      <p>Les donnees ne sont ni revendues, ni cedees a des tiers a des fins commerciales.</p>
     </PageLegale>
   );
 }
 
 export function Cookies() {
+  const { t } = useTranslation();
   return (
-    <PageLegale titre="Gestion des cookies">
+    <PageLegale titre={t('legales.cookies_management')} icon={Cookie}>
+      <h2>{t('legales.what_is_cookie')}</h2>
       <p>
-        La plateforme utilise uniquement un stockage local technique pour conserver votre session
-        de connexion. Aucun cookie de suivi publicitaire n'est depose.
+        {t('legales.cookie_desc')}
       </p>
-      <p>Votre consentement est demande lors de votre premiere visite.</p>
+
+      <h2>{t('legales.cookie_use')}</h2>
+      <p>
+        <span dangerouslySetInnerHTML={{ __html: t('legales.cookie_use_desc_1') }} />
+        <br /><br />
+        <span dangerouslySetInnerHTML={{ __html: t('legales.cookie_use_desc_2') }} />
+      </p>
+      
+      <h2>{t('legales.consent')}</h2>
+      <p>
+        {t('legales.consent_desc')}
+      </p>
     </PageLegale>
   );
 }
 
 export function Conditions() {
+  const { t } = useTranslation();
   return (
-    <PageLegale titre="Conditions d'utilisation">
+    <PageLegale titre={t('legales.terms_of_use')} icon={AlertCircle}>
+      <h2>{t('legales.purpose')}</h2>
       <p>
-        En utilisant cette plateforme, vous vous engagez a publier des contenus respectueux et
-        a ne pas porter atteinte aux droits de tiers.
+        {t('legales.purpose_desc')}
       </p>
+
+      <h2>{t('legales.behavior')}</h2>
       <p>
-        Les contenus signales peuvent etre masques ou supprimes par les pasteurs concernes ou par
-        l'administration.
+        {t('legales.behavior_desc')}
+      </p>
+
+      <h2>{t('legales.moderation')}</h2>
+      <p>
+        {t('legales.moderation_desc')}
       </p>
     </PageLegale>
   );

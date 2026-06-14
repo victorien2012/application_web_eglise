@@ -12,3 +12,5 @@ django-storages>=1.14.0
 boto3>=1.34.0
 # Import / synchronisation des videos YouTube (management command import_youtube_videos)
 google-api-python-client>=2.100.0
+yt-dlp>=2023.11.16
+django-jazzmin>=3.0.1

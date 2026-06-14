@@ -10,6 +10,7 @@ class ProfilUtilisateur(models.Model):
         db_column='utilisateur_id',
     )
     email_verifie = models.BooleanField(default=False, db_column='email_verifie')
+    contact = models.CharField(max_length=50, blank=True, null=True, db_column='contact')
     cree_le = models.DateTimeField(auto_now_add=True, db_column='cree_le')
 
     class Meta:
@@ -29,7 +30,9 @@ class Pasteur(models.Model):
     nom_affichage = models.CharField(max_length=255, db_column='nom_affichage')
     biographie = models.TextField(blank=True, null=True, db_column='biographie')
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, db_column='avatar')
+    contact = models.CharField(max_length=50, blank=True, null=True, db_column='contact')
     nom_eglise = models.CharField(max_length=255, blank=True, null=True, db_column='nom_eglise')
+    logo_eglise = models.ImageField(upload_to='logos/', blank=True, null=True, db_column='logo_eglise')
     lien_twitter = models.CharField(max_length=255, blank=True, null=True, db_column='lien_twitter')
     lien_facebook = models.CharField(max_length=255, blank=True, null=True, db_column='lien_facebook')
     lien_youtube = models.CharField(max_length=255, blank=True, null=True, db_column='lien_youtube')
@@ -39,12 +42,24 @@ class Pasteur(models.Model):
         db_column='est_valide',
         help_text="Indique si le compte du pasteur a été validé par un administrateur."
     )
+    est_rejete = models.BooleanField(
+        default=False,
+        db_column='est_rejete',
+        help_text="Indique si la demande du pasteur a été explicitement rejetée."
+    )
 
     class Meta:
         db_table = 'pasteurs'
 
     def __str__(self):
         return self.nom_affichage
+
+
+class DemandePasteur(Pasteur):
+    class Meta:
+        proxy = True
+        verbose_name = "Demande de pasteur"
+        verbose_name_plural = "Demandes de pasteurs"
 
 
 class Predication(models.Model):
@@ -69,6 +84,13 @@ class Predication(models.Model):
         db_index=True,
         db_column='youtube_id',
         help_text="Identifiant de la video YouTube (utilise pour la synchronisation et la deduplication).",
+    )
+    nom_predicateur = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        db_column='nom_predicateur',
+        help_text="Nom du prédicateur ou de la chaîne YouTube source, rempli automatiquement lors de la synchronisation.",
     )
     image_couverture = models.ImageField(upload_to='covers/', blank=True, null=True, db_column='image_couverture')
     duree_secondes = models.IntegerField(default=0, help_text="Durée en secondes", db_column='duree_secondes')
@@ -97,6 +119,7 @@ class Predication(models.Model):
     )
     serie = models.ForeignKey('Serie', on_delete=models.SET_NULL, related_name='predications', blank=True, null=True, db_column='serie_id')
     cree_le = models.DateTimeField(auto_now_add=True, db_column='cree_le')
+
 
     class Meta:
         db_table = 'predications'
@@ -291,3 +314,17 @@ class JournalAnalytique(models.Model):
 
     def __str__(self):
         return f"{self.type_action} - {self.predication.titre} ({self.cree_le})"
+
+class Notification(models.Model):
+    utilisateur = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', db_column='utilisateur_id')
+    message = models.TextField(db_column='message')
+    lu = models.BooleanField(default=False, db_column='lu')
+    type_notification = models.CharField(max_length=50, default='ABONNEMENT', db_column='type_notification')
+    cree_le = models.DateTimeField(auto_now_add=True, db_column='cree_le')
+
+    class Meta:
+        db_table = 'api_notification'
+        ordering = ['-cree_le']
+
+    def __str__(self):
+        return f"Notif ({self.utilisateur.username}) - {self.message[:20]}"

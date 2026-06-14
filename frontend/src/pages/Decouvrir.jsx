@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { SermonCard } from '../components/SermonCard';
 import { api, extraireListe } from '../services/api';
 import './Decouvrir.css';
 
 export function Decouvrir() {
+  const { t } = useTranslation();
   const [predications, setPredications] = useState([]);
   const [recherche, setRecherche] = useState('');
   const [typeMedia, setTypeMedia] = useState('');
@@ -33,7 +35,7 @@ export function Decouvrir() {
         }
       } catch (error) {
         if (active) {
-          setErreur(error.response?.data?.detail || 'Impossible de charger les predications.');
+          setErreur(error.response?.data?.detail || t('discover.load_error'));
         }
       } finally {
         if (active) {
@@ -70,16 +72,15 @@ export function Decouvrir() {
   return (
     <section className="decouvrir-page">
       <header className="decouvrir-hero">
-        <p className="section-kicker">Explorer</p>
-        <h1>Decouvrir les predications</h1>
+        <p className="section-kicker">{t('discover.kicker')}</p>
+        <h1>{t('discover.title')}</h1>
         <p>
-          Cherchez par theme, type de media ou pasteur, puis trouvez rapidement la bonne
-          predication pour votre moment d'ecoute.
+          {t('discover.subtitle')}
         </p>
         {!chargement && !erreur ? (
           <div className="decouvrir-summary">
-            <span>{predicationsFiltrees.length} resultat{predicationsFiltrees.length > 1 ? 's' : ''}</span>
-            {categorieActive ? <span>Categorie: {categorieActive}</span> : null}
+            <span>{predicationsFiltrees.length} {predicationsFiltrees.length > 1 ? t('discover.result_plural') : t('discover.result_singular')}</span>
+            {categorieActive ? <span>{t('discover.category')} {categorieActive}</span> : null}
           </div>
         ) : null}
       </header>
@@ -90,17 +91,17 @@ export function Decouvrir() {
           <input
             value={recherche}
             onChange={(event) => setRecherche(event.target.value)}
-            placeholder="Titre, description ou pasteur"
+            placeholder={t('discover.search_placeholder')}
           />
         </label>
 
         <label className="decouvrir-filter">
           <SlidersHorizontal size={18} />
           <select value={typeMedia} onChange={(event) => setTypeMedia(event.target.value)}>
-            <option value="">Tous les medias</option>
-            <option value="AUDIO">Audio</option>
-            <option value="VIDEO">Video</option>
-            <option value="BOTH">Audio + Video</option>
+            <option value="">{t('discover.all_media')}</option>
+            <option value="AUDIO">{t('discover.audio_only')}</option>
+            <option value="VIDEO">{t('discover.video_only')}</option>
+            <option value="BOTH">{t('discover.audio_video')}</option>
           </select>
         </label>
       </section>
@@ -112,7 +113,7 @@ export function Decouvrir() {
             onClick={() => setCategorieActive('')}
             type="button"
           >
-            Toutes
+            {t('discover.all_categories')}
           </button>
           {categories.map((categorie) => (
             <button
@@ -127,7 +128,7 @@ export function Decouvrir() {
         </div>
       ) : null}
 
-      {chargement ? <p className="page-state">Chargement des predications...</p> : null}
+      {chargement ? <p className="page-state">{t('discover.loading')}</p> : null}
       {erreur ? <p className="page-state error">{erreur}</p> : null}
 
       {!chargement && !erreur ? (
@@ -138,7 +139,7 @@ export function Decouvrir() {
             ))}
           </div>
         ) : (
-          <p className="page-state">Aucune predication ne correspond a cette recherche.</p>
+          <p className="page-state">{t('discover.no_results')}</p>
         )
       ) : null}
     </section>

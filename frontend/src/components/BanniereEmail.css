@@ -1,14 +1,15 @@
 .banniere-email {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-  padding: 0.7rem 1rem;
-  background: linear-gradient(90deg, rgba(255, 184, 76, 0.18), rgba(255, 122, 89, 0.18));
-  border-bottom: 1px solid rgba(255, 202, 88, 0.35);
-  color: #ffe6b8;
-  font-size: 0.9rem;
+  padding: 0.7rem 3rem 0.7rem 1rem;
+  background: rgba(255, 184, 76, 0.2);
+  border-bottom: 1px solid rgba(255, 184, 76, 0.4);
+  color: #9a3412;
+  font-size: 0.95rem;
 }
 
 .banniere-email-texte {
@@ -20,9 +21,46 @@
 .banniere-email-bouton {
   padding: 0.35rem 0.8rem;
   font-size: 0.85rem;
+  background-color: #c2410c !important;
+  color: #ffffff !important;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.banniere-email-bouton:hover:not(:disabled) {
+  background-color: #9a3412 !important;
+}
+
+.banniere-email-bouton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .banniere-email-statut {
-  color: #ffe6b8;
-  font-weight: 600;
+  color: #7c2d12;
+  font-weight: 700;
+}
+
+.banniere-email-fermer {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #9a3412;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.banniere-email-fermer:hover {
+  background-color: rgba(194, 65, 12, 0.1);
+  color: #7c2d12;
 }

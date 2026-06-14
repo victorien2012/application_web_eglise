@@ -1,73 +1,364 @@
-.commentaires-section {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+/* ==========================================================================
+   SECTION COMMENTAIRES — PREMIUM
+   ========================================================================== */
+
+.sc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.commentaires-titre {
+/* ── En-tête ────────────────────────────────────────────────────────────── */
+.sc-header {
+  margin-bottom: 1.75rem;
+}
+
+.sc-titre {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin: 0 0 1rem;
-  font-size: 1.2rem;
-}
-
-.commentaires-form {
-  display: grid;
   gap: 0.6rem;
-  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.01em;
 }
 
-.commentaires-form textarea {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-  padding: 0.8rem 1rem;
-  font: inherit;
-  resize: vertical;
-}
-
-.commentaires-form .btn {
-  justify-self: start;
+.sc-count {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: center;
+  background: #7c5cff;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 99px;
+  padding: 0 6px;
+  margin-left: 2px;
 }
 
-.commentaires-invite,
-.commentaires-info {
-  color: #bbb;
+/* ── Avatar initiales ────────────────────────────────────────────────────── */
+.comment-avatar-initiales {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+  user-select: none;
+  letter-spacing: 0.02em;
 }
 
-.commentaires-erreur {
-  color: #ff9b9b;
+/* ── Formulaire ──────────────────────────────────────────────────────────── */
+.sc-form {
+  margin-bottom: 2rem;
 }
 
-.commentaires-liste {
+.sc-form-row {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.sc-textarea-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.sc-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #0f172a;
+  padding: 0.85rem 1rem;
+  font: inherit;
+  font-size: 0.97rem;
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.6;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  outline: none;
+}
+
+.sc-textarea:focus {
+  border-color: #7c5cff;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.12);
+}
+
+.sc-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sc-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sc-chars {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.sc-chars.warn  { color: #f59e0b; }
+.sc-chars.danger { color: #ef4444; font-weight: 700; }
+
+.sc-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.25rem;
+  background: linear-gradient(135deg, #7c5cff, #9d7dff);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.18s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(124, 92, 255, 0.3);
+  white-space: nowrap;
+}
+
+.sc-submit-btn:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(124, 92, 255, 0.4);
+}
+
+.sc-submit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.sc-erreur {
+  margin: 0.6rem 0 0;
+  color: #ef4444;
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+}
+
+/* ── Invitation (non connecté) ───────────────────────────────────────────── */
+.sc-invite-bloc {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #f8fafc;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.sc-invite-icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  background: #f0ebff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7c5cff;
+}
+
+.sc-invite-titre {
+  margin: 0 0 0.2rem;
+  font-weight: 700;
+  font-size: 0.97rem;
+  color: #0f172a;
+}
+
+.sc-invite-texte {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.sc-invite-lien {
+  color: #7c5cff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.sc-invite-lien:hover {
+  text-decoration: underline;
+}
+
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
+@keyframes sc-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.sc-spinner {
+  animation: sc-spin 0.9s linear infinite;
+}
+
+/* ── État chargement ─────────────────────────────────────────────────────── */
+.sc-etat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  padding: 2.5rem;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* ── État vide ───────────────────────────────────────────────────────────── */
+.sc-vide {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.sc-vide-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.6;
+}
+
+.sc-vide-titre {
+  font-weight: 700;
+  color: #334155;
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+.sc-vide-texte {
+  color: #94a3b8;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* ── Liste commentaires ──────────────────────────────────────────────────── */
+.sc-liste-wrapper {
+  border-top: 1.5px solid #f1f5f9;
+  padding-top: 1.5rem;
+}
+
+.sc-liste {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  gap: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.commentaires-item {
-  padding: 0.8rem 1rem;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+/* ── Commentaire individuel ──────────────────────────────────────────────── */
+@keyframes sc-fadein {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.commentaires-item strong {
+.sc-item {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 1rem 0;
+  border-bottom: 1px solid #f1f5f9;
+  animation: sc-fadein 0.35s ease both;
+}
+
+.sc-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.sc-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.sc-item-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.sc-item-auteur {
+  font-weight: 800;
   font-size: 0.92rem;
-  color: #ffd36b;
+  color: #0f172a;
 }
 
-.commentaires-item p {
-  margin: 0.35rem 0 0;
-  color: #d6d8e6;
-  line-height: 1.5;
+.sc-item-date {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.sc-item-contenu {
+  margin: 0;
+  color: #334155;
+  font-size: 0.97rem;
+  line-height: 1.65;
+  word-break: break-word;
+}
+
+/* ── Bouton suppression ──────────────────────────────────────────────────── */
+.sc-delete-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+  flex-shrink: 0;
+}
+
+.sc-delete-btn:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #ef4444;
+}
+
+.sc-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .sc-form-row {
+    flex-direction: column;
+  }
+
+  .sc-form-footer {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+
+  .sc-invite-bloc {
+    flex-direction: column;
+    text-align: center;
+  }
 }

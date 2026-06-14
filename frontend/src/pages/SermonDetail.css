@@ -1,47 +1,542 @@
-.sermon-detail {
-  width: min(100%, 920px);
-  display: grid;
-  gap: 1rem;
+/* ==========================================================================
+   PAGE DE DÉTAIL DU SERMON PREMIUM
+   ========================================================================== */
+
+.sermon-detail-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 5rem 2rem;
+  box-sizing: border-box;
 }
 
-.sermon-detail h1 {
-  margin: 0;
-  font-size: clamp(1.8rem, 4vw, 3rem);
+/* Page states (Error / Loading) */
+.page-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  text-align: center;
+}
+
+.page-state {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #475569;
+  margin-bottom: 1.5rem;
+}
+
+.page-state.error {
+  color: #ef4444;
+  background-color: #fef2f2;
+  border: 1px solid #fca5a5;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+}
+
+.back-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #0f172a;
+  color: #ffffff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.back-link-btn:hover {
+  background-color: #1e293b;
+  transform: translateY(-2px);
+}
+
+/* Navigation de retour */
+.sermon-detail-header-nav {
+  margin-bottom: 2rem;
+}
+
+.sermon-detail-header-nav .back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.sermon-detail-header-nav .back-link:hover {
+  color: var(--primary);
+  transform: translateX(-4px);
+}
+
+/* ==========================================================================
+   LAYOUT GRID
+   ========================================================================== */
+.sermon-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+/* ==========================================================================
+   COLONNE PRINCIPALE (GAUCHE)
+   ========================================================================== */
+.sermon-main-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Cover Image Interactive */
+.sermon-interactive-cover-wrapper {
+  width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  background-color: #0f172a;
+  position: relative;
+}
+
+.sermon-cover-interactive {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.sermon-cover-interactive .cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sermon-cover-interactive:hover .cover-img {
+  transform: scale(1.04);
+}
+
+/* Overlay Play sur la cover */
+.cover-play-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.7) 0%, rgba(15, 23, 42, 0.25) 60%, rgba(15, 23, 42, 0.1) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+  transition: all 0.3s ease;
+}
+
+.sermon-cover-interactive:hover .cover-play-overlay {
+  opacity: 1;
+  background-color: rgba(15, 23, 42, 0.45);
+}
+
+.cover-play-btn-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+  color: #ffffff;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.cover-play-icon {
+  margin-left: 4px; /* Centrage visuel du triangle */
+}
+
+.sermon-cover-interactive:hover .cover-play-btn-circle {
+  transform: scale(1.12);
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.6);
+}
+
+.cover-play-text {
+  margin-top: 1.25rem;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.02em;
+  transform: translateY(5px);
+  opacity: 0.9;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.sermon-cover-interactive:hover .cover-play-text {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Fallback Cover */
+.sermon-cover-fallback {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 480px;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #ffffff;
 }
 
-.byline {
-  margin: 0;
-  color: #bbb;
+.sermon-cover-fallback .fallback-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: center;
+  padding: 2rem;
 }
 
-.byline a {
-  color: #f0f2ff;
+.sermon-cover-fallback .fallback-inner span {
+  font-size: 1.2rem;
+  font-weight: 700;
+  max-width: 80%;
 }
 
-.sermon-detail .cover {
-  width: 100%;
-  max-height: 420px;
-  object-fit: cover;
+.sermon-cover-fallback:hover .cover-play-btn-circle {
+  transform: scale(1.12);
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.6);
+}
+
+/* Comments Card — override pour ne pas hériter du fond sombre */
+.sermon-comments-card {
+  background: #ffffff !important;
+  border: 1.5px solid #ede9ff !important;
+  box-shadow: 0 4px 24px rgba(124, 92, 255, 0.06) !important;
+}
+
+/* Glass card design */
+.sermon-main-col .glass-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  padding: 2.25rem;
+  box-sizing: border-box;
+}
+
+/* Sermon Content Header */
+.sermon-badge-type {
+  display: inline-block;
+  background-color: #fef08a;
+  color: #854d0e;
+  font-weight: 800;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  padding: 0.35rem 0.8rem;
   border-radius: 8px;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.06em;
 }
 
-.media-actions {
+.sermon-title {
+  font-size: clamp(1.8rem, 3.8vw, 2.5rem);
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.5rem 0;
+}
+
+.sermon-preacher-byline {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 1.5rem;
+}
+
+.preacher-avatar-wrapper {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #e2e8f0;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.preacher-mini-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.preacher-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.byline-details {
+  font-size: 0.95rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.byline-author a {
+  color: #0f172a;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.byline-author a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.byline-publisher a {
+  color: #64748b;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.byline-publisher a:hover {
+  color: #0f172a;
+}
+
+/* Description Card */
+.sermon-description-card h2 {
+  font-size: 1.4rem;
+  font-weight: 750;
+  color: #0f172a;
+  margin: 0 0 1.25rem 0;
+}
+
+.description-content {
+  line-height: 1.8;
+  color: #334155;
+  font-size: 1.05rem;
+}
+
+.description-content p {
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+}
+
+.description-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* ==========================================================================
+   COLONNE LATÉRALE (DROITE)
+   ========================================================================== */
+.sermon-sidebar-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: sticky;
+  top: 100px;
+}
+
+.sidebar-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  padding: 1.75rem;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.sidebar-card h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 1.25rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: 0.75rem;
+  border-bottom: 1.5px solid #f1f5f9;
+}
+
+.sidebar-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sidebar-actions-list .w-full {
+  width: 100%;
+}
+
+.w-full {
+  width: 100%;
+}
+
+/* Favori button active state */
+.premium-btn.btn-rose.active {
+  background: linear-gradient(135deg, #db2777, #9d174d);
+  color: #ffffff;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.erreur-telechargement {
+  margin-top: 0.75rem;
+  color: #ef4444;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Pièces jointes / Attachments */
+.sidebar-attachments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Informations / Statistiques */
+.stats-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.stats-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.95rem;
+}
+
+.stats-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.stats-label {
+  color: #64748b;
+  font-weight: 550;
+}
+
+.stats-value {
+  color: #0f172a;
+  font-weight: 700;
+  text-align: right;
+}
+
+.stats-item.categories-item {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.stats-categories-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin: 1rem 0;
+  gap: 0.5rem;
 }
 
-.sermon-detail-meta {
+.stats-category-pill {
+  background-color: #f1f5f9;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Prédicateur */
+.sidebar-preacher-info {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  color: #b8bddd;
+  align-items: center;
+  gap: 1rem;
 }
 
-.description {
-  line-height: 1.7;
-  color: #e7e7ff;
+.preacher-card-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #f1f5f9;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+.preacher-card-avatar-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #f8fafc;
+  border: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.preacher-card-details {
+  flex-grow: 1;
+}
+
+.preacher-card-details h4 {
+  margin: 0 0 0.2rem 0;
+  font-size: 1.05rem;
+  font-weight: 750;
+  color: #0f172a;
+}
+
+.preacher-church {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   RESPONSIVITÉ / MEDIA QUERIES
+   ========================================================================== */
+
+@media (max-width: 992px) {
+  .sermon-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  .sermon-sidebar-col {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .sermon-detail-container {
+    padding: 1.5rem 1rem 4rem 1rem;
+  }
+  
+  .sermon-main-col .glass-card {
+    padding: 1.5rem;
+  }
+  
+  .sermon-title {
+    font-size: 1.8rem;
+  }
 }

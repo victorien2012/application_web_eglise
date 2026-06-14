@@ -15,6 +15,7 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 # Application definition
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -134,7 +135,15 @@ if USE_S3:
     }
 
 # Default primary key field type
+# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Forcer l'envoi d'emails dans la console en environnement local pour pouvoir les voir
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    DEFAULT_FROM_EMAIL = 'contact@plateforme-eglise.com'
+
 
 # Securite (active uniquement hors DEBUG, c.-a-d. en production).
 if not DEBUG:
@@ -153,7 +162,7 @@ if not DEBUG:
         origine for origine in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if origine
     ]
 
-# Journalisation structuree vers la sortie standard (exploitable par un agrégateur de logs).
+# Journalisation structuree vers la sortie standard et vers un fichier.
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -168,14 +177,21 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'standard',
         },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'django.log',
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'standard',
+        },
     },
     'root': {
-        'handlers': ['console'],
+        'handlers': ['console', 'file'],
         'level': os.environ.get('LOG_LEVEL', 'INFO'),
     },
     'loggers': {
         'django.request': {
-            'handlers': ['console'],
+            'handlers': ['console', 'file'],
             'level': 'ERROR',
             'propagate': False,
         },
@@ -245,4 +261,68 @@ SIMPLE_JWT = {
     'TOKEN_TYPE_CLAIM': 'token_type',
     'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
     'JTI_CLAIM': 'jti',
+}
+
+# Configuration Django Jazzmin
+JAZZMIN_SETTINGS = {
+    "site_title": "Administration Église",
+    "site_header": "Église Admin",
+    "site_brand": "Portail Église",
+    "site_logo_classes": "img-circle",
+    "welcome_sign": "Bienvenue sur l'administration de l'Église",
+    "copyright": "Plateforme Église",
+    "search_model": ["auth.User", "api.Pasteur"],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "order_with_respect_to": ["auth", "api"],
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "api.ProfilUtilisateur": "fas fa-id-card",
+        "api.Pasteur": "fas fa-user-tie",
+        "api.Predication": "fas fa-bible",
+        "api.Categorie": "fas fa-folder",
+        "api.Etiquette": "fas fa-tags",
+        "api.Serie": "fas fa-list-ol",
+        "api.PieceJointe": "fas fa-paperclip",
+        "api.Commentaire": "fas fa-comments",
+        "api.Favori": "fas fa-star",
+        "api.Abonnement": "fas fa-bell",
+        "api.HistoriqueLecture": "fas fa-history",
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": True,
+    "show_ui_builder": False,
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-navy",
+    "accent": "accent-navy",
+    "navbar": "navbar-navy navbar-dark",
+    "no_navbar_border": False,
+    "navbar_fixed": True,
+    "layout_options": [],
+    "sidebar": "sidebar-dark-navy",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "flatly",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    }
 }

@@ -1,0 +1,85 @@
+/* src/components/VideoCard.css */
+
+/* Glass‑morphism card container */
+.video-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  cursor: pointer;
+}
+.video-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Thumbnail – uses background‑image */
+.video-thumb {
+  width: 100%;
+  height: 180px;
+  background-size: cover;
+  background-position: center;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+/* Card content */
+.video-info {
+  padding: 1rem;
+  color: #e4e7ff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-grow: 1;
+}
+.video-date {
+  font-size: 0.85rem;
+  opacity: 0.78;
+}
+.video-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Action links */
+.video-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 0.75rem;
+}
+.video-actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: #ffd36b;
+  background: rgba(255, 211, 107, 0.12);
+  border: 1px solid rgba(255, 211, 107, 0.2);
+  transition: background 0.2s ease;
+}
+.video-actions a:hover {
+  background: rgba(255, 211, 107, 0.2);
+}
+
+/* Responsive tweaks */
+@media (max-width: 480px) {
+  .video-thumb {
+    height: 140px;
+  }
+  .video-title {
+    font-size: 1rem;
+  }
+}

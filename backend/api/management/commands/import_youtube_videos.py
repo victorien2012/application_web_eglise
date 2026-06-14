@@ -26,6 +26,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import IntegrityError, transaction
 
 from api.models import Pasteur, Predication
+from api.serializers import extraire_nom_predicateur
+
 
 logger = logging.getLogger(__name__)
 
@@ -366,14 +368,26 @@ class Command(BaseCommand):
         date_publication = parser_date_publication(
             details.get('videoPublishedAt') or snippet.get('publishedAt')
         )
+        titre = (snippet.get('title') or 'Sans titre').strip()[:255]
+        description = snippet.get('description') or ''
+
+        # Tente d'extraire le nom du predicateur depuis le titre, puis la description.
+        # Fallback sur le channelTitle (nom de la chaine).
+        nom_pred = extraire_nom_predicateur(titre)
+        if not nom_pred:
+            nom_pred = extraire_nom_predicateur(description)
+        if not nom_pred:
+            nom_pred = (snippet.get('channelTitle') or '').strip()
+
         return {
             'youtube_id': youtube_id,
-            'titre': (snippet.get('title') or 'Sans titre').strip()[:255],
-            'description': snippet.get('description') or '',
+            'titre': titre,
+            'description': description,
             'date_publication': date_publication,
             'duree_secondes': durees.get(youtube_id, 0),
             'url_video': f'https://www.youtube.com/watch?v={youtube_id}',
             'miniature_url': Command._meilleure_miniature(snippet.get('thumbnails', {})),
+            'nom_predicateur': nom_pred[:255] if nom_pred else '',
         }
 
     @staticmethod
@@ -414,6 +428,7 @@ class Command(BaseCommand):
             type_media='VIDEO',
             url_video=video['url_video'],
             youtube_id=video['youtube_id'],
+            nom_predicateur=video.get('nom_predicateur') or '',
             duree_secondes=video['duree_secondes'],
             date_publication=video['date_publication'],
             est_publie=publier,

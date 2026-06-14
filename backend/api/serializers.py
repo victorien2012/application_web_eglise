@@ -19,6 +19,7 @@ from .models import (
     ProfilUtilisateur,
     Serie,
     Signalement,
+    Notification,
 )
 
 
@@ -36,12 +37,12 @@ class PasteurSerializer(serializers.ModelSerializer):
         model = Pasteur
         fields = (
             'id', 'username', 'email', 'nom_affichage', 'biographie',
-            'avatar', 'nom_eglise', 'lien_twitter', 'lien_facebook',
-            'lien_youtube', 'cree_le', 'est_valide'
+            'avatar', 'nom_eglise', 'contact', 'logo_eglise', 'lien_twitter', 'lien_facebook',
+            'lien_youtube', 'cree_le', 'est_valide', 'est_rejete'
         )
         # La validation d'un pasteur est une action reservee a l'administration
         # (voir PasteurViewSet.valider); un pasteur ne peut pas s'auto-valider.
-        read_only_fields = ('est_valide',)
+        read_only_fields = ('est_valide', 'est_rejete')
 
 
 class PasteurMinimalSerializer(serializers.ModelSerializer):
@@ -105,7 +106,7 @@ class PredicationSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'pasteur', 'titre', 'description', 'type_media',
             'fichier_audio', 'url_fichier_audio', 'fichier_video', 'url_fichier_video',
-            'url_video', 'youtube_id', 'image_couverture', 'url_image_couverture', 'duree_secondes',
+            'url_video', 'youtube_id', 'nom_predicateur', 'image_couverture', 'url_image_couverture', 'duree_secondes',
             'nombre_vues', 'nombre_telechargements', 'est_publie', 'date_publication',
             'est_planifiee', 'categories', 'etiquettes', 'serie', 'pieces_jointes', 'cree_le'
         ]
@@ -158,6 +159,32 @@ def extraire_youtube_id(url):
     return None
 
 
+# Patterns pour extraire le nom du predicateur depuis un titre YouTube.
+# Cherche des formules du type "Pasteur X", "avec Frère X", "par X", etc.
+_MOTIFS_PREDICATEUR = (
+    re.compile(r'\b(?:pasteur|past\.?|fr[èe]re|frer\.?|soeur|sr\.?|[ée]vang[ée]liste|evang\.?|proph[èe]te|prophet\.?|ap[ôo]tre|docteur|dr\.?|r[ée]v[ée]rend|rev\.?|ministre)\s+([A-ZÀ-Ü][a-zà-ü]+(?:\s+[A-ZÀ-Ü][a-zà-ü]+){0,3})', re.IGNORECASE),
+    re.compile(r'\b(?:avec|par|message de|pr[ée]dication de|sermon de|enseignement de)\s+(?:(?:pasteur|past\.?|fr[èe]re|frer\.?|soeur|sr\.?|[ée]vang[ée]liste|evang\.?|proph[èe]te|prophet\.?|ap[ôo]tre|docteur|dr\.?|r[ée]v[ée]rend|rev\.?|ministre)\s+)?([A-ZÀ-Ü][a-zà-ü]+(?:\s+[A-ZÀ-Ü][a-zà-ü]+){0,3})', re.IGNORECASE),
+    re.compile(r'\|([^|]{3,40})\|', re.IGNORECASE),  # Nom encadré par des pipes
+)
+
+
+def extraire_nom_predicateur(titre):
+    """
+    Tente d'extraire le nom du predicateur depuis un titre YouTube.
+    Retourne le nom trouve ou None si rien n'est detecte.
+    """
+    if not titre:
+        return None
+    for motif in _MOTIFS_PREDICATEUR:
+        correspondance = motif.search(titre)
+        if correspondance:
+            nom = correspondance.group(1).strip()
+            # On filtre les faux positifs trop courts ou trop longs
+            if 3 <= len(nom) <= 80:
+                return nom
+    return None
+
+
 def valider_fichier_uploade(fichier, extensions_autorisees, taille_max_mo):
     """Valide l'extension et la taille d'un fichier uploade."""
     if not fichier:
@@ -207,7 +234,7 @@ class PredicationEcritureSerializer(serializers.ModelSerializer):
         model = Predication
         fields = [
             'id', 'pasteur', 'titre', 'description', 'type_media',
-            'fichier_audio', 'fichier_video', 'url_video', 'image_couverture',
+            'fichier_audio', 'fichier_video', 'url_video', 'nom_predicateur', 'image_couverture',
             'duree_secondes', 'est_publie', 'date_publication', 'serie',
             'categories_ids', 'etiquettes_ids'
         ]
@@ -236,6 +263,15 @@ class PredicationEcritureSerializer(serializers.ModelSerializer):
                         {'url_video': "Cette video YouTube est deja publiee sur la plateforme."}
                     )
             attrs['youtube_id'] = youtube_id
+
+        # Si le nom du predicateur n'est pas fourni manuellement, on tente
+        # une extraction automatique depuis le titre via des patterns communs.
+        if not attrs.get('nom_predicateur'):
+            titre = attrs.get('titre', '') or ''
+            nom_extrait = extraire_nom_predicateur(titre)
+            if nom_extrait:
+                attrs['nom_predicateur'] = nom_extrait
+
         return attrs
 
 
@@ -256,6 +292,13 @@ class FavoriSerializer(serializers.ModelSerializer):
         model = Favori
         fields = ('id', 'utilisateur', 'predication', 'predication_detail', 'cree_le')
         read_only_fields = ('utilisateur',)
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ('id', 'message', 'lu', 'type_notification', 'cree_le')
+        read_only_fields = ('id', 'message', 'type_notification', 'cree_le')
 
 
 class AbonnementSerializer(serializers.ModelSerializer):
@@ -306,6 +349,9 @@ class InscriptionSerializer(serializers.Serializer):
     est_pasteur = serializers.BooleanField(default=False)
     nom_affichage = serializers.CharField(max_length=255, required=False)
     nom_eglise = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
+    contact = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True)
+    avatar = serializers.ImageField(required=False, allow_null=True)
+    logo_eglise = serializers.ImageField(required=False, allow_null=True)
 
     def validate_username(self, value):
         if User.objects.filter(username=value).exists():
@@ -337,12 +383,18 @@ class InscriptionSerializer(serializers.Serializer):
             email=validated_data['email'],
             password=validated_data['password']
         )
-        ProfilUtilisateur.objects.create(utilisateur=user)
+        ProfilUtilisateur.objects.create(
+            utilisateur=user,
+            contact=validated_data.get('contact', '')
+        )
         if validated_data.get('est_pasteur'):
             Pasteur.objects.create(
                 utilisateur=user,
                 nom_affichage=validated_data['nom_affichage'],
-                nom_eglise=validated_data.get('nom_eglise', '')
+                nom_eglise=validated_data.get('nom_eglise', ''),
+                contact=validated_data.get('contact', ''),
+                avatar=validated_data.get('avatar', None),
+                logo_eglise=validated_data.get('logo_eglise', None)
             )
         return user
 

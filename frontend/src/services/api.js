@@ -45,6 +45,21 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Global response interceptor to handle authentication failures
+api.interceptors.response.use(
+  response => response,
+  error => {
+    const url = error.config?.url || '';
+    if (error.response && error.response.status === 401 && !url.includes('/auth/connexion')) {
+      // Token invalid or expired – clear session and redirect to login
+      effacerSession();
+      // Simple redirect; a full React navigation would require context
+      window.location.href = '/compte-fidele';
+    }
+    return Promise.reject(error);
+  }
+);
+
 /**
  * Telecharge un fichier de predication via l'endpoint protege (exige un compte connecte).
  * Le token JWT est ajoute automatiquement par l'intercepteur ci-dessus.
@@ -69,4 +84,17 @@ export async function telechargerRessource(predicationId, format = 'audio') {
   lien.click();
   lien.remove();
   window.URL.revokeObjectURL(url);
+}
+
+/**
+ * Recupere le lien direct via yt-dlp sur le serveur et lance le telechargement (redirection native du navigateur).
+ * @param {number|string} predicationId 
+ * @param {'audio'|'video'} format 
+ */
+export async function telechargerRessourceExterne(predicationId, format = 'video') {
+  const reponse = await api.get(`/predications/${predicationId}/lien_telechargement_externe/?media=${format}`);
+  if (reponse.data?.url) {
+    // Rediriger le navigateur vers l'url directe du flux video/audio
+    window.location.href = reponse.data.url;
+  }
 }

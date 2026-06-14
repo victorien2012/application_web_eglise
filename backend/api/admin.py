@@ -14,6 +14,7 @@ from .models import (
     ProfilUtilisateur,
     Serie,
     Signalement,
+    DemandePasteur,
 )
 
 
@@ -26,8 +27,42 @@ class ProfilUtilisateurAdmin(admin.ModelAdmin):
 
 @admin.register(Pasteur)
 class PasteurAdmin(admin.ModelAdmin):
-    list_display = ('nom_affichage', 'nom_eglise', 'cree_le')
+    list_display = ('nom_affichage', 'nom_eglise', 'est_valide', 'cree_le')
+    list_filter = ('est_valide',)
     search_fields = ('nom_affichage', 'nom_eglise')
+
+    def save_model(self, request, obj, form, change):
+        if change:
+            old_obj = self.model.objects.get(pk=obj.pk)
+            if not old_obj.est_valide and obj.est_valide:
+                from .views import envoyer_email_validation_pasteur
+                try:
+                    envoyer_email_validation_pasteur(obj)
+                except Exception:
+                    pass
+            elif old_obj.est_valide and not obj.est_valide:
+                from .views import envoyer_email_rejet_pasteur
+                try:
+                    envoyer_email_rejet_pasteur(obj)
+                except Exception:
+                    pass
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(DemandePasteur)
+class DemandePasteurAdmin(PasteurAdmin):
+    list_display = ('nom_affichage', 'nom_eglise', 'email_contact', 'cree_le')
+    search_fields = ('nom_affichage', 'nom_eglise')
+
+    def email_contact(self, obj):
+        return obj.utilisateur.email
+    email_contact.short_description = 'Email'
+
+    def get_queryset(self, request):
+        return super(admin.ModelAdmin, self).get_queryset(request).filter(est_valide=False)
+
+    def has_add_permission(self, request):
+        return False
 
 
 @admin.register(Predication)

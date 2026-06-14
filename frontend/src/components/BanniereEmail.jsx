@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { MailWarning } from 'lucide-react';
+import { MailWarning, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './BanniereEmail.css';
 
 export function BanniereEmail() {
   const { estConnecte, emailVerifie, renvoyerVerification } = useAuth();
   const [etat, setEtat] = useState('initial'); // initial | envoi | envoye | erreur
+  const [visible, setVisible] = useState(true);
 
-  if (!estConnecte || emailVerifie) {
+  if (!estConnecte || emailVerifie || !visible) {
     return null;
   }
 
@@ -42,6 +43,14 @@ export function BanniereEmail() {
       {etat === 'erreur' ? (
         <span className="banniere-email-statut">Echec de l'envoi.</span>
       ) : null}
+      
+      <button 
+        className="banniere-email-fermer" 
+        onClick={() => setVisible(false)}
+        aria-label="Fermer la bannière"
+      >
+        <X size={16} />
+      </button>
     </div>
   );
 }

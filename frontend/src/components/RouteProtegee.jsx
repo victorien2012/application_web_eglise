@@ -10,7 +10,7 @@ export function RouteProtegee({ children, pasteurUniquement = false, adminUnique
   }
 
   if (!estConnecte) {
-    return <Navigate to="/connexion" replace state={{ depuis: location.pathname }} />;
+    return <Navigate to="/compte-fidele" replace state={{ depuis: location.pathname }} />;
   }
 
   if (pasteurUniquement && !estPasteur) {

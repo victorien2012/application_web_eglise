@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Play, Mic, Star } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { HomeHeroPanel } from '../components/HomeHeroPanel';
 import { SermonCard } from '../components/SermonCard';
+import { Button } from '../components/Button';
 import { api, extraireListe } from '../services/api';
+import { SermonCardSkeleton, PastorCardSkeleton } from '../components/SkeletonLoader';
 
 import './Home.css';
 
 export function Home() {
+  const { t } = useTranslation();
   const [predications, setPredications] = useState([]);
+  const [pasteurs, setPasteurs] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState('');
 
@@ -21,12 +26,15 @@ export function Home() {
 
     const charger = async () => {
       try {
-        const response = await api.get('/predications/');
+        const [resPredications, resPasteurs] = await Promise.all([
+          api.get('/predications/'),
+          api.get('/pasteurs/')
+        ]);
 
         if (!active) return;
 
-        const data = extraireListe(response.data);
-        setPredications(data);
+        setPredications(extraireListe(resPredications.data));
+        setPasteurs(extraireListe(resPasteurs.data));
         setErreur('');
       } catch (error) {
         if (!active) return;
@@ -48,11 +56,39 @@ export function Home() {
   }, []);
 
   /* =========================
+     SCROLL REVEAL ANIMATIONS
+  ========================= */
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    // Timeout pour s'assurer que le DOM est à jour après le chargement
+    const timeout = setTimeout(() => {
+      const elements = document.querySelectorAll('.reveal-on-scroll');
+      elements.forEach((el) => observer.observe(el));
+    }, 100);
+
+    return () => {
+      clearTimeout(timeout);
+      observer.disconnect();
+    };
+  }, [chargement, predications, pasteurs]);
+
+  /* =========================
      DERIVED DATA
   ========================= */
   const aLaUne = predications?.[0];
   const tendances = predications.slice(1, 4);
   const dernieres = predications.slice(0, 6);
+  const topPasteurs = pasteurs.slice(0, 4);
 
   const stats = useMemo(() => {
     const audio = predications.filter(p => p.type_media === 'AUDIO').length;
@@ -74,166 +110,171 @@ export function Home() {
   return (
     <main id="contenu-principal" className="home-layout">
 
-      <section className="home-page">
-
-        {/* ================= HERO ================= */}
+      {/* ================= HERO PREMIUM ================= */}
+      <div className="home-premium-hero-wrapper">
         <header className="home-hero">
 
           <div className="home-hero-copy">
-
-            <div className="home-kicker-row">
-              <p className="section-kicker home-kicker-pill">
-                Plateforme web
-              </p>
-              <span className="home-kicker-note">
-                Contenus audio & vidéo
-              </span>
+            <div className="home-kicker-row fade-in-up" style={{ animationDelay: '0.1s' }}>
+              <p className="section-kicker home-kicker-pill">{t('home.kicker_pill')}</p>
+              <span className="home-kicker-note">{t('home.kicker_note')}</span>
             </div>
 
-            <h1 className="title">
-              Écouter et découvrir des prédications inspirantes
+            <h1 className="title-premium fade-in-up" style={{ animationDelay: '0.2s' }}>
+              {t('home.hero_title_1')}<span className="text-yellow">{t('home.hero_title_2')}</span>
             </h1>
 
-            <p className="home-copy">
-              Explore les messages, suis les pasteurs et accède aux contenus
-              audio et vidéo sans friction.
+            <p className="home-copy-premium fade-in-up" style={{ animationDelay: '0.3s', textAlign: 'justify' }}>
+              {t('home.hero_subtitle')}
             </p>
 
-            <div className="home-hero-points">
-              <span>Prédications publiques</span>
-              <span>Navigation intuitive</span>
-              <span>Lecture instantanée</span>
+
+
+            <div className="home-actions fade-in-up" style={{ animationDelay: '0.5s', justifyContent: 'center', width: '100%' }}>
+              <Button to="/videos" variant="yellow" icon={ArrowRight} iconPosition="right" className="hero-btn-glow">
+                {t('home.hero_btn_explore')}
+              </Button>
+
+              <Button to="/pasteurs" variant="outline-dark">
+                {t('home.hero_btn_pastors')}
+              </Button>
             </div>
-
-            <div className="home-actions">
-              <Link to="/decouvrir" className="btn btn-primary">
-                Explorer <ArrowRight size={16} />
-              </Link>
-
-              <Link to="/pasteurs" className="btn btn-secondary">
-                Voir les pasteurs
-              </Link>
-            </div>
-
           </div>
 
+          <div className="fade-in-up" style={{ animationDelay: '0.6s' }}>
+            <div className="animate-eagle-fly">
+              <img 
+                src="/user_eagle.png" 
+                alt="Aigle majestueux en vol" 
+                style={{ 
+                  width: '100%', 
+                  objectFit: 'contain', 
+                  height: '100%', 
+                  maxHeight: '800px', 
+                  transform: 'scale(1.3)',
+                  filter: 'drop-shadow(0 15px 25px rgba(0, 0, 0, 0.4))' 
+                }} 
+              />
+            </div>
+          </div>
+
+        </header>
+      </div>
+
+      <section className="home-page">
+
+        {/* ================= BANDEAU STATISTIQUES ================= */}
+        <section className="home-section reveal-on-scroll" style={{ padding: '2rem 0 2rem 0', display: 'flex', justifyContent: 'center' }}>
           <HomeHeroPanel
             total={stats.total}
             audio={stats.audio}
             video={stats.video}
           />
-
-        </header>
-
-        {/* ================= À LA UNE ================= */}
-        {aLaUne && (
-          <section className="home-highlight">
-
-            <div className="home-highlight-copy">
-              <p className="section-kicker">À la une</p>
-
-              <h2>{aLaUne.titre}</h2>
-
-              <p>
-                {aLaUne.description ||
-                  'Une prédication à retrouver dès maintenant.'}
-              </p>
-
-              <div className="home-highlight-meta">
-                <span>{aLaUne.pasteur?.nom_affichage}</span>
-                <span>{aLaUne.type_media}</span>
-                <span>{aLaUne.duree_secondes}s</span>
-              </div>
-
-              <Link
-                to={`/sermon/${aLaUne.id}`}
-                className="btn btn-primary"
-              >
-                Ouvrir <ArrowRight size={16} />
-              </Link>
-            </div>
-
-          </section>
-        )}
+        </section>
 
         {/* ================= TENDANCES ================= */}
-        <section className="home-section">
+        <section className="home-section reveal-on-scroll">
 
           <div className="section-heading">
-            <h2>Tendances du moment</h2>
-            <p>Une sélection rapide pour commencer l'exploration.</p>
+            <h2>{t('home.trends_title')}</h2>
+            <p>{t('home.trends_subtitle')}</p>
           </div>
 
-          {isLoading && (
-            <p className="page-state">Chargement des prédications...</p>
-          )}
-
-          {hasError && (
-            <p className="page-state error">{erreur}</p>
-          )}
-
-          {!isLoading && !hasError && (
-            tendances.length ? (
-              <div className="grid sermon-grid">
-                {tendances.map(item => (
-                  <SermonCard key={item.id} sermon={item} />
-                ))}
-              </div>
-            ) : (
-              <p className="page-state">
-                Aucune tendance disponible.
-              </p>
-            )
+          {isLoading ? (
+            <div className="grid sermon-grid">
+              <SermonCardSkeleton />
+              <SermonCardSkeleton />
+              <SermonCardSkeleton />
+            </div>
+          ) : hasError ? (
+            <p className="page-state error">{t('home.error_loading')}</p>
+          ) : tendances.length ? (
+            <div className="grid sermon-grid">
+              {tendances.map((item, i) => (
+                <div key={item.id} className="reveal-cascade" style={{ transitionDelay: `${i * 0.1}s` }}>
+                  <SermonCard sermon={item} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="page-state">{t('home.no_trends')}</p>
           )}
 
         </section>
 
-        {/* ================= NAVIGATION CARDS ================= */}
-        <section className="home-section home-public-paths">
+        {/* ================= MINISTÈRES (Pasteurs) ================= */}
+        <section className="home-section reveal-on-scroll">
 
-          <div className="home-path-card">
-            <h2>Explorer les messages</h2>
-            <p>
-              Utilisez la recherche et les filtres pour trouver une prédication.
-            </p>
-            <Link to="/decouvrir" className="btn btn-primary">
-              Découvrir
-            </Link>
+          <div className="section-heading-row">
+            <div className="section-heading">
+              <h2>{t('home.ministries_title')}</h2>
+              <p>{t('home.ministries_subtitle')}</p>
+            </div>
+            <Button to="/pasteurs" variant="outline-dark">
+              {t('home.all_pastors')}
+            </Button>
           </div>
 
-          <div className="home-path-card">
-            <h2>Suivre un ministère</h2>
-            <p>
-              Découvrez les pasteurs et leurs publications.
-            </p>
-            <Link to="/pasteurs" className="btn btn-secondary">
-              Voir
-            </Link>
-          </div>
+          {isLoading ? (
+            <div className="home-pastors-grid">
+              <PastorCardSkeleton />
+              <PastorCardSkeleton />
+              <PastorCardSkeleton />
+              <PastorCardSkeleton />
+            </div>
+          ) : !hasError && topPasteurs.length ? (
+            <div className="home-pastors-grid">
+              {topPasteurs.map((pasteur, i) => (
+                <Link 
+                  key={pasteur.id} 
+                  to={`/pasteurs/${pasteur.id}`} 
+                  className="home-pastor-card premium-hover-lift reveal-cascade"
+                  style={{ transitionDelay: `${i * 0.1}s` }}
+                >
+                  <div className="home-pastor-avatar">
+                    {pasteur.avatar ? (
+                      <img src={pasteur.avatar} alt={pasteur.nom_affichage} />
+                    ) : (
+                      <span>{pasteur.nom_affichage.charAt(0)}</span>
+                    )}
+                  </div>
+                  <h3>{pasteur.nom_affichage}</h3>
+                  <p>{pasteur.nom_eglise || t('home.unknown_church')}</p>
+                </Link>
+              ))}
+            </div>
+          ) : null}
 
         </section>
 
         {/* ================= DERNIERS ================= */}
-        <section className="home-section">
+        <section className="home-section reveal-on-scroll" style={{ marginTop: '2rem' }}>
 
           <div className="section-heading">
-            <h2>Dernières publications</h2>
-            <p>Contenus les plus récents.</p>
+            <h2>{t('home.recent_title')}</h2>
+            <p>{t('home.recent_subtitle')}</p>
           </div>
 
-          {!isLoading && !hasError && (
-            dernieres.length ? (
-              <div className="grid sermon-grid">
-                {dernieres.map(item => (
-                  <SermonCard key={item.id} sermon={item} />
-                ))}
-              </div>
-            ) : (
-              <p className="page-state">
-                Aucune prédication disponible.
-              </p>
-            )
-          )}
+          {isLoading ? (
+            <div className="grid sermon-grid">
+              <SermonCardSkeleton />
+              <SermonCardSkeleton />
+              <SermonCardSkeleton />
+              <SermonCardSkeleton />
+              <SermonCardSkeleton />
+              <SermonCardSkeleton />
+            </div>
+          ) : !hasError && dernieres.length ? (
+            <div className="grid sermon-grid">
+              {dernieres.map((item, i) => (
+                <div key={item.id} className="reveal-cascade" style={{ transitionDelay: `${(i % 3) * 0.1}s` }}>
+                  <SermonCard sermon={item} />
+                </div>
+              ))}
+            </div>
+          ) : !hasError ? (
+            <p className="page-state">{t('home.no_recent')}</p>
+          ) : null}
 
         </section>
 

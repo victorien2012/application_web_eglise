@@ -1,25 +1,22 @@
+/* ==========================================================================
+   CARTE DE PRÉDICATION PREMIUM (LIGHT THEME)
+   ========================================================================== */
 .sermon-card {
   display: flex;
   flex-direction: column;
+  height: 100%;
   overflow: hidden;
-
-  border-radius: 18px;
-
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
-
-  border: 1px solid rgba(255,255,255,.08);
-
-  backdrop-filter: blur(14px);
-
-  transition: .35s ease;
-
-  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  border-radius: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .sermon-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 25px 60px rgba(0,0,0,.45);
+  box-shadow: 0 20px 40px -8px rgba(0, 74, 148, 0.15);
+  border-color: #bfdbfe;
 }
 
 /* IMAGE */
@@ -27,54 +24,111 @@
   width: 100%;
   height: 180px;
   object-fit: cover;
-
-  transition: transform .6s ease;
+  transition: transform 0.5s ease;
 }
 
 .sermon-card:hover .cover {
-  transform: scale(1.06);
+  transform: scale(1.05);
 }
 
 /* INFO */
 .sermon-card .info {
-  padding: 1rem;
-  display: grid;
-  gap: .7rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex-grow: 1;
+}
+
+/* SÉPARATEUR TITRE / BADGE */
+.sermon-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
 }
 
 /* TITLE */
 .sermon-card .info h3 {
   margin: 0;
-  font-size: 1.1rem;
-  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.4;
 }
 
 /* TYPE BADGE */
 .sermon-type {
-  background: rgba(255,211,107,.14);
-  color: #ffd36b;
-  border: 1px solid rgba(255,211,107,.25);
+  background: #fef08a;
+  color: #854d0e;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* LIEN PASTEUR */
+.pastor-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.pastor-link:hover {
+  color: #11233f;
 }
 
 /* DESCRIPTION */
 .sermon-description {
-  color: rgba(230,235,255,.7);
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-/* META */
+/* META (DURÉE, VUES) */
 .sermon-meta {
-  color: rgba(200,205,255,.7);
+  display: flex;
+  gap: 1rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: auto; /* Pousse les méta vers le bas */
 }
 
-/* CATEGORY */
+/* CATEGORIES */
+.sermon-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
 .sermon-category {
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.08);
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 /* ACTIONS */
 .sermon-card .actions {
-  padding: 0 1rem 1rem;
+  padding: 0 1.5rem 1.5rem;
   display: flex;
-  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
 }

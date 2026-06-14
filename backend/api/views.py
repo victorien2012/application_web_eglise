@@ -39,6 +39,7 @@ from .models import (
     ProfilUtilisateur,
     Serie,
     Signalement,
+    Notification,
 )
 from .serializers import (
     AbonnementSerializer,
@@ -58,6 +59,8 @@ from .serializers import (
     SerieEcritureSerializer,
     SerieSerializer,
     SignalementSerializer,
+    UtilisateurSerializer,
+    NotificationSerializer,
     VerificationEmailSerializer,
 )
 
@@ -120,16 +123,21 @@ class GenerateurTokenEmail(PasswordResetTokenGenerator):
 generateur_token_email = GenerateurTokenEmail()
 
 
-def _payload_pasteur(user):
+def _payload_pasteur(user, request=None):
     """Construit la representation publique du profil pasteur d'un utilisateur."""
     try:
         pasteur = user.profil_pasteur
     except Pasteur.DoesNotExist:
         return None
+        
+    avatar_url = pasteur.avatar.url if pasteur.avatar else None
+    if avatar_url and request:
+        avatar_url = request.build_absolute_uri(avatar_url)
+        
     return {
         'id': pasteur.id,
         'nom_affichage': pasteur.nom_affichage,
-        'avatar': pasteur.avatar.url if pasteur.avatar else None,
+        'avatar': avatar_url,
         'nom_eglise': pasteur.nom_eglise,
     }
 
@@ -294,12 +302,513 @@ def envoyer_email_verification(user):
     )
 
 
+def envoyer_email_validation_pasteur(pasteur):
+    """Envoie un email de bienvenue au pasteur lorsque l'admin valide sa demande."""
+    user = pasteur.utilisateur
+    if not user.email:
+        return
+
+    annee = timezone.now().year
+    nom = pasteur.nom_affichage or user.username
+    lien_espace = f"{settings.FRONTEND_URL}/espace-pasteur"
+
+    sujet = "✅ Votre compte ministère a été validé - Plateforme Église"
+
+    message_texte = (
+        f"Bonjour {nom},\n\n"
+        "Bonne nouvelle ! Votre demande d'inscription en tant que pasteur sur la Plateforme Église "
+        "a été examinée et validée par notre équipe d'administration.\n\n"
+        "Vous pouvez dès maintenant accéder à votre espace pasteur pour publier vos prédications, "
+        "créer des séries thématiques et gérer votre profil ministère :\n\n"
+        f"{lien_espace}\n\n"
+        "Que la grâce de Dieu vous accompagne dans ce ministère.\n"
+        "L'équipe Plateforme Église"
+    )
+
+    message_html = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compte validé</title>
+  <style>
+    body {{
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f6f8fb;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }}
+    .email-container {{
+      max-width: 600px;
+      margin: 40px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e1e8ed;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }}
+    .email-header {{
+      background: linear-gradient(135deg, #7c5cff, #a786ff);
+      padding: 30px;
+      text-align: center;
+      color: #ffffff;
+    }}
+    .email-header h1 {{
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }}
+    .email-header p {{
+      margin: 5px 0 0 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }}
+    .badge-valide {{
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.5);
+      border-radius: 50px;
+      padding: 6px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 12px;
+      letter-spacing: 1px;
+    }}
+    .email-body {{
+      padding: 40px 30px;
+      color: #2c3e50;
+      line-height: 1.6;
+    }}
+    .email-body h2 {{
+      margin-top: 0;
+      font-size: 20px;
+      color: #1a252f;
+    }}
+    .email-body p {{
+      font-size: 16px;
+      margin: 0 0 20px 0;
+    }}
+    .check-icon {{
+      text-align: center;
+      font-size: 56px;
+      margin-bottom: 20px;
+    }}
+    .btn-container {{
+      text-align: center;
+      margin: 35px 0;
+    }}
+    .btn-primary {{
+      display: inline-block;
+      background-color: #7c5cff;
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 14px 30px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 4px 10px rgba(124, 92, 255, 0.25);
+    }}
+    .info-box {{
+      background: #f0ebff;
+      border-left: 4px solid #7c5cff;
+      border-radius: 6px;
+      padding: 15px 20px;
+      margin: 20px 0;
+      font-size: 15px;
+      color: #4a3880;
+    }}
+    .email-footer {{
+      background-color: #fafbfc;
+      padding: 20px 30px;
+      text-align: center;
+      font-size: 13px;
+      color: #7f8c8d;
+      border-top: 1px solid #f1f2f6;
+    }}
+    .email-footer a {{
+      color: #7c5cff;
+      text-decoration: none;
+    }}
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="email-header">
+      <h1>Plateforme Église</h1>
+      <p>Votre espace d'édification spirituelle</p>
+      <div class="badge-valide">✅ COMPTE VALIDÉ</div>
+    </div>
+    <div class="email-body">
+      <div class="check-icon">🎉</div>
+      <h2>Félicitations, {nom} !</h2>
+      <p>Votre demande d'inscription en tant que <strong>pasteur</strong> sur la Plateforme Église
+      a été <strong>examinée et approuvée</strong> par notre équipe d'administration.</p>
+
+      <div class="info-box">
+        Vous pouvez dès maintenant publier vos prédications, créer des séries thématiques,
+        synchroniser votre chaîne YouTube et gérer votre profil ministère.
+      </div>
+
+      <p>Connectez-vous et accédez à votre espace pasteur en cliquant sur le bouton ci-dessous :</p>
+      <div class="btn-container">
+        <a href="{lien_espace}" class="btn-primary" target="_blank">Accéder à mon espace</a>
+      </div>
+      <p style="font-size: 14px; color: #7f8c8d;">
+        Que la grâce de Dieu vous accompagne dans ce ministère et que votre parole porte du fruit.
+      </p>
+    </div>
+    <div class="email-footer">
+      <p>&copy; {annee} Plateforme Église. Tous droits réservés.</p>
+    </div>
+  </div>
+</body>
+</html>
+"""
+
+    send_mail(
+        subject=sujet,
+        message=message_texte,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        html_message=message_html,
+        fail_silently=True,
+    )
+
+
+def envoyer_email_notification_admin_nouveau_pasteur(pasteur):
+    """Notifie les administrateurs qu'un nouveau pasteur vient de s'inscrire
+    et attend leur validation."""
+    admins = User.objects.filter(is_staff=True)
+    emails_admins = [u.email for u in admins if u.email]
+    if not emails_admins:
+        return
+
+    nom = pasteur.nom_affichage or pasteur.utilisateur.username
+    email_pasteur = pasteur.utilisateur.email
+    eglise = pasteur.nom_eglise or 'Non renseignée'
+    contact = pasteur.contact or 'Non renseigné'
+    annee = timezone.now().year
+    lien_admin = f"{settings.FRONTEND_URL}/administration"
+
+    sujet = f"📋 Nouvelle demande de compte ministère – {nom}"
+
+    message_texte = (
+        f"Nouvelle demande d'inscription pasteur\n\n"
+        f"Nom d'affichage : {nom}\n"
+        f"Email : {email_pasteur}\n"
+        f"Église : {eglise}\n"
+        f"Contact : {contact}\n\n"
+        f"Connectez-vous à l'espace d'administration pour examiner cette demande :\n"
+        f"{lien_admin}\n"
+    )
+
+    message_html = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nouvelle demande pasteur</title>
+  <style>
+    body {{
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f6f8fb;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }}
+    .email-container {{
+      max-width: 600px;
+      margin: 40px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e1e8ed;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }}
+    .email-header {{
+      background: linear-gradient(135deg, #004a94, #00336b);
+      padding: 30px;
+      text-align: center;
+      color: #ffffff;
+    }}
+    .email-header h1 {{
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+    }}
+    .email-header p {{
+      margin: 5px 0 0 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }}
+    .badge {{
+      display: inline-block;
+      background: rgba(255,211,107,0.25);
+      border: 2px solid rgba(255,211,107,0.5);
+      border-radius: 50px;
+      padding: 6px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 12px;
+      letter-spacing: 1px;
+      color: #ffd36b;
+    }}
+    .email-body {{
+      padding: 35px 30px;
+      color: #2c3e50;
+      line-height: 1.6;
+    }}
+    .email-body h2 {{
+      margin-top: 0;
+      font-size: 20px;
+      color: #1a252f;
+    }}
+    .info-table {{
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }}
+    .info-table td {{
+      padding: 10px 14px;
+      border-bottom: 1px solid #f1f2f6;
+      font-size: 15px;
+    }}
+    .info-table td:first-child {{
+      font-weight: 600;
+      color: #64748b;
+      width: 130px;
+    }}
+    .btn-container {{
+      text-align: center;
+      margin: 30px 0 10px;
+    }}
+    .btn-primary {{
+      display: inline-block;
+      background-color: #004a94;
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 14px 30px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 4px 10px rgba(0, 74, 148, 0.25);
+    }}
+    .email-footer {{
+      background-color: #fafbfc;
+      padding: 20px 30px;
+      text-align: center;
+      font-size: 13px;
+      color: #7f8c8d;
+      border-top: 1px solid #f1f2f6;
+    }}
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="email-header">
+      <h1>Plateforme Église</h1>
+      <p>Administration</p>
+      <div class="badge">📋 NOUVELLE DEMANDE</div>
+    </div>
+    <div class="email-body">
+      <h2>Nouvelle inscription ministère</h2>
+      <p>Un nouveau pasteur vient de soumettre une demande d'inscription et attend votre validation :</p>
+      <table class="info-table">
+        <tr><td>Nom</td><td><strong>{nom}</strong></td></tr>
+        <tr><td>Email</td><td>{email_pasteur}</td></tr>
+        <tr><td>Église</td><td>{eglise}</td></tr>
+        <tr><td>Contact</td><td>{contact}</td></tr>
+      </table>
+      <p>Connectez-vous à l'espace d'administration pour examiner et valider (ou rejeter) cette demande :</p>
+      <div class="btn-container">
+        <a href="{lien_admin}" class="btn-primary" target="_blank">Accéder à l'administration</a>
+      </div>
+    </div>
+    <div class="email-footer">
+      <p>&copy; {annee} Plateforme Église. Notification automatique.</p>
+    </div>
+  </div>
+</body>
+</html>
+"""
+
+    send_mail(
+        subject=sujet,
+        message=message_texte,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=emails_admins,
+        html_message=message_html,
+        fail_silently=True,
+    )
+
+
+def envoyer_email_rejet_pasteur(pasteur):
+    """Envoie un email au pasteur pour l'informer que sa demande a été rejetée."""
+    user = pasteur.utilisateur
+    if not user.email:
+        return
+
+    annee = timezone.now().year
+    nom = pasteur.nom_affichage or user.username
+    lien_contact = f"{settings.FRONTEND_URL}/connexion"
+
+    sujet = "❌ Votre demande de compte ministère – Plateforme Église"
+
+    message_texte = (
+        f"Bonjour {nom},\n\n"
+        "Nous avons examiné votre demande d'inscription en tant que pasteur sur la "
+        "Plateforme Église.\n\n"
+        "Malheureusement, votre demande n'a pas pu être approuvée à ce stade. "
+        "Cela peut être dû à des informations incomplètes ou à un profil ne correspondant "
+        "pas aux critères requis.\n\n"
+        "Si vous pensez qu'il s'agit d'une erreur, n'hésitez pas à nous contacter "
+        "ou à soumettre une nouvelle demande avec des informations complémentaires.\n\n"
+        "Cordialement,\n"
+        "L'équipe Plateforme Église"
+    )
+
+    message_html = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demande non approuvée</title>
+  <style>
+    body {{
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f6f8fb;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }}
+    .email-container {{
+      max-width: 600px;
+      margin: 40px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e1e8ed;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }}
+    .email-header {{
+      background: linear-gradient(135deg, #64748b, #475569);
+      padding: 30px;
+      text-align: center;
+      color: #ffffff;
+    }}
+    .email-header h1 {{
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+    }}
+    .email-header p {{
+      margin: 5px 0 0 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }}
+    .email-body {{
+      padding: 40px 30px;
+      color: #2c3e50;
+      line-height: 1.6;
+    }}
+    .email-body h2 {{
+      margin-top: 0;
+      font-size: 20px;
+      color: #1a252f;
+    }}
+    .email-body p {{
+      font-size: 16px;
+      margin: 0 0 20px 0;
+    }}
+    .info-box {{
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      border-radius: 6px;
+      padding: 15px 20px;
+      margin: 20px 0;
+      font-size: 15px;
+      color: #991b1b;
+    }}
+    .btn-container {{
+      text-align: center;
+      margin: 35px 0;
+    }}
+    .btn-secondary {{
+      display: inline-block;
+      background-color: #64748b;
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 14px 30px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+    }}
+    .email-footer {{
+      background-color: #fafbfc;
+      padding: 20px 30px;
+      text-align: center;
+      font-size: 13px;
+      color: #7f8c8d;
+      border-top: 1px solid #f1f2f6;
+    }}
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="email-header">
+      <h1>Plateforme Église</h1>
+      <p>Votre espace d'édification spirituelle</p>
+    </div>
+    <div class="email-body">
+      <h2>Bonjour {nom},</h2>
+      <p>Nous avons examiné votre demande d'inscription en tant que <strong>pasteur</strong> sur la Plateforme Église.</p>
+
+      <div class="info-box">
+        Malheureusement, votre demande n'a pas pu être approuvée à ce stade.
+        Cela peut être dû à des informations incomplètes ou à un profil ne correspondant
+        pas aux critères requis.
+      </div>
+
+      <p>Si vous pensez qu'il s'agit d'une erreur, n'hésitez pas à soumettre une nouvelle demande
+      avec des informations complémentaires ou à nous contacter directement.</p>
+
+      <div class="btn-container">
+        <a href="{lien_contact}" class="btn-secondary" target="_blank">Retour à la plateforme</a>
+      </div>
+
+      <p style="font-size: 14px; color: #7f8c8d;">
+        Que la paix soit avec vous.
+      </p>
+    </div>
+    <div class="email-footer">
+      <p>&copy; {annee} Plateforme Église. Tous droits réservés.</p>
+    </div>
+  </div>
+</body>
+</html>
+"""
+
+    send_mail(
+        subject=sujet,
+        message=message_texte,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        html_message=message_html,
+        fail_silently=True,
+    )
+
+
 class ConnexionTokenSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
-        data['pasteur'] = _payload_pasteur(self.user)
+        request = self.context.get('request')
+        data['pasteur'] = _payload_pasteur(self.user, request=request)
         data['email_verifie'] = _email_est_verifie(self.user)
         data['est_admin'] = self.user.is_staff
+        profil = getattr(self.user, 'profil', None)
+        data['contact'] = profil.contact if (profil and not data['pasteur']) else None
         return data
 
 
@@ -322,16 +831,31 @@ class InscriptionView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        envoyer_email_verification(user)
+        # Pour les pasteurs, l'email est envoyé uniquement après validation par l'admin.
+        # Pour les fidèles, on envoie l'email de vérification immédiatement.
+        est_pasteur = request.data.get('est_pasteur') in (True, 'true', 'True', 1, '1')
+        if est_pasteur:
+            # Notifier les administrateurs qu'un nouveau pasteur attend leur validation.
+            try:
+                pasteur_obj = user.profil_pasteur
+                envoyer_email_notification_admin_nouveau_pasteur(pasteur_obj)
+            except Pasteur.DoesNotExist:
+                pass
+        else:
+            envoyer_email_verification(user)
 
         refresh = RefreshToken.for_user(user)
+        profil = getattr(user, 'profil', None)
+        pasteur_payload = _payload_pasteur(user, request=request)
+        
         return Response(
             {
                 'access': str(refresh.access_token),
                 'refresh': str(refresh),
-                'pasteur': _payload_pasteur(user),
+                'pasteur': pasteur_payload,
                 'email_verifie': _email_est_verifie(user),
                 'est_admin': user.is_staff,
+                'contact': profil.contact if (profil and not pasteur_payload) else None,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -478,6 +1002,7 @@ class MesDonneesView(APIView):
                 'email': user.email,
                 'date_inscription': user.date_joined,
                 'email_verifie': _email_est_verifie(user),
+                'contact': getattr(user.profil, 'contact', None) if hasattr(user, 'profil') else None,
             },
             'profil_pasteur': profil_pasteur,
             'commentaires': CommentaireSerializer(
@@ -586,8 +1111,18 @@ class PasteurViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if self.request.query_params.get('non_valides') == 'true':
-            queryset = queryset.filter(est_valide=False)
+        user = self.request.user
+        
+        if user.is_staff:
+            if self.request.query_params.get('non_valides') == 'true':
+                queryset = queryset.filter(est_valide=False)
+        else:
+            pasteur_courant = getattr(user, 'profil_pasteur', None) if user.is_authenticated else None
+            if pasteur_courant:
+                queryset = queryset.filter(Q(est_valide=True) | Q(id=pasteur_courant.id))
+            else:
+                queryset = queryset.filter(est_valide=True)
+                
         return queryset
 
     def update(self, request, *args, **kwargs):
@@ -611,16 +1146,41 @@ class PasteurViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def valider(self, request, pk=None):
-        """Valide ou invalide un pasteur (reserve a l'administration)."""
+        """Valide ou rejette un pasteur (reserve a l'administration).
+        Lorsqu'un pasteur est valide pour la premiere fois, un email de bienvenue
+        lui est envoye. Lorsqu'il est rejete, un email de rejet est envoye.
+        """
         pasteur = self.get_object()
-        pasteur.est_valide = request.data.get('est_valide', True) in (True, 'true', 'True', 1, '1')
-        pasteur.save(update_fields=['est_valide'])
-        return Response({"id": pasteur.id, "est_valide": pasteur.est_valide})
+        etait_valide = pasteur.est_valide
+        nouvelle_valeur = request.data.get('est_valide', True) in (True, 'true', 'True', 1, '1')
+        
+        pasteur.est_valide = nouvelle_valeur
+        if nouvelle_valeur:
+            pasteur.est_rejete = False
+        else:
+            pasteur.est_rejete = True
+            
+        pasteur.save(update_fields=['est_valide', 'est_rejete'])
 
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+        if nouvelle_valeur and not etait_valide:
+            # Première validation : email de bienvenue.
+            envoyer_email_validation_pasteur(pasteur)
+        elif not nouvelle_valeur and not etait_valide:
+            # Rejet explicite : email de refus.
+            envoyer_email_rejet_pasteur(pasteur)
+
+        return Response({"id": pasteur.id, "est_valide": pasteur.est_valide, "est_rejete": pasteur.est_rejete})
+
+    @action(detail=False, methods=['get', 'put', 'patch'], permission_classes=[permissions.IsAuthenticated])
     def mon_profil(self, request):
         try:
             pasteur = request.user.profil_pasteur
+            if request.method in ['PUT', 'PATCH']:
+                serializer = self.get_serializer(pasteur, data=request.data, partial=(request.method == 'PATCH'))
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response(serializer.data)
+                
             serializer = self.get_serializer(pasteur)
             return Response(serializer.data)
         except Pasteur.DoesNotExist:
@@ -803,6 +1363,10 @@ class PredicationViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         try:
             pasteur = self.request.user.profil_pasteur
+            if not pasteur.est_valide:
+                raise serializers.ValidationError(
+                    {"detail": "Votre compte n'est pas encore validé. Vous ne pouvez pas publier de prédications."}
+                )
             serializer.save(pasteur=pasteur)
         except Pasteur.DoesNotExist:
             raise serializers.ValidationError(
@@ -888,6 +1452,57 @@ class PredicationViewSet(viewsets.ModelViewSet):
         nom_fichier = f"{nom_base}{extension}"
 
         return FileResponse(fichier.open('rb'), as_attachment=True, filename=nom_fichier)
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def lien_telechargement_externe(self, request, pk=None):
+        """Utilise yt-dlp pour extraire le lien direct d'une video YouTube."""
+        predication = self.get_object()
+        media_demande = request.query_params.get('media', 'video')
+
+        if not predication.url_video:
+            return Response(
+                {"detail": "Cette prédication ne possède pas de lien externe."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            import yt_dlp
+            ydl_opts = {
+                'format': 'bestaudio[ext=m4a]' if media_demande == 'audio' else 'best[ext=mp4]/best',
+                'quiet': True,
+                'no_warnings': True,
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(predication.url_video, download=False)
+                url_directe = info.get('url')
+
+                if url_directe:
+                    # On enregistre la stat comme pour un telechargement classique
+                    predication.nombre_telechargements += 1
+                    predication.save(update_fields=['nombre_telechargements'])
+                    JournalAnalytique.objects.create(
+                        predication=predication,
+                        type_action='DOWNLOAD',
+                        adresse_ip=self._get_adresse_ip(request),
+                    )
+                    return Response({"url": url_directe}, status=status.HTTP_200_OK)
+                else:
+                    return Response(
+                        {"detail": "Impossible d'extraire le lien de téléchargement."},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+        except ImportError:
+            return Response(
+                {"detail": "L'extracteur YouTube (yt-dlp) n'est pas installé sur le serveur."},
+                status=status.HTTP_501_NOT_IMPLEMENTED,
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).exception("Erreur yt-dlp: %s", e)
+            return Response(
+                {"detail": "Erreur lors de l'extraction de la vidéo externe."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     def _get_adresse_ip(self, request):
         forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -1061,7 +1676,27 @@ class AbonnementViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        serializer.save(utilisateur=self.request.user)
+        abonnement = serializer.save(utilisateur=self.request.user)
+        # Créer une notification pour le pasteur
+        Notification.objects.create(
+            utilisateur=abonnement.pasteur.utilisateur,
+            message=f"Le fidèle {self.request.user.username} s'est abonné à votre chaîne.",
+            type_notification='ABONNEMENT'
+        )
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(utilisateur=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def marquer_lu(self, request, pk=None):
+        notification = self.get_object()
+        notification.lu = True
+        notification.save(update_fields=['lu'])
+        return Response({"status": "success"})
 
 
 class HistoriqueLectureViewSet(viewsets.ModelViewSet):

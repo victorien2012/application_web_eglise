@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      if (!sessionLocale.pasteur) {
+      if (sessionLocale.pasteur) {
         try {
           const response = await api.get('/pasteurs/mon_profil/');
           const prochaineSession = { ...sessionLocale, pasteur: response.data };
@@ -61,6 +61,7 @@ export function AuthProvider({ children }) {
       pasteur: response.data.pasteur,
       emailVerifie: response.data.email_verifie,
       estAdmin: response.data.est_admin,
+      contact: response.data.contact,
       username,
     };
     enregistrerSession(prochaineSession);
@@ -69,14 +70,20 @@ export function AuthProvider({ children }) {
   }
 
   async function inscription(donnees) {
+    // Axios gère automatiquement les FormData avec le bon Content-Type (multipart/form-data)
     const response = await api.post('/auth/inscription/', donnees);
+    
+    // Si donnees est un FormData, on extrait le username avec .get()
+    const extractedUsername = donnees instanceof FormData ? donnees.get('username') : donnees.username;
+    
     const prochaineSession = {
       accessToken: response.data.access,
       refreshToken: response.data.refresh,
       pasteur: response.data.pasteur,
       emailVerifie: response.data.email_verifie,
       estAdmin: response.data.est_admin,
-      username: donnees.username,
+      contact: response.data.contact,
+      username: extractedUsername,
     };
     enregistrerSession(prochaineSession);
     setSession(prochaineSession);
@@ -103,6 +110,15 @@ export function AuthProvider({ children }) {
     await api.post('/auth/renvoyer-verification/');
   }
 
+  function actualiserProfilPasteur(nouveauPasteur) {
+    setSession((courante) => {
+      if (!courante) return courante;
+      const prochaineSession = { ...courante, pasteur: { ...courante.pasteur, ...nouveauPasteur } };
+      enregistrerSession(prochaineSession);
+      return prochaineSession;
+    });
+  }
+
   const value = {
     session,
     accessToken: session?.accessToken ?? null,
@@ -117,6 +133,7 @@ export function AuthProvider({ children }) {
     deconnexion,
     marquerEmailVerifie,
     renvoyerVerification,
+    actualiserProfilPasteur,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

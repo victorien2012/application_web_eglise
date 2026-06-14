@@ -1,4 +1,5 @@
 import { Headphones, Sparkles, Video } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import './HomeHeroPanel.css';
 
 const FONCTIONNALITES = [
@@ -27,45 +28,38 @@ const STATUTS = [
 
 export function HomeHeroPanel({ total, audio, video }) {
   const valeurs = { audio, video };
+  const { t } = useTranslation();
 
   return (
-    <aside className="home-hero-panel">
-      <div className="home-hero-panel-badge">
-        <Sparkles size={15} />
-        <span>
-          {total} predication{total > 1 ? 's' : ''} publique{total > 1 ? 's' : ''}
-        </span>
+    <aside className="home-hero-panel-premium">
+      <div className="premium-stat-card">
+        <div className="premium-stat-icon audio-icon">
+          <Headphones size={28} strokeWidth={1.5} />
+        </div>
+        <div className="premium-stat-content">
+          <strong>{valeurs.audio || 0}+</strong>
+          <span>{t('hero_panel.audio')}</span>
+        </div>
       </div>
 
-      <div className="home-hero-panel-divider" />
-
-      <div className="home-hero-panel-stats">
-        {STATUTS.map((statut) => {
-          const Icone = statut.icone;
-          return (
-            <div key={statut.cle} className="home-hero-panel-stat-card">
-              <div className="home-hero-panel-stat-icon">
-                <Icone size={16} />
-              </div>
-              <strong>{valeurs[statut.cle]}</strong>
-              <span>{statut.libelle}</span>
-            </div>
-          );
-        })}
+      <div className="premium-stat-card">
+        <div className="premium-stat-icon video-icon">
+          <Video size={28} strokeWidth={1.5} />
+        </div>
+        <div className="premium-stat-content">
+          <strong>{valeurs.video || 0}+</strong>
+          <span>{t('hero_panel.video')}</span>
+        </div>
       </div>
 
-      <div className="home-hero-panel-divider" />
-
-      <div className="home-hero-panel-features">
-        {FONCTIONNALITES.map((fonctionnalite) => {
-          const Icone = fonctionnalite.icone;
-          return (
-            <div key={fonctionnalite.texte} className="home-hero-panel-feature">
-              <Icone size={16} />
-              <span>{fonctionnalite.texte}</span>
-            </div>
-          );
-        })}
+      <div className="premium-stat-card highlight">
+        <div className="premium-stat-icon spark-icon">
+          <Sparkles size={28} strokeWidth={1.5} />
+        </div>
+        <div className="premium-stat-content">
+          <strong>{total}+</strong>
+          <span>{t('hero_panel.total')}</span>
+        </div>
       </div>
     </aside>
   );

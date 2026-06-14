@@ -23,6 +23,7 @@ from .views import (
     StatistiquesGlobalesView,
     SupprimerCompteView,
     VerificationEmailView,
+    NotificationViewSet,
 )
 
 router = DefaultRouter()
@@ -37,6 +38,7 @@ router.register(r'favoris', FavoriViewSet, basename='favori')
 router.register(r'abonnements', AbonnementViewSet, basename='abonnement')
 router.register(r'historique-lecture', HistoriqueLectureViewSet, basename='historique-lecture')
 router.register(r'signalements', SignalementViewSet, basename='signalement')
+router.register(r'notifications', NotificationViewSet, basename='notification')
 
 urlpatterns = [
     path('', include(router.urls)),

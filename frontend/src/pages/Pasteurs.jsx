@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { api, extraireListe } from '../services/api';
 import './Pasteurs.css';
 
 export function Pasteurs() {
+  const { t } = useTranslation();
   const [pasteurs, setPasteurs] = useState([]);
   const [recherche, setRecherche] = useState('');
   const [chargement, setChargement] = useState(true);
@@ -25,7 +27,7 @@ export function Pasteurs() {
         }
       } catch (error) {
         if (active) {
-          setErreur(error.response?.data?.detail || 'Impossible de charger les pasteurs.');
+          setErreur(error.response?.data?.detail || t('pastors.load_error'));
         }
       } finally {
         if (active) {
@@ -43,61 +45,73 @@ export function Pasteurs() {
   const pasteursAffiches = useMemo(() => pasteurs, [pasteurs]);
 
   return (
-    <section className="pasteurs-page">
-      <header className="pasteurs-hero">
-        <p className="section-kicker">Communautes</p>
-        <h1>Pasteurs et eglises</h1>
-        <p>
-          Parcourez les ministeres presentes sur la plateforme et retrouvez leurs predications,
-          leurs series et leurs thematiques.
-        </p>
-        {!chargement && !erreur ? (
-          <div className="pasteurs-summary">
-            <span>{pasteursAffiches.length} profil{pasteursAffiches.length > 1 ? 's' : ''}</span>
-          </div>
-        ) : null}
-      </header>
+    <section className="pasteurs-container">
+      {/* HERO */}
+      <div className="pasteurs-hero-wrapper">
+        <header className="pasteurs-hero">
+          <p className="section-kicker">{t('pastors.kicker')}</p>
+          <h1>{t('pastors.title')}</h1>
+          <p>
+            {t('pastors.subtitle')}
+          </p>
+          {!chargement && !erreur ? (
+            <div className="pasteurs-summary">
+              <span>{pasteursAffiches.length} {pasteursAffiches.length > 1 ? t('pastors.profile_plural') : t('pastors.profile_singular')} {pasteursAffiches.length > 1 ? t('pastors.registered_plural') : t('pastors.registered_singular')}</span>
+            </div>
+          ) : null}
+        </header>
+      </div>
 
-      <section className="glass-card pasteurs-toolbar">
-        <label className="pasteurs-search">
-          <Search size={18} />
+      {/* CORPS */}
+      <div className="pasteurs-body">
+
+      <section className="pasteurs-toolbar">
+        <div className="pasteurs-search">
+          <Search className="search-icon-large" size={20} />
           <input
             value={recherche}
             onChange={(event) => setRecherche(event.target.value)}
-            placeholder="Rechercher un pasteur ou une eglise"
+            placeholder={t('pastors.search_placeholder')}
           />
-        </label>
+        </div>
       </section>
 
-      {chargement ? <p className="page-state">Chargement des pasteurs...</p> : null}
-      {erreur ? <p className="page-state error">{erreur}</p> : null}
+      {chargement && (
+        <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+          <Loader2 size={32} style={{ margin: '0 auto 1rem', display: 'block', animation: 'spin 1s linear infinite' }} />
+          <p>{t('pastors.loading')}</p>
+        </div>
+      )}
+      
+      {erreur && <p className="page-state" style={{ color: '#ef4444' }}>{erreur}</p>}
 
       {!chargement && !erreur ? (
         pasteursAffiches.length ? (
           <div className="pasteurs-grid">
             {pasteursAffiches.map((pasteur) => (
-              <Link key={pasteur.id} to={`/pasteurs/${pasteur.id}`} className="pasteur-card glass-card">
+              <Link key={pasteur.id} to={`/pasteurs/${pasteur.id}`} className="pasteur-card">
                 <div className="pasteur-avatar">
                   {pasteur.avatar ? (
                     <img src={pasteur.avatar} alt={pasteur.nom_affichage} />
                   ) : (
-                    <span>{pasteur.nom_affichage.charAt(0)}</span>
+                    <span>{pasteur.nom_affichage.charAt(0).toUpperCase()}</span>
                   )}
                 </div>
-                <div>
-                  <h2>{pasteur.nom_affichage}</h2>
-                  <p className="pasteur-eglise">{pasteur.nom_eglise || 'Eglise non renseignee'}</p>
-                  <p className="pasteur-bio">
-                    {pasteur.biographie || 'Profil en cours de presentation.'}
-                  </p>
-                </div>
+                <h2>{pasteur.nom_affichage}</h2>
+                <p className="pasteur-eglise">{pasteur.nom_eglise || t('pastors.unknown_church')}</p>
+                <p className="pasteur-bio">
+                  {pasteur.biographie || t('pastors.no_bio')}
+                </p>
               </Link>
             ))}
           </div>
         ) : (
-          <p className="page-state">Aucun pasteur ne correspond a cette recherche.</p>
+          <p className="page-state">{t('pastors.no_pastors_found')}</p>
         )
       ) : null}
+      </div>{/* fin pasteurs-body */}
     </section>
   );
 }
+
+export default Pasteurs;
