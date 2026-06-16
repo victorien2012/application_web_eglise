@@ -1,0 +1,210 @@
+.carrousel-modal-content {
+  max-width: 600px;
+  width: 95%;
+}
+
+.carrousel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.carrousel-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.carrousel-form label {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+
+.carrousel-form input[type="text"],
+.carrousel-form input[type="url"],
+.carrousel-form input[type="number"],
+.carrousel-form textarea {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.carrousel-form input:focus,
+.carrousel-form textarea:focus {
+  outline: none;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.carrousel-form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.carrousel-form .help-text {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
+}
+
+/* Type Toggles */
+.type-media-toggles {
+  display: flex;
+  gap: 1rem;
+}
+
+.type-toggle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.type-toggle:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.type-toggle.active {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: #f59e0b;
+  color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+/* File Upload */
+.file-upload-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.file-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 2px dashed var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-main);
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.file-upload-btn:hover {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+  color: #f59e0b;
+}
+
+.media-preview-container {
+  margin-top: 1rem;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 250px;
+}
+
+.media-preview {
+  max-width: 100%;
+  max-height: 250px;
+  object-fit: contain;
+}
+
+/* Checkbox (Re-used pattern) */
+.carrousel-form .checkbox-label {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding-left: 35px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.carrousel-form .checkbox-label input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.carrousel-form .checkmark {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  height: 24px;
+  width: 24px;
+  background-color: var(--bg-main);
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.carrousel-form .checkbox-label:hover input ~ .checkmark {
+  border-color: #f59e0b;
+}
+
+.carrousel-form .checkbox-label input:checked ~ .checkmark {
+  background-color: #f59e0b;
+  border-color: #f59e0b;
+}
+
+.carrousel-form .checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.carrousel-form .checkbox-label input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.carrousel-form .checkmark:after {
+  left: 8px;
+  top: 4px;
+  width: 6px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.carrousel-form .required {
+  color: #ef4444;
+  margin-left: 0.2rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}

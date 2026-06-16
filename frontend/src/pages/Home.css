@@ -668,3 +668,147 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   ANNOUNCEMENT BANNER
+   ========================================================================== */
+.announcements-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 20;
+}
+
+/* Effet Cinématique "Toast / Slide" avec flou */
+@keyframes cinematicSlide {
+  0% { 
+    opacity: 0; 
+    transform: translateY(-40px) scale(0.98); 
+    filter: blur(12px); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+    filter: blur(0); 
+  }
+}
+
+@keyframes gradientPan {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.announcement-banner {
+  /* Gradient "Aurore Boréale" Animé (Bleu -> Violet -> Rose -> Or) */
+  background: linear-gradient(270deg, #1e3a8a, #581c87, #be185d, #b45309);
+  background-size: 400% 400%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 1.2rem 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  box-shadow: 0 10px 40px rgba(88, 28, 135, 0.3);
+  overflow: hidden;
+  position: relative;
+  opacity: 0; 
+  animation: 
+    cinematicSlide 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+    gradientPan 15s ease infinite;
+}
+
+/* Douce vague lumineuse (Shimmer subtil) */
+@keyframes cinematicShimmer {
+  0% { transform: skewX(-20deg) translateX(-150%); }
+  100% { transform: skewX(-20deg) translateX(300%); }
+}
+
+.announcement-banner::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,0.15), rgba(255,255,255,0));
+  transform: skewX(-20deg) translateX(-150%);
+  animation: cinematicShimmer 6s infinite cubic-bezier(0.4, 0, 0.2, 1) 2s;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.announcement-banner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: #facc15; /* Yellow accent */
+  border-radius: 4px 0 0 4px;
+  z-index: 2;
+}
+
+.announcement-banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 50px rgba(190, 24, 93, 0.4);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.announcement-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+  animation: gentleBadgePulse 3s infinite ease-in-out;
+}
+
+@keyframes gentleBadgePulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 255, 255, 0); }
+  50% { box-shadow: 0 0 8px rgba(255, 255, 255, 0.5); }
+}
+
+.announcement-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* Animation Texte Flottant */
+@keyframes textFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.floating-text {
+  display: inline-block;
+  animation: textFloat 4s ease-in-out infinite;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.floating-text-delay {
+  display: inline-block;
+  animation: textFloat 4s ease-in-out infinite 2s;
+  color: rgba(255, 255, 255, 0.85); /* Visible on dark background */
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}

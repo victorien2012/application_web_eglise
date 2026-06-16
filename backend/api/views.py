@@ -40,6 +40,8 @@ from .models import (
     Serie,
     Signalement,
     Notification,
+    Annonce,
+    CarrouselMedia,
 )
 from .serializers import (
     AbonnementSerializer,
@@ -61,7 +63,10 @@ from .serializers import (
     SignalementSerializer,
     UtilisateurSerializer,
     NotificationSerializer,
+    NotificationSerializer,
     VerificationEmailSerializer,
+    AnnonceSerializer,
+    CarrouselMediaSerializer,
 )
 
 
@@ -1102,10 +1107,104 @@ class PasteurViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['nom_affichage', 'nom_eglise']
 
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def creer_compte_admin(self, request):
+        """Create a pastor account directly from admin interface.
+        Expected fields: username, email, password, nom_affichage, nom_eglise (optional), contact (optional), avatar (optional), logo_eglise (optional)."""
+        required = ['username', 'email', 'password', 'nom_affichage']
+        missing = [f for f in required if not request.data.get(f)]
+        if missing:
+            return Response({"detail": f"Champs manquants: {', '.join(missing)}"}, status=status.HTTP_400_BAD_REQUEST)
+        username = request.data['username']
+        email = request.data['email']
+        password = request.data['password']
+        nom_affichage = request.data['nom_affichage']
+        nom_eglise = request.data.get('nom_eglise', '')
+        contact = request.data.get('contact', '')
+        avatar = request.data.get('avatar')
+        logo_eglise = request.data.get('logo_eglise')
+        if User.objects.filter(username=username).exists():
+            return Response({"username": ["Ce nom d'utilisateur est déjà pris."]}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(email=email).exists():
+            return Response({"email": ["Cette adresse email est déjà utilisée."]}, status=status.HTTP_400_BAD_REQUEST)
+        user = User.objects.create_user(username=username, email=email, password=password)
+        # Create profile utilisateur if needed
+        ProfilUtilisateur.objects.create(utilisateur=user, contact=contact)
+        pasteur = Pasteur.objects.create(
+            utilisateur=user,
+            nom_affichage=nom_affichage,
+            nom_eglise=nom_eglise,
+            contact=contact,
+            avatar=avatar,
+            logo_eglise=logo_eglise,
+            est_valide=True,
+            est_rejete=False,
+            cree_par_admin=True,
+        )
+        serializer = self.get_serializer(pasteur)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser],
+            url_path='admin_synchroniser_youtube')
+    def admin_synchroniser_youtube(self, request, pk=None):
+        """Permet à un admin de synchroniser la chaîne YouTube d'un pasteur créé par l'admin."""
+        try:
+            pasteur = Pasteur.objects.get(id=pk, cree_par_admin=True)
+        except Pasteur.DoesNotExist:
+            return Response(
+                {"detail": "Pasteur introuvable ou non créé par l'admin."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        lien = (request.data.get('lien_youtube') or '').strip()
+        if not lien:
+            return Response(
+                {"lien_youtube": "Le lien de la chaîne YouTube est requis."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        api_key = os.environ.get('GOOGLE_API_KEY')
+        if not api_key:
+            return Response(
+                {"detail": "L'import YouTube n'est pas configuré sur le serveur (clé API absente)."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        try:
+            from googleapiclient.discovery import build
+            service = build('youtube', 'v3', developerKey=api_key, cache_discovery=False)
+            channel_id = resoudre_channel_id_youtube(service, lien)
+        except Exception as erreur:
+            logger.exception("Echec resolution chaine YouTube : %s", erreur)
+            return Response(
+                {"detail": "Impossible de joindre YouTube pour le moment. Réessayez plus tard."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        if not channel_id:
+            return Response(
+                {"lien_youtube": "Chaîne introuvable. Vérifiez le lien "
+                                 "(ex : https://www.youtube.com/@votrechaine)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        pasteur.lien_youtube = lien
+        pasteur.save(update_fields=['lien_youtube'])
+        lancer_import_youtube_async(channel_id, pasteur.id)
+
+        return Response(
+            {
+                "detail": "Import démarré. Les vidéos apparaîtront dans la bibliothèque "
+                          "dans quelques instants — rafraîchissez la page.",
+                "channel_id": channel_id,
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
+
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy', 'synchroniser_youtube']:
             return [permissions.IsAuthenticated()]
-        if self.action in ['valider', 'a_valider']:
+        if self.action in ['valider', 'a_valider', 'admin_synchroniser_youtube', 'creer_compte_admin']:
             return [permissions.IsAdminUser()]
         return [permissions.AllowAny()]
 
@@ -1133,6 +1232,17 @@ class PasteurViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
         return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        pasteur = self.get_object()
+        if not request.user.is_staff and pasteur.utilisateur != request.user:
+            return Response(
+                {"detail": "Vous n'avez pas la permission de supprimer ce compte."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        user_to_delete = pasteur.utilisateur
+        user_to_delete.delete() # Supprime l'utilisateur et par cascade le profil pasteur
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'])
     def a_valider(self, request):
@@ -1361,17 +1471,28 @@ class PredicationViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        try:
-            pasteur = self.request.user.profil_pasteur
-            if not pasteur.est_valide:
-                raise serializers.ValidationError(
-                    {"detail": "Votre compte n'est pas encore validé. Vous ne pouvez pas publier de prédications."}
-                )
+        # Admins can create predications for any validated pastor via pasteur_id in request data
+        if self.request.user.is_staff:
+            pasteur_id = self.request.data.get('pasteur_id')
+            if not pasteur_id:
+                raise serializers.ValidationError({"pasteur_id": ["Champ requis pour les administrateurs."]})
+            try:
+                pasteur = Pasteur.objects.get(id=pasteur_id, est_valide=True)
+            except Pasteur.DoesNotExist:
+                raise serializers.ValidationError({"detail": "Pasteur spécifié introuvable ou non validé."})
             serializer.save(pasteur=pasteur)
-        except Pasteur.DoesNotExist:
-            raise serializers.ValidationError(
-                {"detail": "Seuls les pasteurs authentifiés peuvent créer des prédications."}
-            )
+        else:
+            try:
+                pasteur = self.request.user.profil_pasteur
+                if not pasteur.est_valide:
+                    raise serializers.ValidationError(
+                        {"detail": "Votre compte n'est pas encore validé. Vous ne pouvez pas publier de prédications."}
+                    )
+                serializer.save(pasteur=pasteur)
+            except Pasteur.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"detail": "Seuls les pasteurs authentifiés peuvent créer des prédications."}
+                )
 
     def perform_update(self, serializer):
         predication = self.get_object()
@@ -1758,3 +1879,48 @@ class SignalementViewSet(viewsets.ModelViewSet):
         signalement.statut = nouveau_statut
         signalement.save(update_fields=['statut'])
         return Response({"id": signalement.id, "statut": signalement.statut})
+
+
+class AnnonceViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet pour les annonces.
+    Publique en lecture (uniquement actives), CRUD complet pour les administrateurs (toutes).
+    """
+    serializer_class = AnnonceSerializer
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]
+
+    def get_queryset(self):
+        base_qs = Annonce.objects.all().order_by('-cree_le')
+        if self.request.user.is_staff:
+            return base_qs
+            
+        maintenant = timezone.now()
+        return base_qs.filter(
+            est_actif=True
+        ).filter(
+            Q(date_expiration__isnull=True) | Q(date_expiration__gt=maintenant)
+        )
+
+
+class CarrouselMediaViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet pour les médias du carrousel de la page d'accueil.
+    Publique en lecture (uniquement les médias actifs), CRUD pour les administrateurs.
+    """
+    serializer_class = CarrouselMediaSerializer
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]
+
+    def get_queryset(self):
+        base_qs = CarrouselMedia.objects.all().order_by('ordre', '-cree_le')
+        if self.request.user.is_staff:
+            return base_qs
+        return base_qs.filter(est_actif=True)
+

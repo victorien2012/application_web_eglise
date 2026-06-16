@@ -20,6 +20,8 @@ from .models import (
     Serie,
     Signalement,
     Notification,
+    Annonce,
+    CarrouselMedia,
 )
 
 
@@ -38,11 +40,11 @@ class PasteurSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'username', 'email', 'nom_affichage', 'biographie',
             'avatar', 'nom_eglise', 'contact', 'logo_eglise', 'lien_twitter', 'lien_facebook',
-            'lien_youtube', 'cree_le', 'est_valide', 'est_rejete'
+            'lien_youtube', 'cree_le', 'est_valide', 'est_rejete', 'cree_par_admin'
         )
         # La validation d'un pasteur est une action reservee a l'administration
         # (voir PasteurViewSet.valider); un pasteur ne peut pas s'auto-valider.
-        read_only_fields = ('est_valide', 'est_rejete')
+        read_only_fields = ('est_valide', 'est_rejete', 'cree_par_admin')
 
 
 class PasteurMinimalSerializer(serializers.ModelSerializer):
@@ -301,6 +303,13 @@ class NotificationSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'message', 'type_notification', 'cree_le')
 
 
+class AnnonceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Annonce
+        fields = ('id', 'titre', 'message', 'est_actif', 'cree_le', 'date_expiration')
+        read_only_fields = ('id', 'cree_le')
+
+
 class AbonnementSerializer(serializers.ModelSerializer):
     utilisateur = UtilisateurSerializer(read_only=True)
     pasteur_detail = PasteurMinimalSerializer(source='pasteur', read_only=True)
@@ -420,3 +429,8 @@ class VerificationEmailSerializer(serializers.Serializer):
     uid = serializers.CharField()
     token = serializers.CharField()
 
+
+class CarrouselMediaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CarrouselMedia
+        fields = '__all__'

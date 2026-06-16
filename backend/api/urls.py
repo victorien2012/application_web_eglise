@@ -24,6 +24,8 @@ from .views import (
     SupprimerCompteView,
     VerificationEmailView,
     NotificationViewSet,
+    AnnonceViewSet,
+    CarrouselMediaViewSet,
 )
 
 router = DefaultRouter()
@@ -39,6 +41,8 @@ router.register(r'abonnements', AbonnementViewSet, basename='abonnement')
 router.register(r'historique-lecture', HistoriqueLectureViewSet, basename='historique-lecture')
 router.register(r'signalements', SignalementViewSet, basename='signalement')
 router.register(r'notifications', NotificationViewSet, basename='notification')
+router.register(r'annonces', AnnonceViewSet, basename='annonce')
+router.register(r'carrousel', CarrouselMediaViewSet, basename='carrousel')
 
 urlpatterns = [
     path('', include(router.urls)),

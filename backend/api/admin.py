@@ -15,6 +15,7 @@ from .models import (
     Serie,
     Signalement,
     DemandePasteur,
+    Annonce,
 )
 
 
@@ -139,3 +140,11 @@ class JournalAnalytiqueAdmin(admin.ModelAdmin):
     list_display = ('type_action', 'predication', 'cree_le', 'adresse_ip')
     list_filter = ('type_action', 'cree_le')
     readonly_fields = ('type_action', 'predication', 'cree_le', 'adresse_ip')
+
+
+@admin.register(Annonce)
+class AnnonceAdmin(admin.ModelAdmin):
+    list_display = ('titre', 'est_actif', 'cree_le', 'date_expiration')
+    list_filter = ('est_actif', 'cree_le')
+    search_fields = ('titre', 'message')
+

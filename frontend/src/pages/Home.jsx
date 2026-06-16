@@ -8,6 +8,7 @@ import { SermonCard } from '../components/SermonCard';
 import { Button } from '../components/Button';
 import { api, extraireListe } from '../services/api';
 import { SermonCardSkeleton, PastorCardSkeleton } from '../components/SkeletonLoader';
+import HomeCarousel from '../components/HomeCarousel';
 
 import './Home.css';
 
@@ -15,6 +16,8 @@ export function Home() {
   const { t } = useTranslation();
   const [predications, setPredications] = useState([]);
   const [pasteurs, setPasteurs] = useState([]);
+  const [annonces, setAnnonces] = useState([]);
+  const [carrouselMedias, setCarrouselMedias] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState('');
 
@@ -26,15 +29,19 @@ export function Home() {
 
     const charger = async () => {
       try {
-        const [resPredications, resPasteurs] = await Promise.all([
+        const [resPredications, resPasteurs, resAnnonces, resCarrousel] = await Promise.all([
           api.get('/predications/'),
-          api.get('/pasteurs/')
+          api.get('/pasteurs/'),
+          api.get('/annonces/'),
+          api.get('/carrousel/')
         ]);
 
         if (!active) return;
 
         setPredications(extraireListe(resPredications.data));
         setPasteurs(extraireListe(resPasteurs.data));
+        setAnnonces(extraireListe(resAnnonces.data));
+        setCarrouselMedias(extraireListe(resCarrousel.data));
         setErreur('');
       } catch (error) {
         if (!active) return;
@@ -112,6 +119,19 @@ export function Home() {
 
       {/* ================= HERO PREMIUM ================= */}
       <div className="home-premium-hero-wrapper">
+        {!isLoading && !hasError && annonces.length > 0 && (
+          <div className="announcements-container fade-in-up" style={{ animationDelay: '0.05s' }}>
+            {annonces.map(annonce => (
+              <div key={annonce.id} className="announcement-banner">
+                <div className="announcement-badge">{t('home.announcement_badge', 'Info')}</div>
+                <div className="announcement-content">
+                  <strong className="floating-text">{annonce.titre}</strong>
+                  {annonce.message && <p className="floating-text-delay">{annonce.message}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         <header className="home-hero">
 
           <div className="home-hero-copy">
@@ -142,20 +162,7 @@ export function Home() {
           </div>
 
           <div className="fade-in-up" style={{ animationDelay: '0.6s' }}>
-            <div className="animate-eagle-fly">
-              <img 
-                src="/user_eagle.png" 
-                alt="Aigle majestueux en vol" 
-                style={{ 
-                  width: '100%', 
-                  objectFit: 'contain', 
-                  height: '100%', 
-                  maxHeight: '800px', 
-                  transform: 'scale(1.3)',
-                  filter: 'drop-shadow(0 15px 25px rgba(0, 0, 0, 0.4))' 
-                }} 
-              />
-            </div>
+            <HomeCarousel medias={carrouselMedias} />
           </div>
 
         </header>

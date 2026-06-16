@@ -39,8 +39,9 @@
     "all_pastors": "All Pastors",
     "unknown_church": "Church not specified",
     "recent_title": "Latest Publications",
-    "recent_subtitle": "Most recently added content on the platform.",
-    "no_recent": "No sermons available.",
+    "recent_subtitle": "Discover the latest additions",
+    "no_recent": "No recent sermons available.",
+    "announcement_badge": "Info",
     "error_loading": "Unable to load sermons."
   },
   "footer": {

@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
-import { ShieldCheck, Flag, BadgeCheck, BarChart3, CheckCircle, XCircle, Clock, AlertTriangle, Users, Video, Eye, Download, MessageSquare, Heart, Bell } from 'lucide-react';
+import { ShieldCheck, Flag, BadgeCheck, BarChart3, CheckCircle, XCircle, Trash2, Clock, AlertTriangle, Users, Video, Eye, Download, MessageSquare, Heart, Bell, Megaphone, Edit, MonitorPlay } from 'lucide-react';
 import { api, extraireListe } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../components/Button';
+import { CreatePasteurModal } from '../components/CreatePasteurModal';
+import { PublishMediaModal } from '../components/PublishMediaModal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { AnnonceModal } from '../components/AnnonceModal';
+import CarrouselModal from '../components/CarrouselModal';
 import Pagination from '../components/Pagination';
 import './Administration.css';
+import './PastorDashboard.css';
 
 export function Administration() {
   const { t } = useTranslation();
@@ -20,6 +25,8 @@ export function Administration() {
   const [stats, setStats] = useState(null);
   const [pasteurs, setPasteurs] = useState([]);
   const [signalements, setSignalements] = useState([]);
+  const [annonces, setAnnonces] = useState([]);
+  const [carrouselMedias, setCarrouselMedias] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState('');
   const [messageSucces, setMessageSucces] = useState('');
@@ -29,8 +36,12 @@ export function Administration() {
   const [filtreStatutPasteur, setFiltreStatutPasteur] = useState('tous');
   const [pagePasteurs, setPagePasteurs] = useState(1);
   const [pageSignalements, setPageSignalements] = useState(1);
+  const [pageAnnonces, setPageAnnonces] = useState(1);
+  const [pageCarrousel, setPageCarrousel] = useState(1);
   const ELEMENTS_PAR_PAGE = 5;
+  const [ongletActif, setOngletActif] = useState('apercu');
   
+  // Existing generic confirm modal state
   const [modalOuvert, setModalOuvert] = useState(false);
   const [modalConfig, setModalConfig] = useState({
     titre: '',
@@ -40,6 +51,20 @@ export function Administration() {
     icone: null,
     action: () => {}
   });
+
+  // New state for Create Pasteur modal
+  const [showCreatePasteur, setShowCreatePasteur] = useState(false);
+  // New state for Publish Media modal
+  const [showPublishMedia, setShowPublishMedia] = useState(false);
+  const [selectedPasteurId, setSelectedPasteurId] = useState(null);
+
+  // Annonces Modal state
+  const [showAnnonceModal, setShowAnnonceModal] = useState(false);
+  const [annonceSelectionnee, setAnnonceSelectionnee] = useState(null);
+
+  // Carrousel Modal state
+  const [showCarrouselModal, setShowCarrouselModal] = useState(false);
+  const [carrouselSelectionne, setCarrouselSelectionne] = useState(null);
 
   const ICONES_STATUT = {
     NOUVEAU: AlertTriangle,
@@ -51,14 +76,18 @@ export function Administration() {
   async function charger() {
     setChargement(true);
     try {
-      const [statsRes, pasteursRes, signalementsRes] = await Promise.all([
+      const [statsRes, pasteursRes, signalementsRes, annoncesRes, carrouselRes] = await Promise.all([
         api.get('/admin/statistiques/'),
         api.get('/pasteurs/'),
         api.get('/signalements/'),
+        api.get('/annonces/'),
+        api.get('/carrousel/')
       ]);
       setStats(statsRes.data);
       setPasteurs(extraireListe(pasteursRes.data));
       setSignalements(extraireListe(signalementsRes.data));
+      setAnnonces(extraireListe(annoncesRes.data));
+      setCarrouselMedias(extraireListe(carrouselRes.data));
       setErreur('');
     } catch (error) {
       setErreur(error.response?.data?.detail || t('admin.load_error'));
@@ -118,6 +147,21 @@ export function Administration() {
     }
   }
 
+  async function supprimerPasteur(pasteur) {
+    setActionEnCours(`supprimer-${pasteur.id}`);
+    try {
+      await api.delete(`/pasteurs/${pasteur.id}/`);
+      setPasteurs((actuels) => actuels.filter(p => p.id !== pasteur.id));
+      setMessageSucces(t('admin.success_delete', 'Le compte pasteur a été supprimé.'));
+      setErreur('');
+    } catch {
+      setErreur(t('admin.delete_error', 'Erreur lors de la suppression.'));
+      setMessageSucces('');
+    } finally {
+      setActionEnCours(null);
+    }
+  }
+
   async function changerStatut(signalement, statut) {
     try {
       const response = await api.post(`/signalements/${signalement.id}/changer_statut/`, { statut });
@@ -129,6 +173,52 @@ export function Administration() {
     } catch {
       setErreur(t('admin.status_change_error'));
       setMessageSucces('');
+    }
+  }
+
+  async function supprimerAnnonce(annonce) {
+    try {
+      await api.delete(`/annonces/${annonce.id}/`);
+      setAnnonces((actuels) => actuels.filter(a => a.id !== annonce.id));
+      setMessageSucces('L\'annonce a été supprimée avec succès.');
+      setErreur('');
+    } catch {
+      setErreur('Erreur lors de la suppression de l\'annonce.');
+      setMessageSucces('');
+    }
+  }
+
+  async function supprimerCarrousel(media) {
+    try {
+      await api.delete(`/carrousel/${media.id}/`);
+      setCarrouselMedias((actuels) => actuels.filter(m => m.id !== media.id));
+      setMessageSucces('Le média a été supprimé avec succès.');
+      setErreur('');
+    } catch {
+      setErreur('Erreur lors de la suppression du média.');
+      setMessageSucces('');
+    }
+  }
+
+  async function sauvegarderCarrousel(formData) {
+    try {
+      if (carrouselSelectionne) {
+        await api.put(`/carrousel/${carrouselSelectionne.id}/`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        setMessageSucces("Média mis à jour avec succès.");
+      } else {
+        await api.post('/carrousel/', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        setMessageSucces("Média ajouté au carrousel.");
+      }
+      setShowCarrouselModal(false);
+      setCarrouselSelectionne(null);
+      charger();
+    } catch (error) {
+      console.error(error);
+      setErreur("Erreur lors de l'enregistrement du média.");
     }
   }
 
@@ -151,6 +241,14 @@ export function Administration() {
   const signalementsAffiches = signalements.slice(indexDebutSignalements, indexDebutSignalements + ELEMENTS_PAR_PAGE);
   const totalPagesSignalements = Math.ceil(signalements.length / ELEMENTS_PAR_PAGE);
 
+  const indexDebutAnnonces = (pageAnnonces - 1) * ELEMENTS_PAR_PAGE;
+  const annoncesAffiches = annonces.slice(indexDebutAnnonces, indexDebutAnnonces + ELEMENTS_PAR_PAGE);
+  const totalPagesAnnonces = Math.ceil(annonces.length / ELEMENTS_PAR_PAGE);
+
+  const indexDebutCarrousel = (pageCarrousel - 1) * ELEMENTS_PAR_PAGE;
+  const carrouselAffiches = carrouselMedias.slice(indexDebutCarrousel, indexDebutCarrousel + ELEMENTS_PAR_PAGE);
+  const totalPagesCarrousel = Math.ceil(carrouselMedias.length / ELEMENTS_PAR_PAGE);
+
   if (chargement) {
     return (
       <div className="admin-loading">
@@ -161,24 +259,48 @@ export function Administration() {
   }
 
   return (
-    <div className="admin-page">
-      {/* En-tête */}
-      <header className="admin-hero">
-        <div className="admin-hero-content">
-          <div className="admin-hero-icon">
-            <ShieldCheck size={28} />
-          </div>
-          <div>
-            <h1>{t('admin.title')}</h1>
-            <p>{t('admin.subtitle')}</p>
+    <div className="dashboard-container" style={{ padding: 0 }}>
+      {/* Barre Latérale */}
+      <aside className="dashboard-sidebar">
+        <div className="sidebar-header">
+          <h2>{t('admin.title')}</h2>
+        </div>
+        <nav className="sidebar-menu">
+          <button type="button" className={`menu-item ${ongletActif === 'apercu' ? 'active' : ''}`} onClick={() => setOngletActif('apercu')}>
+            <BarChart3 size={18} />
+            <span>Tableau de bord</span>
+          </button>
+          <button type="button" className={`menu-item ${ongletActif === 'pasteurs' ? 'active' : ''}`} onClick={() => setOngletActif('pasteurs')}>
+            <Users size={18} />
+            <span>Demandes Pasteurs</span>
+          </button>
+          <button type="button" className={`menu-item ${ongletActif === 'signalements' ? 'active' : ''}`} onClick={() => setOngletActif('signalements')}>
+            <ShieldCheck size={18} />
+            <span>Modération</span>
+          </button>
+          <button type="button" className={`menu-item ${ongletActif === 'annonces' ? 'active' : ''}`} onClick={() => setOngletActif('annonces')}>
+            <Megaphone size={18} />
+            <span>Annonces</span>
+          </button>
+          <button type="button" className={`menu-item ${ongletActif === 'carrousel' ? 'active' : ''}`} onClick={() => setOngletActif('carrousel')}>
+            <MonitorPlay size={18} />
+            <span>Carrousel</span>
+          </button>
+        </nav>
+      </aside>
+
+      <main className="dashboard-content">
+        <div className="dashboard-topbar">
+          <div className="dashboard-title-area">
+            <h1>{t('admin.subtitle')}</h1>
+            <p>Gérez le contenu et les utilisateurs</p>
           </div>
         </div>
         {erreur ? <div className="admin-alert-error">{erreur}</div> : null}
         {messageSucces ? <div className="admin-alert-success">{messageSucces}</div> : null}
-      </header>
 
       {/* KPIs */}
-      {stats ? (
+      {ongletActif === 'apercu' && stats ? (
         <section className="admin-section">
           <div className="admin-section-header">
             <BarChart3 size={20} />
@@ -245,7 +367,8 @@ export function Administration() {
         </section>
       ) : null}
 
-      {/* Pasteurs */}
+      {/* Demandes Pasteurs */}
+      {ongletActif === 'pasteurs' && (
       <section className="admin-section">
         <div className="admin-section-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -255,6 +378,9 @@ export function Administration() {
           </div>
           
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <Button variant="primary" onClick={() => setShowCreatePasteur(true)} style={{ fontSize: '0.9rem' }}>
+              {t('admin.create_pastor', 'Créer un pasteur')}
+            </Button>
             <input 
               type="text" 
               placeholder="Rechercher par nom, église, email..." 
@@ -318,6 +444,11 @@ export function Administration() {
                     <td>{new Date(pasteur.cree_le).toLocaleDateString()}</td>
                     <td>
                       <div className="admin-table-actions">
+                        {pasteur.cree_par_admin && (
+                          <Button variant="secondary" onClick={() => { setSelectedPasteurId(pasteur.id); setShowPublishMedia(true); }} style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
+                            {t('admin.publish_media', 'Publier un média')}
+                          </Button>
+                        )}
                         {!pasteur.est_valide && (
                           <Button
                             variant="green"
@@ -348,12 +479,28 @@ export function Administration() {
                               XCircle,
                               () => rejeterPasteur(pasteur)
                             )}
-                            disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}`}
+                            disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}` || actionEnCours === `supprimer-${pasteur.id}`}
                             style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
                           >
                             {t('admin.reject_btn')}
                           </Button>
                         )}
+                        <Button
+                          variant="red"
+                          icon={Trash2}
+                          onClick={() => demanderConfirmation(
+                            'Supprimer le compte',
+                            `Êtes-vous sûr de vouloir supprimer définitivement le compte de ${pasteur.nom_affichage} ? Cette action est irréversible.`,
+                            'Supprimer',
+                            'danger',
+                            Trash2,
+                            () => supprimerPasteur(pasteur)
+                          )}
+                          disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}` || actionEnCours === `supprimer-${pasteur.id}`}
+                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                        >
+                          Supprimer
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -372,8 +519,10 @@ export function Administration() {
           </div>
         )}
       </section>
+      )}
 
       {/* Signalements */}
+      {ongletActif === 'signalements' && (
       <section className="admin-section">
         <div className="admin-section-header">
           <Flag size={20} />
@@ -463,6 +612,203 @@ export function Administration() {
           </div>
         )}
       </section>
+      )}
+
+      {/* Annonces */}
+      {ongletActif === 'annonces' && (
+      <section className="admin-section">
+        <div className="admin-section-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Megaphone size={20} />
+            <h2>Gestion des Annonces</h2>
+            {annonces.length > 0 && (
+              <span className="admin-badge-count">{annonces.length}</span>
+            )}
+          </div>
+          <Button variant="primary" onClick={() => { setAnnonceSelectionnee(null); setShowAnnonceModal(true); }} style={{ fontSize: '0.9rem' }}>
+            Créer une annonce
+          </Button>
+        </div>
+
+        {annonces.length ? (
+          <div className="datatable-responsive">
+            <table className="premium-table">
+              <thead>
+                <tr>
+                  <th>Titre</th>
+                  <th>Statut</th>
+                  <th>Date d'expiration</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {annoncesAffiches.map((annonce) => (
+                  <tr key={annonce.id} className="datatable-row">
+                    <td className="cell-title">
+                      <strong>{annonce.titre}</strong>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
+                        {annonce.message ? (annonce.message.length > 50 ? annonce.message.substring(0, 50) + '...' : annonce.message) : '-'}
+                      </div>
+                    </td>
+                    <td>
+                      {annonce.est_actif ? (
+                        <span className="status-badge published">Actif</span>
+                      ) : (
+                        <span className="status-badge archived" style={{ color: '#64748b', backgroundColor: '#f1f5f9' }}>Inactif</span>
+                      )}
+                    </td>
+                    <td>
+                      {annonce.date_expiration ? new Date(annonce.date_expiration).toLocaleString() : 'Jamais'}
+                    </td>
+                    <td>
+                      <div className="admin-table-actions">
+                        <Button
+                          variant="secondary"
+                          icon={Edit}
+                          onClick={() => { setAnnonceSelectionnee(annonce); setShowAnnonceModal(true); }}
+                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                        >
+                          Modifier
+                        </Button>
+                        <Button
+                          variant="red"
+                          icon={Trash2}
+                          onClick={() => demanderConfirmation(
+                            'Supprimer l\'annonce',
+                            `Êtes-vous sûr de vouloir supprimer l'annonce "${annonce.titre}" ?`,
+                            'Supprimer',
+                            'danger',
+                            Trash2,
+                            () => supprimerAnnonce(annonce)
+                          )}
+                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                        >
+                          Supprimer
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
+              <Pagination current={pageAnnonces} total={totalPagesAnnonces} onChange={setPageAnnonces} />
+            </div>
+          </div>
+        ) : (
+          <div className="admin-empty-state">
+            <CheckCircle size={32} />
+            <p>Aucune annonce pour le moment.</p>
+          </div>
+        )}
+    </section>
+    )}
+
+      {/* Carrousel */}
+      {ongletActif === 'carrousel' && (
+      <section className="admin-section">
+        <div className="admin-section-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <MonitorPlay size={20} />
+            <h2>Gestion du Carrousel (Page d'accueil)</h2>
+            {carrouselMedias.length > 0 && (
+              <span className="admin-badge-count">{carrouselMedias.length}</span>
+            )}
+          </div>
+          <Button variant="primary" onClick={() => { setCarrouselSelectionne(null); setShowCarrouselModal(true); }} style={{ fontSize: '0.9rem' }}>
+            Ajouter un média
+          </Button>
+        </div>
+
+        {carrouselMedias.length ? (
+          <div className="datatable-responsive">
+            <table className="premium-table">
+              <thead>
+                <tr>
+                  <th>Aperçu</th>
+                  <th>Titre / Type</th>
+                  <th>Ordre</th>
+                  <th>Statut</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {carrouselAffiches.map((media) => (
+                  <tr key={media.id} className="datatable-row">
+                    <td style={{ width: '80px' }}>
+                      {media.type_media === 'IMAGE' ? (
+                        <div style={{ width: '60px', height: '40px', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
+                          <img src={media.fichier} alt="Aperçu" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                      ) : (
+                        <div style={{ width: '60px', height: '40px', borderRadius: '4px', overflow: 'hidden', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                          <Video size={16} />
+                        </div>
+                      )}
+                    </td>
+                    <td className="cell-title">
+                      <strong>{media.titre || 'Sans titre'}</strong>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
+                        {media.type_media === 'IMAGE' ? 'Image' : 'Vidéo'}
+                      </div>
+                    </td>
+                    <td>
+                      <span className="status-badge" style={{ backgroundColor: '#f1f5f9', color: '#334155' }}>
+                        {media.ordre}
+                      </span>
+                    </td>
+                    <td>
+                      {media.est_actif ? (
+                        <span className="status-badge published">Actif</span>
+                      ) : (
+                        <span className="status-badge archived" style={{ color: '#64748b', backgroundColor: '#f1f5f9' }}>Inactif</span>
+                      )}
+                    </td>
+                    <td>
+                      <div className="admin-table-actions">
+                        <Button
+                          variant="secondary"
+                          icon={Edit}
+                          onClick={() => { setCarrouselSelectionne(media); setShowCarrouselModal(true); }}
+                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                        >
+                          Modifier
+                        </Button>
+                        <Button
+                          variant="red"
+                          icon={Trash2}
+                          onClick={() => demanderConfirmation(
+                            'Supprimer le média',
+                            `Êtes-vous sûr de vouloir supprimer ce média du carrousel ?`,
+                            'Supprimer',
+                            'danger',
+                            Trash2,
+                            () => supprimerCarrousel(media)
+                          )}
+                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                        >
+                          Supprimer
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
+              <Pagination current={pageCarrousel} total={totalPagesCarrousel} onChange={setPageCarrousel} />
+            </div>
+          </div>
+        ) : (
+          <div className="admin-empty-state">
+            <CheckCircle size={32} />
+            <p>Aucun média dans le carrousel pour le moment.</p>
+          </div>
+        )}
+      </section>
+      )}
 
       <ConfirmModal 
         isOpen={modalOuvert}
@@ -474,6 +820,38 @@ export function Administration() {
         variant={modalConfig.variante}
         icon={modalConfig.icone}
       />
+      {/* Modals for creating pastor and publishing media */}
+      <CreatePasteurModal
+        isOpen={showCreatePasteur}
+        onClose={() => setShowCreatePasteur(false)}
+        onCreated={() => {
+          charger();
+        }}
+      />
+      <PublishMediaModal
+        isOpen={showPublishMedia}
+        onClose={() => setShowPublishMedia(false)}
+        pasteurId={selectedPasteurId}
+        onPublished={() => {
+          charger();
+        }}
+      />
+      <AnnonceModal
+        isOpen={showAnnonceModal}
+        onClose={() => { setShowAnnonceModal(false); setAnnonceSelectionnee(null); }}
+        onSaved={() => {
+          setMessageSucces(annonceSelectionnee ? "L'annonce a été modifiée avec succès." : "L'annonce a été créée avec succès.");
+          charger();
+        }}
+        annonceInitiale={annonceSelectionnee}
+      />
+      <CarrouselModal
+        isOpen={showCarrouselModal}
+        onClose={() => { setShowCarrouselModal(false); setCarrouselSelectionne(null); }}
+        onSave={sauvegarderCarrousel}
+        mediaToEdit={carrouselSelectionne}
+      />
+      </main>
     </div>
   );
 }

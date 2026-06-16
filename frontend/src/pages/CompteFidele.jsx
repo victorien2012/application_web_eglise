@@ -56,7 +56,12 @@ export function CompteFidele() {
           setErreur("Ce compte est un compte ministère. Veuillez vous connecter via l'espace Pasteur.");
           return;
         }
-        navigate(depuis || '/', { replace: true });
+        if (session.estAdmin) {
+          // Admin user, redirect to admin dashboard
+          navigate('/administration', { replace: true });
+        } else {
+          navigate(depuis || '/', { replace: true });
+        }
       } else {
         await inscription({ username, email, password, contact, est_pasteur: false });
         navigate(depuis || '/', { replace: true });

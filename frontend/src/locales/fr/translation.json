@@ -39,8 +39,9 @@
     "all_pastors": "Tous les pasteurs",
     "unknown_church": "Église non renseignée",
     "recent_title": "Dernières publications",
-    "recent_subtitle": "Contenus les plus récents ajoutés sur la plateforme.",
-    "no_recent": "Aucune prédication disponible.",
+    "recent_subtitle": "Découvrez les derniers ajouts",
+    "no_recent": "Aucune prédication récente disponible.",
+    "announcement_badge": "Info",
     "error_loading": "Impossible de charger les prédications."
   },
   "footer": {
