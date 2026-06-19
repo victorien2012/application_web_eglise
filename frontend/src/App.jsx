@@ -1,31 +1,56 @@
-import { useState, useEffect } from "react";
-import { Link, NavLink, Route, Routes, useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect, lazy, Suspense } from "react";
+import { Link, NavLink, Route, Routes, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import { Compass, LayoutDashboard, LogOut, ShieldCheck, UserRound, Menu, X, ChevronDown, User, LogIn, UserPlus, Church } from "lucide-react";
 import { useAuth } from "./context/AuthContext";
-import { AudioPlayer } from "./components/AudioPlayer";
-import { BanniereEmail } from "./components/BanniereEmail";
-import { BanniereCookies } from "./components/BanniereCookies";
-import { PiedDePage } from "./components/PiedDePage";
-import { RouteProtegee } from "./components/RouteProtegee";
-import { MentionsLegales, Confidentialite, Cookies, Conditions } from "./pages/Legales";
-import { Videos } from "./pages/Videos";
-import { Home } from "./pages/Home";
-import { CompteFidele } from "./pages/CompteFidele";
-import { ComptePasteur } from "./pages/ComptePasteur";
-import { MotDePasseOublie } from "./pages/MotDePasseOublie";
-import { ReinitialiserMotDePasse } from "./pages/ReinitialiserMotDePasse";
-import { VerifierEmail } from "./pages/VerifierEmail";
-import { Administration } from "./pages/Administration";
-import { PastorDashboard } from "./pages/PastorDashboard";
-import { PasteurDetail } from "./pages/PasteurDetail";
-import { Pasteurs } from "./pages/Pasteurs";
-import { Profil } from "./pages/Profil";
-import { SermonDetail } from "./pages/SermonDetail";
-import { NotFound } from "./pages/NotFound";
-import { LanguageSelector } from "./components/LanguageSelector";
-import { ThemeToggle } from "./components/ThemeToggle";
+import { useSite } from "./context/SiteContext";
+
+// Layout components
+import { AudioPlayer } from "./components/layout/AudioPlayer";
+import { BanniereCookies } from "./components/layout/BanniereCookies";
+import { PiedDePage } from "./components/layout/PiedDePage";
+import { LanguageSelector } from "./components/layout/LanguageSelector";
+import { ThemeToggle } from "./components/layout/ThemeToggle";
+
+// Shared components
+import { RouteProtegee } from "./components/shared/RouteProtegee";
 import { Button } from "./components/Button";
+
+// Feature: Auth
+import { BanniereEmail } from "./features/auth/components/BanniereEmail";
+import { CompteFidele } from "./features/auth/pages/CompteFidele";
+import { ComptePasteur } from "./features/auth/pages/ComptePasteur";
+import { MotDePasseOublie } from "./features/auth/pages/MotDePasseOublie";
+import { ReinitialiserMotDePasse } from "./features/auth/pages/ReinitialiserMotDePasse";
+import { VerifierEmail } from "./features/auth/pages/VerifierEmail";
+
+// Feature: Home
+import { Home } from "./features/home/pages/Home";
+
+// Feature: Sermons (Lazy)
+const Videos = lazy(() => import('./features/sermons/pages/Videos').then(m => ({ default: m.Videos })));
+const SermonDetail = lazy(() => import('./features/sermons/pages/SermonDetail').then(m => ({ default: m.SermonDetail })));
+
+// Feature: Documents (Lazy)
+const Documents = lazy(() => import('./features/documents/pages/Documents').then(m => ({ default: m.Documents })));
+
+// Feature: Pasteurs (Lazy)
+const Pasteurs = lazy(() => import('./features/pasteurs/pages/Pasteurs').then(m => ({ default: m.Pasteurs })));
+const PasteurDetail = lazy(() => import('./features/pasteurs/pages/PasteurDetail').then(m => ({ default: m.PasteurDetail })));
+
+// Feature: Dashboard (Espace Pasteur) (Lazy)
+const PastorDashboard = lazy(() => import('./features/dashboard/pages/PastorDashboard').then(m => ({ default: m.PastorDashboard })));
+
+// Feature: Admin (Lazy)
+const Administration = lazy(() => import('./features/admin/pages/Administration').then(m => ({ default: m.Administration })));
+
+// Feature: Profil (Lazy)
+const Profil = lazy(() => import('./features/profil/pages/Profil').then(m => ({ default: m.Profil })));
+
+// Feature: Legal
+import { MentionsLegales, Confidentialite, Cookies, Conditions } from "./features/legal/pages/Legales";
+import { NotFound } from "./features/legal/pages/NotFound";
+
 import "./App.css";
 
 export default function App() {
@@ -33,14 +58,26 @@ export default function App() {
   const location = useLocation();
   const { t } = useTranslation();
   const { deconnexion, estConnecte, estAdmin, pasteur, session } = useAuth();
+  const { siteConfig } = useSite();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
-  // Fermer le menu mobile lors d'un changement de route
+  // Fermer le menu mobile et dropdown lors d'un changement de route
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setIsAccountMenuOpen(false);
   }, [location.pathname]);
+
+  // Fermer le dropdown au clic extérieur
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('.app-nav-actions')) {
+        setIsAccountMenuOpen(false);
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, []);
 
   const masquerBanniereEtFooter =
     location.pathname === "/compte-fidele" ||
@@ -58,7 +95,7 @@ export default function App() {
         <div className="app-nav">
           <Link to="/" className="app-brand">
             <div className="app-brand-logo-wrapper">
-              <img src="/user_eagle.png" alt="Logo Aigle" className="app-brand-logo" />
+              <img src={siteConfig?.logo || "/user_eagle.png"} alt="Logo du site" className="app-brand-logo" />
             </div>
             <div className="app-brand-divider" />
             <span className="app-brand-copy">
@@ -79,6 +116,9 @@ export default function App() {
               <NavLink to="/videos" className="nav-link">
                 <Compass size={16} />
                 {t('nav.videos')}
+              </NavLink>
+              <NavLink to="/documents" className="nav-link">
+                {t('nav.documents', 'Documents')}
               </NavLink>
               <NavLink to="/pasteurs" className="nav-link">{t('nav.pastors')}</NavLink>
               {estAdmin ? (
@@ -158,41 +198,44 @@ export default function App() {
       </nav>
 
       <main id="contenu-principal" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/videos" element={<Videos />} />
-          <Route path="/pasteurs" element={<Pasteurs />} />
-          <Route path="/pasteurs/:id" element={<PasteurDetail />} />
-          <Route path="/compte-fidele" element={<CompteFidele />} />
-          <Route path="/compte-pasteur" element={<ComptePasteur />} />
-          <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
-          <Route path="/reinitialiser-mot-de-passe" element={<ReinitialiserMotDePasse />} />
-          <Route path="/verifier-email" element={<VerifierEmail />} />
-          <Route path="/profil" element={<Profil />} />
-          <Route
-            path="/espace-pasteur"
-            element={(
-              <RouteProtegee pasteurUniquement={true}>
-                <PastorDashboard />
-              </RouteProtegee>
-            )}
-          />
-          <Route path="/dashboard" element={<RouteProtegee pasteurUniquement={true}><PastorDashboard /></RouteProtegee>} />
-          <Route
-            path="/administration"
-            element={(
-              <RouteProtegee adminUniquement={true}>
-                <Administration />
-              </RouteProtegee>
-            )}
-          />
-          <Route path="/sermon/:id" element={<SermonDetail />} />
-          <Route path="/mentions-legales" element={<MentionsLegales />} />
-          <Route path="/confidentialite" element={<Confidentialite />} />
-          <Route path="/cookies" element={<Cookies />} />
-          <Route path="/conditions" element={<Conditions />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Chargement en cours...</div>}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/videos" element={<Videos />} />
+            <Route path="/documents" element={<Documents />} />
+            <Route path="/pasteurs" element={<Pasteurs />} />
+            <Route path="/pasteurs/:id" element={<PasteurDetail />} />
+            <Route path="/compte-fidele" element={<CompteFidele />} />
+            <Route path="/compte-pasteur" element={<ComptePasteur />} />
+            <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
+            <Route path="/reinitialiser-mot-de-passe" element={<ReinitialiserMotDePasse />} />
+            <Route path="/verifier-email" element={<VerifierEmail />} />
+            <Route path="/profil" element={<Profil />} />
+            <Route
+              path="/espace-pasteur"
+              element={(
+                <RouteProtegee pasteurUniquement={true}>
+                  <PastorDashboard />
+                </RouteProtegee>
+              )}
+            />
+            <Route path="/dashboard" element={<Navigate to="/espace-pasteur" replace />} />
+            <Route
+              path="/administration"
+              element={(
+                <RouteProtegee adminUniquement={true}>
+                  <Administration />
+                </RouteProtegee>
+              )}
+            />
+            <Route path="/sermon/:id" element={<SermonDetail />} />
+            <Route path="/mentions-legales" element={<MentionsLegales />} />
+            <Route path="/confidentialite" element={<Confidentialite />} />
+            <Route path="/cookies" element={<Cookies />} />
+            <Route path="/conditions" element={<Conditions />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
 
       {!masquerBanniereEtFooter && <PiedDePage />}

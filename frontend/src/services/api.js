@@ -45,16 +45,80 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // Global response interceptor to handle authentication failures
 api.interceptors.response.use(
   response => response,
-  error => {
-    const url = error.config?.url || '';
-    if (error.response && error.response.status === 401 && !url.includes('/auth/connexion')) {
-      // Token invalid or expired – clear session and redirect to login
-      effacerSession();
-      // Simple redirect; a full React navigation would require context
-      window.location.href = '/compte-fidele';
+  async error => {
+    const originalRequest = error.config;
+    const url = originalRequest?.url || '';
+
+    if (error.response?.status === 401 && !url.includes('/auth/connexion') && !url.includes('/auth/rafraichir/')) {
+      if (!originalRequest._retry) {
+        if (isRefreshing) {
+          return new Promise(function(resolve, reject) {
+            failedQueue.push({ resolve, reject });
+          })
+            .then(token => {
+              originalRequest.headers.Authorization = 'Bearer ' + token;
+              return api(originalRequest);
+            })
+            .catch(err => {
+              return Promise.reject(err);
+            });
+        }
+
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        const session = lireSession();
+        if (session && session.refreshToken) {
+          try {
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/auth/rafraichir/`, {
+              refresh: session.refreshToken
+            });
+
+            const newSession = {
+              ...session,
+              accessToken: res.data.access
+            };
+            if (res.data.refresh) {
+               newSession.refreshToken = res.data.refresh;
+            }
+            enregistrerSession(newSession);
+
+            api.defaults.headers.common['Authorization'] = 'Bearer ' + newSession.accessToken;
+            originalRequest.headers.Authorization = 'Bearer ' + newSession.accessToken;
+
+            processQueue(null, newSession.accessToken);
+            return api(originalRequest);
+          } catch (err) {
+            processQueue(err, null);
+            effacerSession();
+            window.location.href = '/compte-fidele';
+            return Promise.reject(err);
+          } finally {
+            isRefreshing = false;
+          }
+        } else {
+          effacerSession();
+          window.location.href = '/compte-fidele';
+          return Promise.reject(error);
+        }
+      }
     }
     return Promise.reject(error);
   }

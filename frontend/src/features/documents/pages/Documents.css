@@ -1,0 +1,33 @@
+@import '../../sermons/pages/Videos.css';
+
+/* Styles spécifiques aux catégories pour les documents */
+.documents-category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.doc-cat-btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  border: 1px solid var(--pd-border);
+  background-color: white;
+  color: var(--pd-text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.doc-cat-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.doc-cat-btn.active {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 94, 184, 0.2);
+}

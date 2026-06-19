@@ -1,0 +1,202 @@
+/* ==========================================================================
+   VIDEOS PAGE — PREMIUM COHÉRENT AVEC HOME
+   ========================================================================== */
+
+.videos-container {
+  width: 100%;
+  background-color: #f8fafc;
+  min-height: calc(100vh - 80px);
+  box-sizing: border-box;
+}
+
+/* Bandeau Hero */
+.videos-hero-wrapper {
+  background: linear-gradient(135deg, #004a94 0%, #00336b 60%, #001f45 100%);
+  width: 100%;
+  padding: 2rem 2rem;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+}
+
+.videos-hero-wrapper::before {
+  content: "";
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 350px; height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 211, 107, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.videos-header-title {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.videos-header-title .section-badge {
+  display: inline-block;
+  background: rgba(255, 211, 107, 0.18);
+  color: #ffd36b;
+  border: 1px solid rgba(255, 211, 107, 0.35);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+}
+
+.videos-header-title h1 {
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem 0;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.videos-header-title p {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 1rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Corps de la page */
+.videos-body {
+  max-width: 100%;
+  margin: 0;
+  padding: 2rem 1rem; /* minimal padding just to avoid sticking perfectly to the screen bezel */
+  box-sizing: border-box;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   CARTE TABLEAU
+   ========================================================================== */
+.table-card {
+  background-color: #fff;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  max-width: 100%;
+  margin: 0;
+}
+
+.table-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 0 1rem;
+}
+
+.table-title h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--pd-text-main);
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.01em;
+}
+
+.table-title span {
+  font-size: 0.95rem;
+  color: var(--pd-text-muted);
+}
+
+.search-input-wrapper {
+  position: relative;
+  width: 320px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--pd-text-muted);
+  transition: color 0.3s ease;
+}
+
+.search-input-wrapper input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.8rem 1rem 0.8rem 2.8rem;
+  border: 1px solid var(--pd-border);
+  border-radius: 999px;
+  background-color: #f8fafc;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+.search-input-wrapper input:focus {
+  border-color: var(--primary-color);
+  background-color: #fff;
+  box-shadow: 0 0 0 4px rgba(0, 94, 184, 0.1);
+}
+.search-input-wrapper input:focus + .search-icon {
+  color: var(--primary-color);
+}
+
+
+/* ==========================================================================
+   PAGINATION FOOTER
+   ========================================================================== */
+.datatable-footer-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding: 1.25rem 1.5rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0 0 16px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1024px) {
+  .videos-body { padding: 2rem 1.5rem; }
+}
+
+@media (max-width: 768px) {
+  .table-card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+    padding: 0;
+  }
+  
+  .table-title {
+    text-align: center;
+  }
+  
+  .search-input-wrapper {
+    width: 100%;
+  }
+
+  .videos-header-title h1 {
+    font-size: 2.2rem;
+  }
+
+  .datatable-footer-pagination {
+    flex-direction: column;
+    gap: 1.25rem;
+    text-align: center;
+  }
+}

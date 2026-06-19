@@ -1,0 +1,202 @@
+/* ==========================================================================
+   DATATABLE PREMIUM COMPONENT
+   ========================================================================== */
+.datatable-responsive {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid var(--pd-border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  background-color: #fff;
+}
+
+.premium-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.premium-table thead {
+  background-color: var(--table-header-bg);
+  border-bottom: 2px solid var(--pd-border);
+}
+
+.premium-table th {
+  padding: 1.25rem 1.5rem;
+  color: var(--table-header-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.datatable-row {
+  border-bottom: 1px solid var(--pd-border);
+  background-color: #fff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  animation: fadeRowIn 0.5s ease-out backwards;
+}
+
+/* Staggered animation for rows */
+.datatable-row:nth-child(1) { animation-delay: 0.1s; }
+.datatable-row:nth-child(2) { animation-delay: 0.2s; }
+.datatable-row:nth-child(3) { animation-delay: 0.3s; }
+.datatable-row:nth-child(4) { animation-delay: 0.4s; }
+.datatable-row:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes fadeRowIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.datatable-row:hover {
+  background-color: #f8fafc;
+  transform: translateY(-2px) scale(1.002);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+  border-radius: 8px;
+}
+
+.datatable-row:last-child {
+  border-bottom: none;
+}
+
+.premium-table td {
+  padding: 1.25rem 1.5rem;
+  vertical-align: middle;
+  font-size: 0.95rem;
+  color: var(--pd-text-main);
+  white-space: nowrap;
+}
+
+/* Cellules Spécifiques */
+.cell-image .image-wrapper {
+  position: relative;
+  width: 80px;
+  height: 50px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease;
+}
+
+.datatable-row:hover .image-wrapper {
+  transform: scale(1.08);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
+
+.cell-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.datatable-row:hover .image-wrapper img {
+  transform: scale(1.1);
+}
+
+.play-overlay-mini {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  background: rgba(0, 94, 184, 0.85);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(2px);
+}
+
+.datatable-row:hover .play-overlay-mini {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.cell-title {
+  font-weight: 700;
+  color: #0a192f;
+  font-size: 1rem;
+}
+
+.cell-actions {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  width: max-content;
+  margin-left: auto;
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.btn-action.btn-icon-only {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.btn-visionner {
+  background: linear-gradient(135deg, #004a94 0%, #0369a1 100%);
+  border: none;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 74, 148, 0.2);
+}
+
+.btn-visionner:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 74, 148, 0.35);
+}
+
+.btn-pdf {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  border: none;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
+}
+
+.btn-pdf:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.35);
+  background: linear-gradient(135deg, #f87171 0%, #991b1b 100%);
+}
+
+.btn-download {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  border: none;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+}
+
+.btn-download:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.35);
+  background: linear-gradient(135deg, #34d399 0%, #065f46 100%);
+}

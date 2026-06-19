@@ -26,6 +26,8 @@ from .views import (
     NotificationViewSet,
     AnnonceViewSet,
     CarrouselMediaViewSet,
+    DocumentViewSet,
+    ConfigurationSiteViewSet,
 )
 
 router = DefaultRouter()
@@ -43,6 +45,8 @@ router.register(r'signalements', SignalementViewSet, basename='signalement')
 router.register(r'notifications', NotificationViewSet, basename='notification')
 router.register(r'annonces', AnnonceViewSet, basename='annonce')
 router.register(r'carrousel', CarrouselMediaViewSet, basename='carrousel')
+router.register(r'documents', DocumentViewSet, basename='document')
+router.register(r'configuration', ConfigurationSiteViewSet, basename='configuration')
 
 urlpatterns = [
     path('', include(router.urls)),
