@@ -17,13 +17,13 @@
 }
 
 .premium-table thead {
-  background-color: var(--table-header-bg);
+  background-color: var(--primary, #004a94);
   border-bottom: 2px solid var(--pd-border);
 }
 
 .premium-table th {
   padding: 1.25rem 1.5rem;
-  color: var(--table-header-text);
+  color: #ffffff;
   font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -107,7 +107,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.9);
-  background: rgba(0, 94, 184, 0.85);
+  background: rgba(245, 158, 11, 0.9); /* Yellow accent */
   border-radius: 50%;
   width: 28px;
   height: 28px;
@@ -128,6 +128,13 @@
   font-weight: 700;
   color: #0a192f;
   font-size: 1rem;
+  white-space: normal; /* Override nowrap */
+  max-width: 300px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Limit to 2 lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
 }
 
 .cell-actions {
@@ -164,15 +171,16 @@
 }
 
 .btn-visionner {
-  background: linear-gradient(135deg, #004a94 0%, #0369a1 100%);
+  background: var(--accent);
   border: none;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 74, 148, 0.2);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
 }
 
 .btn-visionner:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 74, 148, 0.35);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+  background: #fcd34d;
 }
 
 .btn-pdf {

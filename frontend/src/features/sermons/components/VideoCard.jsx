@@ -9,7 +9,7 @@ export default function VideoCard({ predication }) {
   const ytId = ytMatch ? ytMatch[1] : null;
   const thumb = ytId
     ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
-    : '/assets/pdf-placeholder.png'; // ensure placeholder exists in public assets
+    : 'https://via.placeholder.com/320x180?text=No+Thumbnail'; // fallback placeholder image
 
   return (
     <article className="video-card">

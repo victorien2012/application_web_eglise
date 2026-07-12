@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { Globe } from 'lucide-react';
 
 export function LanguageSelector() {
   const { i18n } = useTranslation();
@@ -8,17 +7,29 @@ export function LanguageSelector() {
     i18n.changeLanguage(e.target.value);
   };
 
+  const getFlagUrl = (lang) => {
+    if (lang?.startsWith('fr')) return 'https://flagcdn.com/w20/fr.png';
+    if (lang?.startsWith('en')) return 'https://flagcdn.com/w20/gb.png';
+    return null;
+  };
+
+  const flagUrl = getFlagUrl(i18n.language);
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: '20px', color: '#e0e0ff' }}>
-      <Globe size={16} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0, 74, 148, 0.05)', padding: '4px 12px', borderRadius: '20px', color: 'var(--text-main)', border: '1px solid rgba(0, 74, 148, 0.1)' }}>
+      {flagUrl ? (
+        <img src={flagUrl} alt={i18n.language} style={{ width: '20px', height: '15px', objectFit: 'cover', borderRadius: '2px' }} />
+      ) : (
+        <span style={{ fontSize: '18px', lineHeight: 1 }}>🌐</span>
+      )}
       <select 
         value={i18n.language} 
         onChange={handleLanguageChange}
         style={{
           background: 'transparent',
           border: 'none',
-          color: '#ffffff',
-          fontWeight: '600',
+          color: 'var(--text-main)',
+          fontWeight: '700',
           cursor: 'pointer',
           outline: 'none',
           WebkitAppearance: 'none',
@@ -33,3 +44,4 @@ export function LanguageSelector() {
     </div>
   );
 }
+

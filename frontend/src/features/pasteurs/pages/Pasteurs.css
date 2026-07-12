@@ -18,10 +18,22 @@
   position: absolute;
   top: -100px;
   right: -80px;
-  width: 400px;
-  height: 400px;
+  width: 450px;
+  height: 450px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 211, 107, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.pasteurs-hero-wrapper::after {
+  content: "";
+  position: absolute;
+  bottom: -150px;
+  left: -100px;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -35,9 +47,9 @@
 
 .pasteurs-hero .section-kicker {
   display: inline-block;
-  background: rgba(255, 211, 107, 0.18);
-  color: #ffd36b;
-  border: 1px solid rgba(255, 211, 107, 0.35);
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
   font-size: 0.7rem;
@@ -95,10 +107,20 @@
   padding: 3.5rem 2rem;
 }
 
-/* Barre de recherche */
+/* Barre de recherche flottante */
 .pasteurs-toolbar {
-  max-width: 560px;
+  max-width: 600px;
   margin: 0 auto 3.5rem auto;
+  position: sticky;
+  top: 75px; /* Sous la navbar */
+  z-index: 50;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 10px 40px rgba(0, 31, 69, 0.08);
 }
 
 .pasteurs-search {
@@ -130,8 +152,12 @@
 }
 
 .pasteurs-search input:focus {
-  border-color: #004a94;
-  box-shadow: 0 0 0 4px rgba(0, 74, 148, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
+}
+
+.pasteurs-search input:focus + .search-icon-large {
+  color: var(--accent);
 }
 
 /* ==========================================================================
@@ -186,7 +212,7 @@
 .pasteur-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 20px 40px -8px rgba(0, 74, 148, 0.14);
-  border-color: #bfdbfe;
+  border-color: var(--accent);
 }
 
 .pasteur-avatar {
@@ -194,7 +220,7 @@
   height: 110px;
   border-radius: 50%;
   margin-bottom: 1.5rem;
-  background: linear-gradient(135deg, #004a94, #3b82f6);
+  background: linear-gradient(135deg, #004a94, #004a94);
   display: grid;
   place-items: center;
   font-size: 2.5rem;

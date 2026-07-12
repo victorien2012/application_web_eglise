@@ -74,7 +74,7 @@
 
 .modal-icon-primary {
   background-color: #eff6ff;
-  color: #3b82f6;
+  color: #004a94;
 }
 
 .modal-icon-warning {
@@ -127,7 +127,7 @@
 }
 
 .modal-btn-primary {
-  background-color: #3b82f6;
+  background-color: #004a94;
   color: white;
 }
 .modal-btn-primary:hover {
@@ -155,7 +155,7 @@
   color: white;
 }
 .modal-btn-warning:hover {
-  background-color: #ca8a04;
+  background-color: #004a94;
 }
 
 @keyframes fadeIn {

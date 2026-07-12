@@ -34,7 +34,7 @@ class PasteurSerializer(serializers.ModelSerializer):
 class PasteurMinimalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pasteur
-        fields = ('id', 'nom_affichage', 'avatar', 'nom_eglise')
+        fields = ('id', 'nom_affichage', 'avatar', 'nom_eglise', 'lien_youtube')
 
 
 class InscriptionSerializer(serializers.Serializer):

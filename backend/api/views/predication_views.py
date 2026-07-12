@@ -33,10 +33,11 @@ logger = logging.getLogger(__name__)
 
 
 class PredicationViewSet(viewsets.ModelViewSet):
-    queryset = Predication.objects.filter(est_publie=True).order_by('-cree_le')
+    queryset = Predication.objects.filter(est_publie=True).order_by('-date_publication', '-cree_le')
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ['titre', 'description', 'pasteur__nom_affichage']
+    pagination_class = None
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -44,29 +45,33 @@ class PredicationViewSet(viewsets.ModelViewSet):
         return PredicationSerializer
 
     def get_queryset(self):
-        queryset = Predication.objects.select_related('pasteur', 'serie').all().order_by('-cree_le')
+        queryset = Predication.objects.select_related('pasteur', 'serie').all().order_by('-date_publication', '-cree_le')
         user = self.request.user
         espace_pasteur = self.request.query_params.get('espace_pasteur', 'false') == 'true'
+
+        espace_admin = self.request.query_params.get('espace_admin', 'false') == 'true'
 
         pasteur_courant = None
         if user.is_authenticated:
             pasteur_courant = getattr(user, 'profil_pasteur', None)
 
-        if espace_pasteur and user.is_authenticated:
+        if espace_admin and user.is_staff:
+            pass # L'administrateur a accès à toutes les prédications
+        elif espace_pasteur and user.is_authenticated:
             if pasteur_courant is None:
                 return queryset.none()
             return queryset.filter(pasteur=pasteur_courant)
-
-        # Une predication est publique si elle est publiee ET (sans date de
-        # publication planifiee OU dont la date est deja passee).
-        visible_public = Q(est_publie=True) & (
-            Q(date_publication__isnull=True) | Q(date_publication__lte=timezone.now())
-        )
-        # Un pasteur voit en plus toutes ses propres predications (brouillons et planifiees).
-        if pasteur_courant is not None:
-            queryset = queryset.filter(visible_public | Q(pasteur=pasteur_courant))
         else:
-            queryset = queryset.filter(visible_public)
+            # Une predication est publique si elle est publiee ET (sans date de
+            # publication planifiee OU dont la date est deja passee).
+            visible_public = Q(est_publie=True) & (
+                Q(date_publication__isnull=True) | Q(date_publication__lte=timezone.now())
+            )
+            # Un pasteur voit en plus toutes ses propres predications (brouillons et planifiees).
+            if pasteur_courant is not None:
+                queryset = queryset.filter(visible_public | Q(pasteur=pasteur_courant))
+            else:
+                queryset = queryset.filter(visible_public)
 
         pasteur_id = self.request.query_params.get('pasteur')
         if pasteur_id:
@@ -104,7 +109,7 @@ class PredicationViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         predication = self.get_object()
-        if predication.pasteur.utilisateur != self.request.user:
+        if not self.request.user.is_staff and predication.pasteur.utilisateur != self.request.user:
             raise serializers.ValidationError(
                 {"detail": "Vous n'êtes pas autorisé à modifier cette prédication."}
             )
@@ -246,6 +251,7 @@ class CategorieViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ['nom', 'description']
+    pagination_class = None
 
 
 class EtiquetteViewSet(viewsets.ModelViewSet):
@@ -254,6 +260,7 @@ class EtiquetteViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ['nom']
+    pagination_class = None
 
 
 class SerieViewSet(viewsets.ModelViewSet):
@@ -261,6 +268,7 @@ class SerieViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ['titre', 'description', 'pasteur__nom_affichage']
+    pagination_class = None
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:

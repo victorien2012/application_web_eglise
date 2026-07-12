@@ -26,7 +26,7 @@
   top: -80px; right: -80px;
   width: 350px; height: 350px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 211, 107, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -66,9 +66,9 @@
 
 .pasteur-detail-copy .section-kicker {
   display: inline-block;
-  background: rgba(255, 211, 107, 0.18);
-  color: #ffd36b;
-  border: 1px solid rgba(255, 211, 107, 0.35);
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
   font-size: 0.72rem;
@@ -131,7 +131,7 @@
 }
 
 .btn-premium-primary {
-  background: #ffd36b;
+  background: #004a94;
   color: #111;
   box-shadow: 0 4px 12px rgba(255, 211, 107, 0.3);
 }
@@ -192,7 +192,7 @@
   position: absolute;
   bottom: 0; left: 0; right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #004a94, #3b82f6);
+  background: linear-gradient(90deg, #004a94, #004a94);
 }
 
 .pasteur-stat:hover {

@@ -2,12 +2,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, PlaySquare, FileText, Loader2, Play, Film, Mic2, Download } from 'lucide-react';
+import { Search, PlaySquare, FileText, Loader2, Play, Film, Mic2, Download, LayoutGrid, List } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, extraireListe, telechargerRessource, telechargerRessourceExterne } from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
 import { VideoPlayer } from '../../sermons/components/VideoPlayer';
 import { SermonTable } from '../../sermons/components/SermonTable';
+import { SermonCard } from '../components/SermonCard';
 import Pagination from '../../../components/Pagination';
 import './Videos.css';
 
@@ -23,6 +24,8 @@ export function Videos() {
   const [erreur, setErreur] = useState('');
   const [videoEnLecture, setVideoEnLecture] = useState(null);
   const [telechargement, setTelechargement] = useState(null); // { sermon, statut: 'chargement' | 'erreur', erreurMsg: '' }
+  const [vueActive, setVueActive] = useState('grille'); // 'grille' ou 'liste'
+  const [filtreType, setFiltreType] = useState('tous'); // 'tous', 'video', 'audio'
 
   const demanderTelechargement = (sermon, format) => {
     if (!estConnecte) {
@@ -80,21 +83,29 @@ export function Videos() {
   }, [recherche]);
 
   const filtered = useMemo(() => {
-    if (!recherche.trim()) return predications;
+    let result = predications;
+    
+    if (filtreType === 'video') {
+      result = result.filter(p => p.type_media === 'VIDEO' || !!p.url_video);
+    } else if (filtreType === 'audio') {
+      result = result.filter(p => p.type_media === 'AUDIO' && !p.fichier_video && !p.url_video);
+    }
+
+    if (!recherche.trim()) return result;
     const term = recherche.toLowerCase();
-    return predications.filter(p =>
+    return result.filter(p =>
       (p.titre && p.titre.toLowerCase().includes(term)) ||
       (p.nom_predicateur && p.nom_predicateur.toLowerCase().includes(term)) ||
       (p.pasteur?.nom_affichage && p.pasteur.nom_affichage.toLowerCase().includes(term))
     );
-  }, [recherche, predications]);
+  }, [recherche, predications, filtreType]);
 
   const [page, setPage] = useState(1);
   
-  // Réinitialiser à la page 1 lors d'une recherche
+  // Réinitialiser à la page 1 lors d'une recherche ou filtre
   useEffect(() => {
     setPage(1);
-  }, [recherche]);
+  }, [recherche, filtreType]);
 
   const rowsPerPage = 10;
   const paginated = useMemo(() => {
@@ -117,18 +128,62 @@ export function Videos() {
       {/* CORPS */}
       <div className="videos-body">
       <div className="table-card">
-        <div className="table-card-header">
-          <div className="table-title">
-            <h3>{t('videos.library_badge')}</h3>
-            <span>{filtered.length} {filtered.length > 1 ? t('videos.videos_available') : t('videos.videos_available_singular')}</span>
+        <div className="table-card-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="table-title" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <h3 style={{ margin: 0 }}>{t('videos.library_badge')}</h3>
+              <span className="badge-count" style={{ background: 'var(--primary)', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                {filtered.length} {filtered.length > 1 ? t('videos.videos_available') : t('videos.videos_available_singular')}
+              </span>
+            </div>
+            <div className="filter-pills" style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <button 
+                className={`filter-pill ${filtreType === 'tous' ? 'active' : ''}`}
+                onClick={() => setFiltreType('tous')}
+              >
+                Tous
+              </button>
+              <button 
+                className={`filter-pill ${filtreType === 'video' ? 'active' : ''}`}
+                onClick={() => setFiltreType('video')}
+              >
+                <Film size={14} /> Vidéos
+              </button>
+              <button 
+                className={`filter-pill ${filtreType === 'audio' ? 'active' : ''}`}
+                onClick={() => setFiltreType('audio')}
+              >
+                <Mic2 size={14} /> Audios
+              </button>
+            </div>
           </div>
-          <div className="search-input-wrapper">
-            <Search className="search-icon" size={16} />
-            <input 
-              placeholder={t('videos.search_placeholder')} 
-              value={recherche}
-              onChange={(e) => setRecherche(e.target.value)}
-            />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <div className="search-input-wrapper">
+              <Search className="search-icon" size={16} />
+              <input 
+                placeholder={t('videos.search_placeholder')} 
+                value={recherche}
+                onChange={(e) => setRecherche(e.target.value)}
+              />
+            </div>
+            <div className="view-toggle" style={{ display: 'flex', background: '#f1f5f9', borderRadius: '8px', padding: '0.2rem' }}>
+              <button
+                className={`toggle-btn ${vueActive === 'grille' ? 'active' : ''}`}
+                onClick={() => setVueActive('grille')}
+                title="Vue Grille"
+                style={{ padding: '0.4rem', border: 'none', background: vueActive === 'grille' ? '#fff' : 'transparent', borderRadius: '6px', boxShadow: vueActive === 'grille' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: vueActive === 'grille' ? '#0f172a' : '#64748b' }}
+              >
+                <LayoutGrid size={18} />
+              </button>
+              <button
+                className={`toggle-btn ${vueActive === 'liste' ? 'active' : ''}`}
+                onClick={() => setVueActive('liste')}
+                title="Vue Liste"
+                style={{ padding: '0.4rem', border: 'none', background: vueActive === 'liste' ? '#fff' : 'transparent', borderRadius: '6px', boxShadow: vueActive === 'liste' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: vueActive === 'liste' ? '#0f172a' : '#64748b' }}
+              >
+                <List size={18} />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -142,50 +197,65 @@ export function Videos() {
         {erreur && <div className="error-message" style={{ padding: '2rem', textAlign: 'center', color: '#ef4444' }}>{erreur}</div>}
 
         {!chargement && !erreur && (
-          <SermonTable
-            predications={paginated}
-            showStatus={false}
-            showCheckbox={false}
-            onImageClick={(p) => {
-              const isVideo = p.type_media === 'VIDEO' || !!p.url_video;
-              if (isVideo && p.url_video) {
-                setVideoEnLecture(p.url_video);
-              }
-            }}
-            renderActions={(p) => {
-              const isVideo = p.type_media === 'VIDEO' || !!p.url_video;
-              return (
-                <>
-                  {isVideo && (p.url_video || p.fichier_video) && (
-                    <button type="button" className="btn-action btn-icon-only btn-visionner" onClick={() => setVideoEnLecture(p.url_video || p.fichier_video)} title={t('videos.action_watch')}>
-                      <Play size={14} fill="currentColor" />
-                    </button>
-                  )}
-                  {p.pieces_jointes && p.pieces_jointes.map((pj) => (
-                    <button
-                      key={pj.id}
-                      type="button"
-                      className="btn-action btn-icon-only btn-pdf"
-                      onClick={() => window.open(pj.fichier, '_blank')}
-                      title={`${t('videos.action_open_doc')} ${pj.nom}`}
-                    >
-                      <FileText size={14} />
-                    </button>
-                  ))}
-                  {(p.fichier_video || p.url_video) && (
-                    <button type="button" className="btn-action btn-icon-only btn-download" onClick={() => demanderTelechargement(p, 'video')} title={t('videos.action_dl_video')}>
-                      <Download size={14} />
-                    </button>
-                  )}
-                  {p.fichier_audio && !p.fichier_video && !p.url_video && (
-                    <button type="button" className="btn-action btn-icon-only btn-download" onClick={() => demanderTelechargement(p, 'audio')} title={t('videos.action_dl_audio')}>
-                      <Download size={14} />
-                    </button>
-                  )}
-                </>
-              );
-            }}
-          />
+          <>
+            {vueActive === 'liste' ? (
+              <SermonTable
+                predications={paginated}
+                showStatus={false}
+                showCheckbox={false}
+                onImageClick={(p) => {
+                  const isVideo = p.type_media === 'VIDEO' || !!p.url_video;
+                  if (isVideo && p.url_video) {
+                    setVideoEnLecture(p.url_video);
+                  }
+                }}
+                renderActions={(p) => {
+                  const isVideo = p.type_media === 'VIDEO' || !!p.url_video;
+                  return (
+                    <>
+                      {isVideo && (p.url_video || p.fichier_video) && (
+                        <button type="button" className="btn-action btn-icon-only btn-visionner" onClick={() => setVideoEnLecture(p.url_video || p.fichier_video)} title={t('videos.action_watch')}>
+                          <Play size={14} fill="currentColor" />
+                        </button>
+                      )}
+                      {p.pieces_jointes && p.pieces_jointes.map((pj) => (
+                        <button
+                          key={pj.id}
+                          type="button"
+                          className="btn-action btn-icon-only btn-pdf"
+                          onClick={() => window.open(pj.fichier, '_blank')}
+                          title={`${t('videos.action_open_doc')} ${pj.nom}`}
+                        >
+                          <FileText size={14} />
+                        </button>
+                      ))}
+                      {(p.fichier_video || p.url_video) && (
+                        <button type="button" className="btn-action btn-icon-only btn-download" onClick={() => demanderTelechargement(p, 'video')} title={t('videos.action_dl_video')}>
+                          <Download size={14} />
+                        </button>
+                      )}
+                      {p.fichier_audio && !p.fichier_video && !p.url_video && (
+                        <button type="button" className="btn-action btn-icon-only btn-download" onClick={() => demanderTelechargement(p, 'audio')} title={t('videos.action_dl_audio')}>
+                          <Download size={14} />
+                        </button>
+                      )}
+                    </>
+                  );
+                }}
+              />
+            ) : (
+              <div className="sermon-grid" style={{ padding: '2rem' }}>
+                {paginated.map((item, i) => (
+                  <div key={item.id} style={{ animation: `fadeRowIn 0.5s ease-out backwards`, animationDelay: `${(i % 10) * 0.05}s` }}>
+                    <SermonCard sermon={item} />
+                  </div>
+                ))}
+                {paginated.length === 0 && (
+                  <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#64748b' }}>Aucun média trouvé.</p>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         {!chargement && !erreur && paginated.length > 0 && (

@@ -31,7 +31,7 @@
 .pagination-btn:hover:not(:disabled) {
   background: #f1f5f9;
   border-color: #cbd5e1;
-  color: #004a94;
+  color: var(--primary);
   transform: translateY(-1px);
 }
 
@@ -48,14 +48,14 @@
 }
 
 .pagination-page.active {
-  background: #004a94;
-  border-color: #004a94;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 74, 148, 0.3);
 }
 
 .pagination-page.active:hover {
-  background: #004a94;
+  background: var(--primary);
   transform: none;
 }
 

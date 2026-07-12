@@ -1,10 +1,10 @@
 /* src/components/PiedDePage.css */
 
 .footer-premium {
-  background-color: #004a94;
+  background-color: var(--primary-dark);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 1.5rem 1rem 0.5rem;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Outfit', system-ui, sans-serif;
   color: rgba(255, 255, 255, 0.7);
   margin-top: auto;
   width: 100%;
@@ -76,11 +76,11 @@
 }
 
 .footer-socials a:hover {
-  background-color: #fde047;
-  border-color: #fde047;
-  color: #004a94;
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: var(--primary-dark);
   transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(253, 224, 71, 0.2);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
 }
 
 .footer-heading {
@@ -99,7 +99,7 @@
   bottom: -0.25rem;
   width: 25px;
   height: 2px;
-  background: #fde047;
+  background: var(--accent);
   border-radius: 2px;
 }
 
@@ -121,7 +121,7 @@
 }
 
 .footer-links li a:hover {
-  color: #fde047;
+  color: var(--accent);
   transform: translateX(4px);
 }
 
@@ -135,7 +135,7 @@
 }
 
 .footer-contact li svg {
-  color: #fde047;
+  color: var(--accent);
   flex-shrink: 0;
   margin-top: 0.15rem;
 }
@@ -166,7 +166,7 @@
 }
 
 .footer-bottom-links a:hover {
-  color: #fde047;
+  color: var(--accent);
 }
 
 .separator {

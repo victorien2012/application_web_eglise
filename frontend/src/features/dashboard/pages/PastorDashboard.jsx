@@ -487,7 +487,7 @@ export function PastorDashboard() {
         />
         
         {pasteur && !pasteur.est_valide && (
-          <div style={{ margin: '0 2.5rem 1.5rem', padding: '1.25rem', backgroundColor: '#fffbeb', border: '1px solid #fef3c7', borderLeft: '4px solid #f59e0b', borderRadius: '8px', color: '#b45309', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ margin: '0 2.5rem 1.5rem', padding: '1.25rem', backgroundColor: '#fffbeb', border: '1px solid #fef3c7', borderLeft: '4px solid #004a94', borderRadius: '8px', color: '#b45309', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <AlertCircle size={20} />
             <p style={{ margin: 0, fontWeight: 500, fontSize: '0.95rem' }}>
               {t('dashboard.account_pending')}
@@ -542,7 +542,7 @@ export function PastorDashboard() {
             <div className="dashboard-section">
               <div className="table-actions-top">
                 <div className="left-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                  <button className="btn btn-yellow" type="button" onClick={() => { ouvrirModeVideo(); setOngletActif('publier'); }}>
+                  <button className="btn btn-primary" type="button" onClick={() => { ouvrirModeVideo(); setOngletActif('publier'); }}>
                     {t('dashboard.add_video')}
                   </button>
                   <button className="btn" type="button" style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', display: 'flex', alignItems: 'center' }} onClick={() => {
@@ -697,7 +697,7 @@ export function PastorDashboard() {
                   <>
                     <button 
                       type="button" 
-                      className={`btn ${modePublication === 'chaine' ? 'btn-yellow' : 'btn-outline'}`} 
+                      className={`btn ${modePublication === 'chaine' ? 'btn-primary' : 'btn-outline'}`} 
                       onClick={() => {
                         setErreurFormulaire('');
                         setMessageFormulaire('');
@@ -708,7 +708,7 @@ export function PastorDashboard() {
                     </button>
                     <button 
                       type="button" 
-                      className={`btn ${modePublication === 'video' ? 'btn-yellow' : 'btn-outline'}`} 
+                      className={`btn ${modePublication === 'video' ? 'btn-primary' : 'btn-outline'}`} 
                       onClick={ouvrirModeVideo}
                     >
                       {t('dashboard.add_a_video')}
@@ -952,7 +952,7 @@ export function PastorDashboard() {
 
                 <div className="dashboard-inline" style={{ marginTop: '1rem' }}>
                   <button
-                    className="btn btn-yellow"
+                    className="btn btn-primary"
                     type="button"
                     onClick={handleSynchronisation}
                     disabled={syncEnCours}

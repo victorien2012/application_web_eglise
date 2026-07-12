@@ -2,26 +2,26 @@
    PASTOR DASHBOARD — MOCKUP DESIGN (Dark Sidebar, Light Content)
    ========================================================================== */
 :root {
-  --pd-sidebar-bg: var(--nav-bg);
-  --pd-sidebar-text: var(--text-muted);
+  --pd-sidebar-bg: #0f172a;
+  --pd-sidebar-text: #cbd5e1;
   --pd-sidebar-active: rgba(255, 255, 255, 0.1);
   --pd-sidebar-active-text: #ffffff;
-  --pd-main-bg: var(--bg-alt);
-  --pd-card-bg: var(--bg-card);
-  --pd-text-main: var(--text-main);
-  --pd-text-muted: var(--text-muted);
-  --pd-border: var(--border-color);
-  
+  --pd-main-bg: var(--bg-alt, #f8fafc);
+  --pd-card-bg: var(--bg-card, #ffffff);
+  --pd-text-main: var(--text-main, #1e293b);
+  --pd-text-muted: var(--text-muted, #64748b);
+  --pd-border: var(--border-color, #e2e8f0);
+
   /* Buttons */
-  --btn-yellow: #eab308;
-  --btn-yellow-hover: #ca8a04;
-  --btn-pink-bg: #fce7f3;
-  --btn-pink-text: #db2777;
-  --btn-pink-hover: #fbcfe8;
-  --btn-dark: #11233f;
-  --btn-dark-hover: #1e3a8a;
-  
-  --table-header-bg: var(--nav-bg);
+  --btn-primary: var(--accent);
+  --btn-primary-hover: #d97706;
+  --btn-pink-bg: #f1f5f9;
+  --btn-pink-text: #64748b;
+  --btn-pink-hover: #e2e8f0;
+  --btn-dark: var(--primary);
+  --btn-dark-hover: var(--primary-dark);
+
+  --table-header-bg: var(--primary);
   --table-header-text: #ffffff;
 }
 
@@ -35,7 +35,8 @@ body {
    ========================================================================== */
 .dashboard-container {
   display: flex;
-  min-height: calc(100vh - 60px); /* Adjust based on navbar */
+  min-height: calc(100vh - 60px);
+  /* Adjust based on navbar */
   background-color: var(--pd-main-bg);
   width: 100%;
   flex: 1;
@@ -79,7 +80,8 @@ body {
   padding: 0.85rem 1.5rem;
   background: transparent;
   border: none;
-  border-left: 4px solid transparent; /* align with active state border */
+  border-left: 4px solid transparent;
+  /* align with active state border */
   color: var(--pd-sidebar-text);
   font-family: inherit;
   font-size: 0.95rem;
@@ -99,7 +101,7 @@ body {
 .sidebar-menu .menu-item.active {
   background-color: var(--pd-sidebar-active);
   color: var(--pd-sidebar-active-text);
-  border-left: 3px solid var(--btn-yellow);
+  border-left: 3px solid var(--btn-primary);
 }
 
 .sidebar-menu .menu-item svg {
@@ -128,14 +130,15 @@ body {
 .dashboard-title-area h1 {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--btn-dark);
+  color: var(--pd-text-main, #1e293b);
   margin: 0 0 0.25rem 0;
 }
 
 .dashboard-title-area p {
-  color: var(--pd-text-muted);
+  color: var(--pd-text-muted, #64748b);
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
+  font-weight: 500;
 }
 
 /* ==========================================================================
@@ -208,6 +211,7 @@ body {
   background-color: var(--btn-dark);
   color: #fff;
 }
+
 .btn-dark:hover {
   background-color: var(--btn-dark-hover);
 }
@@ -217,22 +221,26 @@ body {
   border: 1px solid var(--pd-border);
   color: var(--pd-text-main);
 }
+
 .btn-outline:hover {
   background-color: var(--pd-main-bg);
 }
 
-.btn-yellow {
-  background-color: var(--btn-yellow);
-  color: #fff; /* or dark text if preferred */
+.btn-primary {
+  background-color: var(--btn-primary);
+  color: #fff;
+  /* or dark text if preferred */
 }
-.btn-yellow:hover {
-  background-color: var(--btn-yellow-hover);
+
+.btn-primary:hover {
+  background-color: var(--btn-primary-hover);
 }
 
 .btn-pink {
   background-color: var(--btn-pink-bg);
   color: var(--btn-pink-text);
 }
+
 .btn-pink:hover {
   background-color: var(--btn-pink-hover);
 }
@@ -295,6 +303,7 @@ body {
   font-size: 0.9rem;
   outline: none;
 }
+
 .search-input-wrapper input:focus {
   border-color: var(--btn-dark);
 }
@@ -306,12 +315,15 @@ body {
   border: 1px solid var(--pd-border);
   overflow-x: auto;
   /* Masquer la barre de défilement tout en gardant le scroll possible */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE/Edge */
 }
 
 .datatable-responsive::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
+  /* Chrome, Safari, Opera */
 }
 
 .premium-table {
@@ -321,12 +333,12 @@ body {
 }
 
 .premium-table thead {
-  background-color: var(--table-header-bg);
+  background-color: var(--primary);
 }
 
 .premium-table th {
   padding: 1rem;
-  color: var(--table-header-text);
+  color: #ffffff;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -377,14 +389,18 @@ body {
   font-weight: 600;
   text-align: center;
 }
+
 .status-badge.published {
   background-color: #dcfce7;
   color: #166534;
 }
-.status-badge.draft, .status-badge.archived {
+
+.status-badge.draft,
+.status-badge.archived {
   background-color: #f3f4f6;
   color: #4b5563;
 }
+
 .status-badge.scheduled {
   background-color: #fef9c3;
   color: #854d0e;
@@ -406,6 +422,7 @@ body {
   color: var(--btn-dark);
   cursor: pointer;
 }
+
 .btn-manage:hover {
   background-color: var(--pd-main-bg);
 }
@@ -568,13 +585,13 @@ body {
   border: 1px solid var(--pd-border);
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .dashboard-kpi:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
 }
 
 .kpi-icon-wrapper {
@@ -587,9 +604,9 @@ body {
   flex-shrink: 0;
 }
 
-.kpi-icon-wrapper.yellow-bg {
-  background-color: #fef08a;
-  color: #ca8a04;
+.kpi-icon-wrapper.primary-bg {
+  background-color: #e0f2fe;
+  color: #004a94;
 }
 
 .kpi-icon-wrapper.pink-bg {
@@ -721,7 +738,7 @@ body {
   border: 1px solid var(--pd-border);
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 /* ==========================================================================
@@ -747,15 +764,15 @@ body {
   width: 320px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-  border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   z-index: 100;
   overflow: hidden;
 }
 
 .notifications-header {
   padding: 1rem;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .notifications-header h3 {
@@ -781,7 +798,7 @@ body {
   align-items: flex-start;
   gap: 0.75rem;
   padding: 1rem;
-  border-bottom: 1px solid rgba(0,0,0,0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.03);
   cursor: pointer;
   transition: background 0.2s;
 }
@@ -830,19 +847,31 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #004a94;
   margin-top: 4px;
 }
 
 /* Modal Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleUp {
-  from { transform: scale(0.92); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* ==========================================================================
@@ -970,7 +999,7 @@ body {
   .dashboard-kpis {
     grid-template-columns: 1fr;
   }
-  
+
   .dashboard-topbar {
     flex-direction: column;
   }
@@ -979,4 +1008,3 @@ body {
     padding: 1.5rem 1rem;
   }
 }
-

@@ -11,11 +11,8 @@ export const ThemeProvider = ({ children }) => {
     if (savedTheme) {
       return savedTheme;
     }
-    // Sinon, vérifier les préférences système
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-    return 'light'; // Par défaut
+    // Forcer le thème clair par défaut (ignorer la préférence système sombre)
+    return 'light';
   });
 
   useEffect(() => {

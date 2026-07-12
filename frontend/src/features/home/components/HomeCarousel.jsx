@@ -8,26 +8,25 @@ const HomeCarousel = ({ medias }) => {
   const { t } = useTranslation();
   const { siteConfig } = useSite();
   const scrollRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  if (!medias || medias.length === 0) {
-    // Fallback à l'aigle si aucun média
-    return (
-      <div className="animate-eagle-fly">
-        <img 
-          src={siteConfig?.logo || "/user_eagle.png"} 
-          alt="Aigle majestueux en vol" 
-          style={{ 
-            width: '100%', 
-            objectFit: 'contain', 
-            height: '100%', 
-            maxHeight: '800px', 
-            transform: 'scale(1.3)',
-            filter: 'drop-shadow(0 15px 25px rgba(0, 0, 0, 0.4))' 
-          }} 
-        />
-      </div>
-    );
-  }
+  // Fallback banners if no medias are provided
+  const displayMedias = (!medias || medias.length === 0) ? [
+    {
+      id: 'default-1',
+      fichier: 'https://images.unsplash.com/photo-1438032005730-c779502df39b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80',
+      titre: "Bienvenue dans notre Église",
+      description: "S'Équiper pour Bâtir, S'Unir pour Grandir",
+      type_media: 'IMAGE'
+    },
+    {
+      id: 'default-2',
+      fichier: 'https://images.unsplash.com/photo-1548625361-ec8531ce3e08?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80',
+      titre: "Rejoignez notre Communauté",
+      description: "Des moments de partage et de foi inoubliables",
+      type_media: 'IMAGE'
+    }
+  ] : medias;
 
   const extractYouTubeId = (url) => {
     if (!url) return null;
@@ -36,19 +35,36 @@ const HomeCarousel = ({ medias }) => {
     return (match && match[2].length === 11) ? match[2] : null;
   };
 
-  const scrollLeft = () => {
+  const scrollTo = (index) => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -350, behavior: 'smooth' });
+      const containerWidth = scrollRef.current.clientWidth;
+      scrollRef.current.scrollTo({ left: index * containerWidth, behavior: 'smooth' });
+      setActiveIndex(index);
     }
+  };
+
+  const scrollLeft = () => {
+    if (activeIndex > 0) scrollTo(activeIndex - 1);
+    else scrollTo(displayMedias.length - 1); // loop to end
   };
 
   const scrollRight = () => {
+    if (activeIndex < displayMedias.length - 1) scrollTo(activeIndex + 1);
+    else scrollTo(0); // loop to start
+  };
+
+  const handleScroll = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 350, behavior: 'smooth' });
+      const scrollPosition = scrollRef.current.scrollLeft;
+      const containerWidth = scrollRef.current.clientWidth;
+      const newIndex = Math.round(scrollPosition / containerWidth);
+      if (newIndex !== activeIndex) {
+        setActiveIndex(newIndex);
+      }
     }
   };
 
-  const hasCarouselEffect = medias.length > 2;
+  const hasCarouselEffect = displayMedias.length > 1;
 
   return (
     <div className="home-carousel-wrapper fade-in-up" style={{ animationDelay: '0.6s' }}>
@@ -59,10 +75,11 @@ const HomeCarousel = ({ medias }) => {
       )}
 
       <div 
-        className={`home-carousel-container ${hasCarouselEffect ? 'scrollable' : 'centered'}`} 
+        className={`home-carousel-container ${hasCarouselEffect ? 'scrollable-banner' : ''}`} 
         ref={scrollRef}
+        onScroll={handleScroll}
       >
-        {medias.map((media) => {
+        {displayMedias.map((media) => {
           let mediaContent = null;
           if (media.type_media === 'VIDEO' && media.url_video) {
             const youtubeId = extractYouTubeId(media.url_video);
@@ -90,11 +107,11 @@ const HomeCarousel = ({ medias }) => {
           }
 
           return (
-            <div key={media.id} className="carousel-slide">
+            <div key={media.id} className="carousel-slide-banner">
               {mediaContent}
               
               {(media.titre || media.description) && (
-                <div className="carousel-caption">
+                <div className="carousel-caption-banner">
                   {media.titre && <h3>{media.titre}</h3>}
                   {media.description && <p>{media.description}</p>}
                 </div>
@@ -105,9 +122,22 @@ const HomeCarousel = ({ medias }) => {
       </div>
 
       {hasCarouselEffect && (
-        <button className="carousel-nav-btn next" onClick={scrollRight} aria-label="Suivant">
-          <ChevronRight size={24} />
-        </button>
+        <>
+          <button className="carousel-nav-btn next" onClick={scrollRight} aria-label="Suivant">
+            <ChevronRight size={24} />
+          </button>
+          
+          <div className="carousel-indicators">
+            {displayMedias.map((_, idx) => (
+              <button 
+                key={idx} 
+                className={`carousel-dot ${idx === activeIndex ? 'active' : ''}`}
+                onClick={() => scrollTo(idx)}
+                aria-label={`Aller à la diapositive ${idx + 1}`}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

@@ -12,7 +12,8 @@ import { useAuth } from '../../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useFavori } from '../../../hooks/useEngagement';
 import { Button } from '../../../components/Button';
-import { api, telechargerRessource, telechargerRessourceExterne } from '../../../services/api';
+import { api, telechargerRessource, telechargerRessourceExterne, extraireListe } from '../../../services/api';
+import { SermonCard } from '../components/SermonCard';
 import './SermonDetail.css';
 
 export function SermonDetail() {
@@ -25,6 +26,8 @@ export function SermonDetail() {
   const [showVideo, setShowVideo] = useState(false);
   const [erreur, setErreur] = useState('');
   const [telechargement, setTelechargement] = useState(null); // { format: 'audio'|'video', statut: 'confirmation' | 'chargement' | 'erreur', erreurMsg: '' }
+  const [sermonsSimilaires, setSermonsSimilaires] = useState([]);
+  const [modeCinema, setModeCinema] = useState(false);
   const { estFavori, basculer, pret: favoriPret } = useFavori(id);
 
   useEffect(() => {
@@ -36,6 +39,14 @@ export function SermonDetail() {
         if (active) {
           setSermon(response.data);
           setErreur('');
+          
+          // Fetch similar
+          try {
+            const allRes = await api.get('/predications/');
+            const all = extraireListe(allRes.data);
+            const similaires = all.filter(p => p.id !== Number(id)).slice(0, 3);
+            setSermonsSimilaires(similaires);
+          } catch(e) { console.error(e); }
         }
       } catch (error) {
         if (active) {
@@ -157,15 +168,22 @@ export function SermonDetail() {
 
   return (
     <div className="sermon-detail-container">
-      {/* Bouton retour */}
-      <div className="sermon-detail-header-nav">
+      {/* Bouton retour et mode cinéma */}
+      <div className="sermon-detail-header-nav" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Link to="/videos" className="back-link">
           <ArrowLeft size={16} />
           <span>{t('sermon_detail.back_to_lib')}</span>
         </Link>
+        <button 
+          className={`btn-mode-cinema ${modeCinema ? 'active' : ''}`}
+          onClick={() => setModeCinema(!modeCinema)}
+          title="Mode Cinéma"
+        >
+          <Film size={16} /> {modeCinema ? 'Quitter Mode Cinéma' : 'Mode Cinéma'}
+        </button>
       </div>
 
-      <div className="sermon-detail-grid">
+      <div className={`sermon-detail-grid ${modeCinema ? 'mode-cinema-active' : ''}`}>
         {/* COLONNE PRINCIPALE (GAUCHE) */}
         <div className="sermon-main-col">
           {/* Cover Interactive */}
@@ -396,6 +414,20 @@ export function SermonDetail() {
         </aside>
       </div>
 
+      {/* Sermons Similaires */}
+      {sermonsSimilaires.length > 0 && !modeCinema && (
+        <div className="similar-sermons-section" style={{ marginTop: '4rem' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.5rem', color: '#0f172a' }}>Recommandé pour vous</h2>
+          <div className="sermon-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
+            {sermonsSimilaires.map((item, i) => (
+              <div key={item.id} className="reveal-cascade" style={{ transitionDelay: `${i * 0.1}s` }}>
+                <SermonCard sermon={item} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {showVideo && (
         <VideoPlayer src={sermon.fichier_video || sermon.url_video} onClose={() => setShowVideo(false)} />
       )}
@@ -420,7 +452,7 @@ export function SermonDetail() {
                   <button type="button" onClick={() => setTelechargement(null)} style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', background: 'var(--bg-alt)', color: 'var(--text-main)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>
                     {t('videos.modal_dl_cancel')}
                   </button>
-                  <button type="button" onClick={executerTelechargement} style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', background: 'linear-gradient(135deg, #005eb8 0%, #004a94 100%)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 4px 6px rgba(0, 94, 184, 0.2)' }}>
+                  <button type="button" onClick={executerTelechargement} style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 4px 6px rgba(0, 94, 184, 0.2)' }}>
                     {t('videos.modal_dl_confirm_btn')}
                   </button>
                 </div>

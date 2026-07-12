@@ -111,7 +111,7 @@
   transition: color 0.2s;
 }
 
-.sc-chars.warn  { color: #f59e0b; }
+.sc-chars.warn  { color: #004a94; }
 .sc-chars.danger { color: #ef4444; font-weight: 700; }
 
 .sc-submit-btn {

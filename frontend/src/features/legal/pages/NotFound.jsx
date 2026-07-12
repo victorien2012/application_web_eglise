@@ -20,7 +20,7 @@ export function NotFound() {
         <h1 style={{ 
           fontSize: '8rem', 
           fontWeight: '900', 
-          background: 'var(--yellow-gradient, linear-gradient(135deg, #f59e0b 0%, #d97706 100%))', 
+          background: 'var(--primary-gradient, linear-gradient(135deg, #004a94 0%, #004a94 100%))', 
           WebkitBackgroundClip: 'text', 
           WebkitTextFillColor: 'transparent',
           marginBottom: '1rem',
@@ -58,7 +58,7 @@ export function NotFound() {
         <Button onClick={() => window.history.back()} variant="outline-dark" icon={ArrowLeft} iconPosition="left">
           {t('not_found.back_btn', "Page précédente")}
         </Button>
-        <Button to="/" variant="yellow" icon={Home} iconPosition="left">
+        <Button to="/" variant="primary" icon={Home} iconPosition="left">
           {t('not_found.home_btn', "Retour à l'accueil")}
         </Button>
       </div>

@@ -1,6 +1,7 @@
 /* Global design system – premium dark theme, glassmorphism, smooth transitions */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+@import './theme.css';
 
 /* Accessibilite: lien d'evitement visible uniquement au focus clavier */
 .lien-evitement {
@@ -9,8 +10,8 @@
   top: 0;
   z-index: 100;
   padding: 0.6rem 1rem;
-  background: #ffd36b;
-  color: #111;
+  background: #ffffff;
+  color: #004a94;
   border-radius: 0 0 8px 0;
   font-weight: 600;
   text-decoration: none;
@@ -26,7 +27,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #ffd36b;
+  outline: 2px solid #004a94;
   outline-offset: 2px;
 }
 
@@ -36,76 +37,96 @@ body,
   height: 100%;
   margin: 0;
   font-family: 'Outfit', sans-serif;
-  background: var(--bg-main);
+  background-color: var(--bg-main);
+  background-image:
+    radial-gradient(circle at top right, rgba(0, 74, 148, 0.08), transparent 40%),
+    radial-gradient(circle at bottom left, rgba(245, 158, 11, 0.08), transparent 40%);
   color: var(--text-main);
   overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 :root {
-  /* LIGHT THEME (default) */
-  --primary: hsl(260, 80%, 60%);
-  --primary-light: hsl(260, 80%, 70%);
-  --accent: hsl(45, 90%, 55%);
-  --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(0, 0, 0, 0.05);
+  --primary: #004a94;
+  --primary-dark: #001f45;
+  --accent: #f59e0b;
+  --accent-light: #fcd34d;
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --nav-bg: #ffffff; /* La navbar sera blanche par defaut selon la charte */
+
+  /* Global UI Colors */
   --bg-main: #ffffff;
   --bg-alt: #f8fafc;
   --bg-card: #ffffff;
-  --text-main: #333333;
-  --text-muted: #64748b;
+  --text-main: #001f45; /* Texte foncé tirant sur le bleu nuit pour plus d'élégance */
+  --text-muted: #475569;
   --border-color: #e2e8f0;
-  --nav-bg: #004a94;
-  /* Deep blue for the navbar */
 }
 
-[data-theme='dark'] {
-  /* DARK THEME */
-  --primary: hsl(260, 80%, 60%);
-  --primary-light: hsl(260, 80%, 70%);
-  --accent: hsl(45, 90%, 55%);
-  --glass-bg: rgba(15, 23, 42, 0.7);
-  /* slate-900 with opacity */
+[data-theme="dark"] {
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --accent: #f59e0b;
+  --accent-light: #fcd34d;
+  --glass-bg: rgba(15, 23, 42, 0.85);
   --glass-border: rgba(255, 255, 255, 0.1);
-  --bg-main: #0a192f;
-  /* Deep dark blue */
-  --bg-alt: #0f172a;
-  /* slate-900 */
-  --bg-card: #1e293b;
-  /* slate-800 */
-  --text-main: #f8fafc;
-  /* slate-50 */
-  --text-muted: #94a3b8;
-  /* slate-400 */
-  --border-color: rgba(255, 255, 255, 0.1);
-  --nav-bg: #061121;
-  /* Darker blue for the navbar */
+  --nav-bg: #0f172a;
+
+  /* Global UI Colors */
+  --bg-main: #020617; /* Slate 950 */
+  --bg-alt: #0f172a;  /* Slate 900 */
+  --bg-card: #0f172a;
+  --text-main: #f8fafc; /* Slate 50 */
+  --text-muted: #94a3b8; /* Slate 400 */
+  --border-color: #1e293b; /* Slate 800 */
+
+  /* Overrides for theme.css */
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --color-bg-main: #020617;
+  --color-bg-alt: #0f172a;
+  --color-bg-card: #0f172a;
+  --color-text-main: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-border: #1e293b;
 }
 
 .glass-card {
   background: var(--glass-bg);
   border-radius: 12px;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 32px rgba(0, 31, 69, 0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .glass-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 12px 48px rgba(0, 74, 148, 0.12);
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 8px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   border: none;
-  transition: background 0.2s ease, transform 0.1s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+.btn:active {
+  transform: scale(0.97) translateY(0);
 }
 
 .btn-primary {
@@ -114,11 +135,19 @@ body,
 }
 
 .btn-primary:hover {
-  background: var(--primary-light);
+  background: var(--primary-dark);
+  box-shadow: 0 8px 20px rgba(0, 74, 148, 0.3);
 }
 
-.btn-primary:active {
-  transform: scale(0.98);
+.btn-accent {
+  background: var(--accent);
+  color: #000;
+}
+
+.btn-accent:hover {
+  background: #d97706;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35);
 }
 
 /* Scrollbar */
@@ -158,15 +187,15 @@ body,
 /* Navigation links */
 nav .nav-link {
   margin-right: 1.5rem;
-  color: #e0e0ff;
+  color: var(--text-main);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
   transition: color 0.2s;
 }
 
 nav .nav-link.active,
 nav .nav-link:hover {
-  color: var(--primary);
+  color: var(--accent);
 }
 
 @media (max-width: 720px) {
@@ -175,9 +204,7 @@ nav .nav-link:hover {
   }
 }
 
-body {
-  background-color: var(--bg-alt);
-}
+
 
 /* Override PrimeReact Toast transparency */
 .p-toast .p-toast-message {

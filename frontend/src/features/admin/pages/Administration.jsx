@@ -28,6 +28,7 @@ export function Administration() {
   const [signalements, setSignalements] = useState([]);
   const [annonces, setAnnonces] = useState([]);
   const [carrouselMedias, setCarrouselMedias] = useState([]);
+  const [predications, setPredications] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState('');
   const [messageSucces, setMessageSucces] = useState('');
@@ -39,6 +40,7 @@ export function Administration() {
   const [pageSignalements, setPageSignalements] = useState(1);
   const [pageAnnonces, setPageAnnonces] = useState(1);
   const [pageCarrousel, setPageCarrousel] = useState(1);
+  const [pagePredications, setPagePredications] = useState(1);
   const ELEMENTS_PAR_PAGE = 5;
   const [ongletActif, setOngletActif] = useState('apercu');
   
@@ -77,18 +79,20 @@ export function Administration() {
   async function charger() {
     setChargement(true);
     try {
-      const [statsRes, pasteursRes, signalementsRes, annoncesRes, carrouselRes] = await Promise.all([
+      const [statsRes, pasteursRes, signalementsRes, annoncesRes, carrouselRes, predicationsRes] = await Promise.all([
         api.get('/admin/statistiques/'),
         api.get('/pasteurs/'),
         api.get('/signalements/'),
         api.get('/annonces/'),
-        api.get('/carrousel/')
+        api.get('/carrousel/'),
+        api.get('/predications/?espace_admin=true')
       ]);
       setStats(statsRes.data);
       setPasteurs(extraireListe(pasteursRes.data));
       setSignalements(extraireListe(signalementsRes.data));
       setAnnonces(extraireListe(annoncesRes.data));
       setCarrouselMedias(extraireListe(carrouselRes.data));
+      setPredications(extraireListe(predicationsRes.data));
       setErreur('');
     } catch (error) {
       setErreur(error.response?.data?.detail || t('admin.load_error'));
@@ -223,6 +227,19 @@ export function Administration() {
     }
   }
 
+  async function basculerALaUne(predication) {
+    try {
+      const nouveauStatut = !predication.est_a_la_une;
+      await api.patch(`/predications/${predication.id}/`, { est_a_la_une: nouveauStatut });
+      setPredications((actuels) => actuels.map(p => p.id === predication.id ? { ...p, est_a_la_une: nouveauStatut } : p));
+      setMessageSucces(nouveauStatut ? "La vidéo a été ajoutée à la une." : "La vidéo a été retirée de la une.");
+      setErreur('');
+    } catch {
+      setErreur("Erreur lors de la mise à jour de la vidéo.");
+      setMessageSucces('');
+    }
+  }
+
   const pasteursFiltres = pasteurs.filter(p => {
     const correspondRecherche = (p.nom_affichage || '').toLowerCase().includes(recherchePasteur.toLowerCase()) ||
                                 (p.nom_eglise || '').toLowerCase().includes(recherchePasteur.toLowerCase()) ||
@@ -249,6 +266,10 @@ export function Administration() {
   const indexDebutCarrousel = (pageCarrousel - 1) * ELEMENTS_PAR_PAGE;
   const carrouselAffiches = carrouselMedias.slice(indexDebutCarrousel, indexDebutCarrousel + ELEMENTS_PAR_PAGE);
   const totalPagesCarrousel = Math.ceil(carrouselMedias.length / ELEMENTS_PAR_PAGE);
+
+  const indexDebutPredications = (pagePredications - 1) * ELEMENTS_PAR_PAGE;
+  const predicationsAffiches = predications.slice(indexDebutPredications, indexDebutPredications + ELEMENTS_PAR_PAGE);
+  const totalPagesPredications = Math.ceil(predications.length / ELEMENTS_PAR_PAGE);
 
   if (chargement) {
     return (
@@ -282,6 +303,10 @@ export function Administration() {
           <button type="button" className={`menu-item ${ongletActif === 'annonces' ? 'active' : ''}`} onClick={() => setOngletActif('annonces')}>
             <Megaphone size={18} />
             <span>Annonces</span>
+          </button>
+          <button type="button" className={`menu-item ${ongletActif === 'videos' ? 'active' : ''}`} onClick={() => setOngletActif('videos')}>
+            <Video size={18} />
+            <span>Vidéos (À la une)</span>
           </button>
           <button type="button" className={`menu-item ${ongletActif === 'carrousel' ? 'active' : ''}`} onClick={() => setOngletActif('carrousel')}>
             <MonitorPlay size={18} />
@@ -319,7 +344,7 @@ export function Administration() {
                 <span>{t('admin.users')}</span>
               </div>
             </div>
-            <div className="admin-kpi admin-kpi-purple">
+            <div className="admin-kpi admin-kpi-primary">
               <div className="admin-kpi-icon"><BadgeCheck size={20} /></div>
               <div className="admin-kpi-data">
                 <strong>{stats.total_pasteurs}</strong>
@@ -443,7 +468,7 @@ export function Administration() {
                       ) : pasteur.est_rejete ? (
                         <span className="status-badge archived" style={{ color: '#ef4444', backgroundColor: '#fee2e2' }}>Rejeté</span>
                       ) : (
-                        <span className="status-badge draft" style={{ color: '#ca8a04', backgroundColor: '#fef08a' }}>En attente</span>
+                        <span className="status-badge draft" style={{ color: '#004a94', backgroundColor: '#e0f2fe' }}>En attente</span>
                       )}
                     </td>
                     <td>{new Date(pasteur.cree_le).toLocaleDateString()}</td>
@@ -814,6 +839,88 @@ export function Administration() {
           <div className="admin-empty-state">
             <CheckCircle size={32} />
             <p>Aucun média dans le carrousel pour le moment.</p>
+          </div>
+        )}
+      </section>
+      )}
+
+      {/* Vidéos */}
+      {ongletActif === 'videos' && (
+      <section className="admin-section">
+        <div className="admin-section-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Video size={20} />
+            <h2>Gestion des Vidéos et Actualités</h2>
+            <span className="admin-badge-count">{predications.length}</span>
+          </div>
+          <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
+            <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{predications.filter(p => p.est_a_la_une).length}</span> vidéos à la une
+          </div>
+        </div>
+
+        {predications.length ? (
+          <div className="datatable-responsive">
+            <table className="premium-table">
+              <thead>
+                <tr>
+                  <th>Titre</th>
+                  <th>Pasteur</th>
+                  <th>Média</th>
+                  <th>Statut</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {predicationsAffiches.map((predication) => (
+                  <tr key={predication.id} className="datatable-row">
+                    <td className="cell-title">
+                      <strong>{predication.titre}</strong>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
+                        {new Date(predication.cree_le).toLocaleDateString()}
+                      </div>
+                    </td>
+                    <td>{predication.nom_predicateur || predication.pasteur?.nom_affichage || '-'}</td>
+                    <td>
+                      {predication.type_media === 'AUDIO' ? 'Audio' : predication.type_media === 'VIDEO' ? 'Vidéo' : 'Audio & Vidéo'}
+                    </td>
+                    <td>
+                      {predication.est_a_la_une ? (
+                        <span className="status-badge published" style={{ backgroundColor: '#fef3c7', color: '#d97706' }}>À la une</span>
+                      ) : (
+                        <span className="status-badge archived" style={{ color: '#64748b', backgroundColor: '#f1f5f9' }}>Standard</span>
+                      )}
+                    </td>
+                    <td>
+                      <div className="admin-table-actions">
+                        <Button
+                          variant={predication.est_a_la_une ? "secondary" : "primary"}
+                          onClick={() => demanderConfirmation(
+                            predication.est_a_la_une ? 'Retirer de la une' : 'Mettre à la une',
+                            `Êtes-vous sûr de vouloir ${predication.est_a_la_une ? 'retirer' : 'ajouter'} la vidéo "${predication.titre}" ${predication.est_a_la_une ? 'de' : 'à'} la une ?`,
+                            predication.est_a_la_une ? 'Retirer' : 'Ajouter',
+                            predication.est_a_la_une ? 'warning' : 'primary',
+                            Video,
+                            () => basculerALaUne(predication)
+                          )}
+                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                        >
+                          {predication.est_a_la_une ? 'Retirer de la une' : 'Mettre à la une'}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
+              <Pagination current={pagePredications} total={totalPagesPredications} onChange={setPagePredications} />
+            </div>
+          </div>
+        ) : (
+          <div className="admin-empty-state">
+            <CheckCircle size={32} />
+            <p>Aucune vidéo disponible.</p>
           </div>
         )}
       </section>

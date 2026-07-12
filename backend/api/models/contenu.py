@@ -38,6 +38,7 @@ class Predication(models.Model):
     nombre_vues = models.IntegerField(default=0, db_column='nombre_vues')
     nombre_telechargements = models.IntegerField(default=0, db_column='nombre_telechargements')
     est_publie = models.BooleanField(default=True, db_column='est_publie')
+    est_a_la_une = models.BooleanField(default=False, db_column='est_a_la_une', help_text="Afficher dans le carrousel À la une")
     date_publication = models.DateTimeField(
         blank=True,
         null=True,

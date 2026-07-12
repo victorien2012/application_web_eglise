@@ -72,7 +72,7 @@
 
 /* Highlight (Total) Icon Colors */
 .spark-icon {
-  background: linear-gradient(135deg, #fef08a, #facc15);
+  background: linear-gradient(135deg, #e0f2fe, #004a94);
   color: #a16207;
   box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 4px 10px rgba(234, 179, 8, 0.3);
 }
@@ -92,7 +92,7 @@
 
 /* Make the highlight card text golden */
 .premium-stat-card.highlight strong {
-  background: linear-gradient(135deg, #b45309, #d97706);
+  background: linear-gradient(135deg, #b45309, #004a94);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

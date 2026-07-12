@@ -29,16 +29,16 @@
    ========================================================================== */
 
 /* Jaune (Action Principale Premium) */
-.premium-btn.btn-yellow {
-  background: linear-gradient(135deg, #fde047, #f59e0b);
-  color: #78350f;
+.premium-btn.btn-primary {
+  background: var(--primary);
+  color: #ffffff;
   box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
 }
 
-.premium-btn.btn-yellow:hover {
+.premium-btn.btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.35);
-  background: linear-gradient(135deg, #fef08a, #d97706);
+  box-shadow: 0 8px 25px rgba(0, 74, 148, 0.35);
+  background: var(--primary-dark);
 }
 
 /* Sombre (Bleu nuit / Noir) */
@@ -56,7 +56,7 @@
 
 /* Bleu (Action Vidéo) */
 .premium-btn.btn-blue {
-  background: linear-gradient(135deg, #004a94, #002f5e);
+  background: #004a94;
   color: #ffffff;
   box-shadow: 0 4px 15px rgba(0, 74, 148, 0.2);
 }
@@ -64,12 +64,12 @@
 .premium-btn.btn-blue:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 74, 148, 0.35);
-  background: linear-gradient(135deg, #005eb8, #003b7a);
+  background: #005eb8;
 }
 
 /* Contour Sombre (Pour fond clair) */
 .premium-btn.btn-outline-dark {
-  background: transparent;
+  background: #ffffff;
   color: #0f172a;
   border-color: #cbd5e1;
 }
@@ -107,7 +107,7 @@
 
 /* Vert (Téléchargement) */
 .premium-btn.btn-green {
-  background: linear-gradient(135deg, #10b981, #047857);
+  background: #10b981;
   color: #ffffff;
   box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
 }
@@ -115,7 +115,7 @@
 .premium-btn.btn-green:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(16, 185, 129, 0.35);
-  background: linear-gradient(135deg, #34d399, #065f46);
+  background: #34d399;
 }
 
 /* Gris Neutre Premium (Téléchargement / Action discrète) */
@@ -136,7 +136,7 @@
 
 /* Rouge / Crimson (Documents / PDF) */
 .premium-btn.btn-red {
-  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  background: #ef4444;
   color: #ffffff;
   box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
 }
@@ -144,12 +144,12 @@
 .premium-btn.btn-red:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(239, 68, 68, 0.35);
-  background: linear-gradient(135deg, #f87171, #991b1b);
+  background: #f87171;
 }
 
 /* Rose (Favoris) */
 .premium-btn.btn-rose {
-  background: linear-gradient(135deg, #ec4899, #be185d);
+  background: #ec4899;
   color: #ffffff;
   box-shadow: 0 4px 15px rgba(236, 72, 153, 0.2);
 }
@@ -157,6 +157,6 @@
 .premium-btn.btn-rose:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(236, 72, 153, 0.35);
-  background: linear-gradient(135deg, #f472b6, #9d174d);
+  background: #f472b6;
 }
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Download, MonitorPlay, Headphones, UserRound, Loader2 } from 'lucide-react';
+import { Download, MonitorPlay, Headphones, UserRound, Loader2, Play } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { telechargerRessource, telechargerRessourceExterne } from '../../../services/api';
 import { Button } from '../../../components/Button';
@@ -17,6 +17,7 @@ export function SermonCard({ sermon }) {
   const youtubeMatch = sermon.url_video ? sermon.url_video.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/) : null;
   const youtubeId = youtubeMatch ? youtubeMatch[1] : null;
   const estVideo = sermon.type_media !== 'AUDIO';
+  const imageUrl = sermon.image_couverture || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null);
 
   const handlePlay = () => {
     if (sermon.fichier_audio) {
@@ -72,32 +73,61 @@ export function SermonCard({ sermon }) {
       onMouseEnter={() => setSurvol(true)}
       onMouseLeave={() => setSurvol(false)}
     >
-      {estVideo && survol && (sermon.fichier_video || youtubeId) ? (
-        sermon.fichier_video ? (
-          <video 
-            src={sermon.fichier_video} 
-            muted 
-            autoPlay 
-            loop 
-            playsInline 
-            className="cover" 
-            style={{ objectFit: 'cover', pointerEvents: 'none' }}
-          />
+      <div className="cover-wrapper" style={{ position: 'relative', width: '100%', height: '180px', overflow: 'hidden' }}>
+        {estVideo && survol && (sermon.fichier_video || youtubeId) ? (
+          sermon.fichier_video ? (
+            <video 
+              src={sermon.fichier_video} 
+              muted 
+              autoPlay 
+              loop 
+              playsInline 
+              className="cover" 
+              style={{ objectFit: 'cover', pointerEvents: 'none', width: '100%', height: '100%' }}
+            />
+          ) : (
+            <iframe
+              src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0&iv_load_policy=3&showinfo=0`}
+              title={sermon.titre}
+              className="cover"
+              frameBorder="0"
+              allow="autoplay; encrypted-media"
+              style={{ objectFit: 'cover', pointerEvents: 'none', border: 'none', width: '100%', height: '100%' }}
+            />
+          )
         ) : (
-          <iframe
-            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&rel=0&iv_load_policy=3&showinfo=0`}
-            title={sermon.titre}
-            className="cover"
-            frameBorder="0"
-            allow="autoplay; encrypted-media"
-            style={{ objectFit: 'cover', pointerEvents: 'none', border: 'none' }}
-          />
-        )
-      ) : (
-        sermon.image_couverture && (
-          <img src={sermon.image_couverture} alt={sermon.titre} className="cover" />
-        )
-      )}
+          imageUrl ? (
+            <img src={imageUrl} alt={sermon.titre} className="cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <div className="cover" style={{ width: '100%', height: '100%', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}>
+              {estVideo ? <MonitorPlay size={48} /> : <Headphones size={48} />}
+            </div>
+          )
+        )}
+        
+        {/* Overlay icône Play pour les vidéos */}
+        {estVideo && (
+          <div className="video-play-overlay" style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backgroundColor: survol ? 'transparent' : 'rgba(0,0,0,0.2)',
+            transition: 'background-color 0.3s ease',
+            pointerEvents: 'none'
+          }}>
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '50%',
+              background: survol ? 'rgba(245, 158, 11, 0.9)' : 'rgba(255,255,255,0.8)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: survol ? '0 0 20px rgba(245, 158, 11, 0.6)' : '0 4px 10px rgba(0,0,0,0.3)',
+              color: survol ? '#fff' : '#000',
+              transform: survol ? 'scale(1.1)' : 'scale(1)',
+              transition: 'all 0.3s ease'
+            }}>
+              <Play size={24} fill="currentColor" style={{ marginLeft: '4px' }} />
+            </div>
+          </div>
+        )}
+      </div>
       <div className="info">
         <div className="sermon-card-top">
           <h3>{sermon.titre}</h3>
@@ -124,12 +154,12 @@ export function SermonCard({ sermon }) {
       </div>
       <div className="actions">
         {sermon.type_media !== 'VIDEO' && sermon.fichier_audio && (
-          <Button variant="dark" onClick={handlePlay} icon={Headphones} iconPosition="left" style={{ padding: '0.6rem 1rem', fontSize: '0.85rem' }}>
+          <Button variant="primary" onClick={handlePlay} icon={Headphones} iconPosition="left" style={{ padding: '0.6rem 1rem', fontSize: '0.85rem' }}>
             Écouter
           </Button>
         )}
         {sermon.type_media !== 'AUDIO' && (sermon.fichier_video || sermon.url_video) && (
-          <Button variant="blue" onClick={() => navigate(`/sermon/${sermon.id}`)} icon={MonitorPlay} iconPosition="left" style={{ padding: '0.6rem 1rem', fontSize: '0.85rem' }}>
+          <Button variant="primary" onClick={() => navigate(`/sermon/${sermon.id}`)} icon={MonitorPlay} iconPosition="left" style={{ padding: '0.6rem 1rem', fontSize: '0.85rem' }}>
             Visionner
           </Button>
         )}
@@ -161,7 +191,7 @@ export function SermonCard({ sermon }) {
                   <button type="button" onClick={() => setTelechargement(null)} style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', background: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>
                     Annuler
                   </button>
-                  <button type="button" onClick={executerTelechargement} style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', background: 'linear-gradient(135deg, #005eb8 0%, #004a94 100%)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 4px 6px rgba(0, 94, 184, 0.2)' }}>
+                  <button type="button" onClick={executerTelechargement} style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', boxShadow: '0 4px 6px rgba(0, 94, 184, 0.2)' }}>
                     Confirmer
                   </button>
                 </div>
@@ -181,7 +211,7 @@ export function SermonCard({ sermon }) {
                   <svg width="54" height="54" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ margin: '0 auto', display: 'block' }}><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
                 </div>
                 <p style={{ color: '#ef4444', fontWeight: '600', marginBottom: '2rem' }}>{telechargement.erreurMsg}</p>
-                <button type="button" onClick={() => setTelechargement(null)} style={{ padding: '0.75rem 2rem', fontSize: '1rem', background: '#005eb8', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>
+                <button type="button" onClick={() => setTelechargement(null)} style={{ padding: '0.75rem 2rem', fontSize: '1rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>
                   Fermer
                 </button>
               </>

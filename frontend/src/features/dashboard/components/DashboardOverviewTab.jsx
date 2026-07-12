@@ -13,7 +13,7 @@ export function DashboardOverviewTab({ stats }) {
 
       <div className="dashboard-kpis">
         <div className="dashboard-kpi">
-          <div className="kpi-icon-wrapper yellow-bg">
+          <div className="kpi-icon-wrapper primary-bg">
             <Film size={24} />
           </div>
           <div className="kpi-content">

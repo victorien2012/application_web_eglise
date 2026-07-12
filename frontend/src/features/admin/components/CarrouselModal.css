@@ -39,7 +39,7 @@
 .carrousel-form input:focus,
 .carrousel-form textarea:focus {
   outline: none;
-  border-color: #f59e0b;
+  border-color: #004a94;
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
 }
 
@@ -77,14 +77,14 @@
 }
 
 .type-toggle:hover {
-  border-color: #f59e0b;
-  color: #f59e0b;
+  border-color: #004a94;
+  color: #004a94;
 }
 
 .type-toggle.active {
   background: rgba(245, 158, 11, 0.1);
-  border-color: #f59e0b;
-  color: #f59e0b;
+  border-color: #004a94;
+  color: #004a94;
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
 }
 
@@ -110,9 +110,9 @@
 }
 
 .file-upload-btn:hover {
-  border-color: #f59e0b;
+  border-color: #004a94;
   background: rgba(245, 158, 11, 0.05);
-  color: #f59e0b;
+  color: #004a94;
 }
 
 .media-preview-container {
@@ -167,12 +167,12 @@
 }
 
 .carrousel-form .checkbox-label:hover input ~ .checkmark {
-  border-color: #f59e0b;
+  border-color: #004a94;
 }
 
 .carrousel-form .checkbox-label input:checked ~ .checkmark {
-  background-color: #f59e0b;
-  border-color: #f59e0b;
+  background-color: #004a94;
+  border-color: #004a94;
 }
 
 .carrousel-form .checkmark:after {

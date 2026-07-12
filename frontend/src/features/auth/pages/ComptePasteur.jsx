@@ -298,7 +298,7 @@ export function ComptePasteur() {
             {erreur ? <p className={`auth-error ${mode === 'register' ? 'auth-field-full' : ''}`}>{erreur}</p> : null}
 
             <Button 
-              variant="yellow" 
+              variant="primary" 
               icon={mode === 'login' ? LogIn : Send} 
               type="submit" 
               disabled={soumission} 

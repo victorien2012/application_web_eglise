@@ -197,7 +197,7 @@ export function CompteFidele() {
 
             {erreur ? <p className="auth-error">{erreur}</p> : null}
 
-            <Button variant="yellow" icon={mode === 'login' ? LogIn : UserPlus} type="submit" disabled={soumission} className="auth-submit-btn">
+            <Button variant="primary" icon={mode === 'login' ? LogIn : UserPlus} type="submit" disabled={soumission} className="auth-submit-btn">
               {soumission 
                 ? (mode === 'login' ? t('auth.btn_login_loading') : t('auth.btn_register_loading')) 
                 : (mode === 'login' ? t('auth.btn_login') : t('auth.btn_register'))}

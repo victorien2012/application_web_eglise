@@ -72,7 +72,7 @@ export function MotDePasseOublie() {
 
               {erreur ? <p className="auth-error">{erreur}</p> : null}
 
-              <Button variant="yellow" type="submit" disabled={soumission} style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', marginTop: '0.5rem' }}>
+              <Button variant="primary" type="submit" disabled={soumission} style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', marginTop: '0.5rem' }}>
                 {soumission ? t('auth.btn_send_link_loading') : t('auth.btn_send_link')}
               </Button>
             </form>

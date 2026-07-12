@@ -20,7 +20,7 @@ function AvatarInitiales({ nom, size = 36 }) {
   const lettre = (nom || '?')[0].toUpperCase();
   const couleurs = [
     ['#7c3aed', '#ddd6fe'], ['#0891b2', '#cffafe'], ['#059669', '#d1fae5'],
-    ['#d97706', '#fef3c7'], ['#db2777', '#fce7f3'], ['#dc2626', '#fee2e2'],
+    ['#004a94', '#fef3c7'], ['#db2777', '#fce7f3'], ['#dc2626', '#fee2e2'],
   ];
   const idx = lettre.charCodeAt(0) % couleurs.length;
   const [bg, fg] = couleurs[idx];

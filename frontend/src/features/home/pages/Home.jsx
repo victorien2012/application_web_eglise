@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
+
+
 import { Link } from 'react-router-dom';
 import { ArrowRight, Play, Mic, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { HomeHeroPanel } from '../components/HomeHeroPanel';
+
 import { SermonCard } from '../../sermons/components/SermonCard';
 import { Button } from '../../../components/Button';
 import { api, extraireListe } from '../../../services/api';
@@ -92,10 +94,15 @@ export function Home() {
   /* =========================
      DERIVED DATA
   ========================= */
-  const aLaUne = predications?.[0];
+  const aLaUneItems = predications.filter(p => p.est_a_la_une).slice(0, 4);
+  if (aLaUneItems.length === 0 && predications.length > 0) {
+    aLaUneItems.push(predications[0]);
+  }
   const tendances = predications.slice(1, 4);
   const dernieres = predications.slice(0, 6);
   const topPasteurs = pasteurs.slice(0, 4);
+
+
 
   const stats = useMemo(() => {
     const audio = predications.filter(p => p.type_media === 'AUDIO').length;
@@ -111,14 +118,32 @@ export function Home() {
   const isLoading = chargement;
   const hasError = !!erreur;
 
+  // Auto-scroll carousel (added after state definitions)
+  const featuredRef = useRef(null);
+  useEffect(() => {
+    if (isLoading || aLaUneItems.length === 0) return;
+    const container = featuredRef.current;
+    if (!container) return;
+    const scrollStep = container.offsetWidth;
+    const interval = setInterval(() => {
+      if (container.scrollLeft + container.offsetWidth >= container.scrollWidth) {
+        container.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        container.scrollBy({ left: scrollStep, behavior: 'smooth' });
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isLoading, aLaUneItems]);
+  // const hasError = !!erreur; // duplicate removed
+
   /* =========================
      RENDER
   ========================= */
   return (
     <main id="contenu-principal" className="home-layout">
 
-      {/* ================= HERO PREMIUM ================= */}
-      <div className="home-premium-hero-wrapper">
+      {/* ================= BANNIÈRE UVCI ================= */}
+      <div className="home-banner-wrapper">
         {!isLoading && !hasError && annonces.length > 0 && (
           <div className="announcements-container fade-in-up" style={{ animationDelay: '0.05s' }}>
             {annonces.map(annonce => (
@@ -132,52 +157,103 @@ export function Home() {
             ))}
           </div>
         )}
-        <header className="home-hero">
 
-          <div className="home-hero-copy">
-            <div className="home-kicker-row fade-in-up" style={{ animationDelay: '0.1s' }}>
-              <p className="section-kicker home-kicker-pill">{t('home.kicker_pill')}</p>
-              <span className="home-kicker-note">{t('home.kicker_note')}</span>
-            </div>
-
-            <h1 className="title-premium fade-in-up" style={{ animationDelay: '0.2s' }}>
-              {t('home.hero_title_1')}<span className="text-yellow">{t('home.hero_title_2')}</span>
-            </h1>
-
-            <p className="home-copy-premium fade-in-up" style={{ animationDelay: '0.3s', textAlign: 'justify' }}>
-              {t('home.hero_subtitle')}
-            </p>
-
-
-
-            <div className="home-actions fade-in-up" style={{ animationDelay: '0.5s', justifyContent: 'center', width: '100%' }}>
-              <Button to="/videos" variant="yellow" icon={ArrowRight} iconPosition="right" className="hero-btn-glow">
-                {t('home.hero_btn_explore')}
-              </Button>
-
-              <Button to="/pasteurs" variant="outline-dark">
-                {t('home.hero_btn_pastors')}
-              </Button>
-            </div>
-          </div>
-
-          <div className="fade-in-up" style={{ animationDelay: '0.6s' }}>
-            <HomeCarousel medias={carrouselMedias} />
-          </div>
-
-        </header>
+        {/* CAROUSEL BACKGROUND */}
+        <div className="fade-in" style={{ animationDelay: '0.2s' }}>
+          <HomeCarousel medias={carrouselMedias} />
+        </div>
       </div>
+
+      <section className="home-intro-section reveal-on-scroll">
+        <header className="home-hero-center">
+          <div className="home-kicker-row fade-in-up" style={{ animationDelay: '0.1s', justifyContent: 'center' }}>
+            <p className="section-kicker home-kicker-pill">{t('home.kicker_pill')}</p>
+          </div>
+
+          <h1 className="title-premium fade-in-up" style={{ animationDelay: '0.2s' }}>
+            {t('home.hero_title_1')}<br /><span className="text-primary">{t('home.hero_title_2')}</span>
+          </h1>
+
+          <p className="home-copy-premium fade-in-up" style={{ animationDelay: '0.3s', textAlign: 'center' }}>
+            {t('home.hero_subtitle')}
+          </p>
+
+          <div className="home-actions-center fade-in-up" style={{ animationDelay: '0.5s' }}>
+            <Button to="/videos" variant="accent" icon={ArrowRight} iconPosition="right" className="hero-btn-glow">
+              {t('home.hero_btn_explore')}
+            </Button>
+
+            <Link to="/pasteurs" className="btn btn-outline-dark">
+              {t('home.hero_btn_pastors')}
+            </Link>
+          </div>
+        </header>
+      </section>
 
       <section className="home-page">
 
-        {/* ================= BANDEAU STATISTIQUES ================= */}
-        <section className="home-section reveal-on-scroll" style={{ padding: '2rem 0 2rem 0', display: 'flex', justifyContent: 'center' }}>
-          <HomeHeroPanel
-            total={stats.total}
-            audio={stats.audio}
-            video={stats.video}
-          />
-        </section>
+
+
+        {/* ================= À LA UNE (Actualité) ================= */}
+        {!isLoading && !hasError && aLaUneItems.length > 0 && (
+          <section className="home-section reveal-on-scroll">
+            <div className="section-heading">
+              <h2>{t('home.featured_title', 'À La Une')}</h2>
+              <p>{t('home.featured_subtitle', 'Découvrez notre actualité principale')}</p>
+            </div>
+
+            <div className="featured-scroll-container" ref={featuredRef}>
+              {aLaUneItems.map((item) => {
+                let coverUrl = item.image_couverture;
+                if (!coverUrl && item.url_video) {
+                  const match = item.url_video.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+                  if (match && match[1]) {
+                    coverUrl = `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`;
+                  }
+                }
+                const pastorName = item.nom_predicateur || item.pasteur?.nom_affichage;
+
+                return (
+                  <div key={item.id} className="premium-featured-card scroll-snap-card">
+                    {coverUrl && (
+                      <>
+                        <div className="featured-image-bg">
+                          <img src={coverUrl} alt={item.titre} />
+                        </div>
+                        <div className="featured-overlay"></div>
+                      </>
+                    )}
+                    <div className="home-highlight-copy">
+                      <div className="featured-badge">
+                        <Star size={14} /> {t('home.featured_badge', 'ACTUALITÉ')}
+                      </div>
+                      <h2 className="featured-title">{item.titre}</h2>
+                      {item.description && (
+                        <p className="featured-desc" dangerouslySetInnerHTML={{ __html: item.description.substring(0, 150) + (item.description.length > 150 ? '...' : '') }}></p>
+                      )}
+                      <div className="home-highlight-meta">
+                        {pastorName && (
+                          <span className="meta-badge">{pastorName}</span>
+                        )}
+                        {item.date_publication && (
+                          <>
+                            <span className="meta-dot">•</span>
+                            <span>{new Date(item.date_publication).toLocaleDateString()}</span>
+                          </>
+                        )}
+                        <span className="meta-dot">•</span>
+                        <span>{item.type_media === 'AUDIO' ? <Mic size={16} /> : <Play size={16} />}</span>
+                      </div>
+                      <Button to={`/sermon/${item.id}`} variant="primary">
+                        {t('home.watch_now', 'Découvrir')}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* ================= TENDANCES ================= */}
         <section className="home-section reveal-on-scroll">
@@ -217,7 +293,7 @@ export function Home() {
               <h2>{t('home.ministries_title')}</h2>
               <p>{t('home.ministries_subtitle')}</p>
             </div>
-            <Button to="/pasteurs" variant="outline-dark">
+            <Button to="/pasteurs" variant="primary">
               {t('home.all_pastors')}
             </Button>
           </div>
@@ -232,9 +308,9 @@ export function Home() {
           ) : !hasError && topPasteurs.length ? (
             <div className="home-pastors-grid">
               {topPasteurs.map((pasteur, i) => (
-                <Link 
-                  key={pasteur.id} 
-                  to={`/pasteurs/${pasteur.id}`} 
+                <Link
+                  key={pasteur.id}
+                  to={`/pasteurs/${pasteur.id}`}
                   className="home-pastor-card premium-hover-lift reveal-cascade"
                   style={{ transitionDelay: `${i * 0.1}s` }}
                 >
@@ -284,6 +360,7 @@ export function Home() {
           ) : null}
 
         </section>
+
 
       </section>
 

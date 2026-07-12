@@ -23,7 +23,7 @@
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-size: 0.72rem;
-  color: #ffd36b;
+  color: #004a94;
 }
 
 .connexion-copy {
@@ -92,7 +92,7 @@
 .champ-case input {
   width: 18px;
   height: 18px;
-  accent-color: #ffd36b;
+  accent-color: #004a94;
 }
 
 .connexion-pied {
@@ -103,7 +103,7 @@
 }
 
 .connexion-pied a {
-  color: #ffd36b;
+  color: #004a94;
   font-weight: 600;
   text-decoration: none;
 }

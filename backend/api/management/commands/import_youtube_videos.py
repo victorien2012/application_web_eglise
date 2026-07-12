@@ -376,8 +376,6 @@ class Command(BaseCommand):
         nom_pred = extraire_nom_predicateur(titre)
         if not nom_pred:
             nom_pred = extraire_nom_predicateur(description)
-        if not nom_pred:
-            nom_pred = (snippet.get('channelTitle') or '').strip()
 
         return {
             'youtube_id': youtube_id,
