@@ -16,8 +16,28 @@ from .models import (
     Signalement,
     DemandePasteur,
     Annonce,
+    PlanTarifaire,
+    SouscriptionPasteur,
+    Transaction,
 )
 
+@admin.register(PlanTarifaire)
+class PlanTarifaireAdmin(admin.ModelAdmin):
+    list_display = ('nom', 'prix', 'duree_jours', 'est_actif', 'cree_le')
+    list_filter = ('est_actif',)
+    search_fields = ('nom',)
+
+@admin.register(SouscriptionPasteur)
+class SouscriptionPasteurAdmin(admin.ModelAdmin):
+    list_display = ('pasteur', 'plan', 'date_debut', 'date_fin', 'est_essai', 'est_active')
+    list_filter = ('est_essai',)
+    search_fields = ('pasteur__nom_affichage',)
+
+@admin.register(Transaction)
+class TransactionAdmin(admin.ModelAdmin):
+    list_display = ('reference', 'pasteur', 'montant', 'methode', 'statut', 'cree_le')
+    list_filter = ('statut', 'methode', 'cree_le')
+    search_fields = ('reference', 'pasteur__nom_affichage')
 
 @admin.register(ProfilUtilisateur)
 class ProfilUtilisateurAdmin(admin.ModelAdmin):

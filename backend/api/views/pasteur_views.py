@@ -131,6 +131,20 @@ class PasteurViewSet(viewsets.ModelViewSet):
             status=status.HTTP_202_ACCEPTED,
         )
 
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser],
+            url_path='admin_supprimer_chaine_youtube')
+    def admin_supprimer_chaine_youtube(self, request, pk=None):
+        """Permet à un admin de supprimer la chaîne YouTube associée à un compte pasteur."""
+        pasteur = self.get_object()
+        pasteur.lien_youtube = None
+        pasteur.save(update_fields=['lien_youtube'])
+        
+        if request.data.get('supprimer_videos'):
+            Predication.objects.filter(pasteur=pasteur, url_video__icontains='youtube.com').delete()
+            Predication.objects.filter(pasteur=pasteur, url_video__icontains='youtu.be').delete()
+            
+        return Response({"detail": "La chaîne a été retirée avec succès."}, status=status.HTTP_200_OK)
+
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy', 'synchroniser_youtube']:
             return [permissions.IsAuthenticated()]

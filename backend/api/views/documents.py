@@ -46,7 +46,13 @@ class DocumentViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(pasteur=self.request.user.profil_pasteur)
+        pasteur = self.request.user.profil_pasteur
+        if not hasattr(pasteur, 'souscription') or not pasteur.souscription.est_active:
+            from rest_framework import serializers
+            raise serializers.ValidationError(
+                {"detail": "Votre abonnement est expiré. Veuillez le renouveler pour publier des documents."}
+            )
+        serializer.save(pasteur=pasteur)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
     def enregistrer_telechargement(self, request, pk=None):

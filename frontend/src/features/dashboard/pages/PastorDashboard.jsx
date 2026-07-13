@@ -24,6 +24,7 @@ import { ModifierProfilPasteur } from '../components/ModifierProfilPasteur';
 import { DashboardSidebar } from '../components/DashboardSidebar';
 import { DashboardTopbar } from '../components/DashboardTopbar';
 import { DashboardOverviewTab } from '../components/DashboardOverviewTab';
+import { AbonnementPasteur } from './AbonnementPasteur';
 import './PastorDashboard.css';
 
 const FORMULAIRE_VIDE = {
@@ -66,6 +67,7 @@ export function PastorDashboard() {
   const [chargementInitial, setChargementInitial] = useState(true);
   const [soumission, setSoumission] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [souscription, setSouscription] = useState(null);
   
   // États indispensables au Datatable (Recherche, Filtre & Pagination)
   const [filtrePublication, setFiltrePublication] = useState('tous');
@@ -244,11 +246,12 @@ export function PastorDashboard() {
 
     async function chargerDonnees() {
       try {
-        const [statsResponse, predicationsResponse, seriesResponse, categoriesResponse] = await Promise.all([
+        const [statsResponse, predicationsResponse, seriesResponse, categoriesResponse, souscriptionResponse] = await Promise.all([
           api.get('/pasteurs/statistiques_tableau_de_bord/'),
           api.get('/predications/?espace_pasteur=true'),
           api.get('/series/'),
           api.get('/categories/'),
+          api.get('/souscriptions/courante/').catch(() => ({ data: null }))
         ]);
 
         if (active) {
@@ -256,6 +259,9 @@ export function PastorDashboard() {
           setPredications(extraireListe(predicationsResponse.data));
           setSeries(extraireListe(seriesResponse.data));
           setCategories(extraireListe(categoriesResponse.data));
+          if (souscriptionResponse.data) {
+            setSouscription(souscriptionResponse.data);
+          }
         }
       } catch (error) {
         if (active) {
@@ -495,6 +501,15 @@ export function PastorDashboard() {
           </div>
         )}
 
+        {souscription && !souscription.est_active && (
+          <div style={{ margin: '0 2.5rem 1.5rem', padding: '1.25rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderLeft: '4px solid #dc2626', borderRadius: '8px', color: '#991b1b', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <AlertTriangle size={20} />
+            <p style={{ margin: 0, fontWeight: 500, fontSize: '0.95rem' }}>
+              Votre abonnement a expiré. Vous ne pouvez plus publier de nouvelles vidéos ou documents. <a href="#" onClick={(e) => { e.preventDefault(); setOngletActif('abonnement'); }} style={{ color: '#dc2626', textDecoration: 'underline', fontWeight: 600 }}>Renouveler maintenant</a>.
+            </p>
+          </div>
+        )}
+
         {/* Onglet : MON PROFIL */}
         {ongletActif === 'profil' && <ModifierProfilPasteur />}
 
@@ -510,6 +525,9 @@ export function PastorDashboard() {
 
         {/* Onglet : DOCUMENTS */}
         {ongletActif === 'documents' && <GestionDocuments />}
+
+        {/* Onglet : ABONNEMENT */}
+        {ongletActif === 'abonnement' && <AbonnementPasteur />}
 
         {/* Onglet 1 : VUE D'ENSEMBLE */}
         {ongletActif === 'apercu' ? <DashboardOverviewTab stats={stats} /> : null}
@@ -542,10 +560,10 @@ export function PastorDashboard() {
             <div className="dashboard-section">
               <div className="table-actions-top">
                 <div className="left-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                  <button className="btn btn-primary" type="button" onClick={() => { ouvrirModeVideo(); setOngletActif('publier'); }}>
+                  <button className="btn btn-primary" type="button" onClick={() => { ouvrirModeVideo(); setOngletActif('publier'); }} disabled={souscription && !souscription.est_active}>
                     {t('dashboard.add_video')}
                   </button>
-                  <button className="btn" type="button" style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', display: 'flex', alignItems: 'center' }} onClick={() => {
+                  <button className="btn" type="button" disabled={souscription && !souscription.est_active} style={{ backgroundColor: (souscription && !souscription.est_active) ? '#ccc' : '#ef4444', color: 'white', border: 'none', display: 'flex', alignItems: 'center' }} onClick={() => {
                     setErreurFormulaire('');
                     setMessageFormulaire('');
                     setModePublication('chaine');

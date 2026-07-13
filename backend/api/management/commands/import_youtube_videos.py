@@ -143,6 +143,13 @@ class Command(BaseCommand):
             )
 
         pasteur = self._resoudre_pasteur(options['pasteur'], channel_id)
+        
+        if hasattr(pasteur, 'souscription') and not pasteur.souscription.est_active:
+            raise CommandError(
+                f"L'abonnement du pasteur {pasteur.nom_affichage} a expiré. "
+                "L'importation est bloquée."
+            )
+            
         service = self._construire_service(api_key)
 
         self.stdout.write(self.style.MIGRATE_HEADING(

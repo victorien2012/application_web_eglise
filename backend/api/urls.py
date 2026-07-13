@@ -28,6 +28,9 @@ from .views import (
     CarrouselMediaViewSet,
     DocumentViewSet,
     ConfigurationSiteViewSet,
+    PlanTarifaireViewSet,
+    SouscriptionPasteurViewSet,
+    PaiementSimulationViewSet,
 )
 
 router = DefaultRouter()
@@ -47,6 +50,9 @@ router.register(r'annonces', AnnonceViewSet, basename='annonce')
 router.register(r'carrousel', CarrouselMediaViewSet, basename='carrousel')
 router.register(r'documents', DocumentViewSet, basename='document')
 router.register(r'configuration', ConfigurationSiteViewSet, basename='configuration')
+router.register(r'plans', PlanTarifaireViewSet, basename='plan')
+router.register(r'souscriptions', SouscriptionPasteurViewSet, basename='souscription')
+router.register(r'paiements', PaiementSimulationViewSet, basename='paiement')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -22,6 +22,15 @@ export function DashboardSidebar({ isSidebarOpen, setIsSidebarOpen, ongletActif,
 
         <button
           type="button"
+          className={`menu-item ${ongletActif === 'abonnement' ? 'active' : ''}`}
+          onClick={() => { setOngletActif('abonnement'); setIsSidebarOpen(false); }}
+        >
+          <TrendingUp size={18} />
+          <span>Abonnement</span>
+        </button>
+
+        <button
+          type="button"
           className={`menu-item ${ongletActif === 'catalogue' ? 'active' : ''}`}
           onClick={() => { setOngletActif('catalogue'); setIsSidebarOpen(false); }}
         >

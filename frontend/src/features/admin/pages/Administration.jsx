@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ShieldCheck, Flag, BadgeCheck, BarChart3, CheckCircle, XCircle, Trash2, Clock, AlertTriangle, Users, Video, Eye, Download, MessageSquare, Heart, Bell, Megaphone, Edit, MonitorPlay, Settings } from 'lucide-react';
+import { ShieldCheck, Flag, BadgeCheck, BarChart3, CheckCircle, XCircle, Trash2, Clock, AlertTriangle, Users, Video, Eye, Download, MessageSquare, Heart, Bell, Megaphone, Edit, MonitorPlay, Settings, UserX, UserCheck } from 'lucide-react';
 import { api, extraireListe } from '../../../services/api';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../../components/Button';
@@ -37,6 +37,7 @@ export function Administration() {
   const [recherchePasteur, setRecherchePasteur] = useState('');
   const [filtreStatutPasteur, setFiltreStatutPasteur] = useState('tous');
   const [pagePasteurs, setPagePasteurs] = useState(1);
+  const [pagePasteursValides, setPagePasteursValides] = useState(1);
   const [pageSignalements, setPageSignalements] = useState(1);
   const [pageAnnonces, setPageAnnonces] = useState(1);
   const [pageCarrousel, setPageCarrousel] = useState(1);
@@ -108,7 +109,18 @@ export function Administration() {
 
   useEffect(() => {
     setPagePasteurs(1);
-  }, [recherchePasteur, filtreStatutPasteur]);
+    setPagePasteursValides(1);
+  }, [filtreStatutPasteur, recherchePasteur, ongletActif]);
+
+  useEffect(() => {
+    if (messageSucces || erreur) {
+      const timer = setTimeout(() => {
+        setMessageSucces('');
+        setErreur('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [messageSucces, erreur]);
 
   const demanderConfirmation = (titre, message, texteConfirmer, variante, icone, action) => {
     setModalConfig({ titre, message, texteConfirmer, variante, icone, action });
@@ -161,6 +173,21 @@ export function Administration() {
       setErreur('');
     } catch {
       setErreur(t('admin.delete_error', 'Erreur lors de la suppression.'));
+      setMessageSucces('');
+    } finally {
+      setActionEnCours(null);
+    }
+  }
+
+  async function supprimerChaineYoutube(pasteur) {
+    setActionEnCours(`supprimer-chaine-${pasteur.id}`);
+    try {
+      await api.post(`/pasteurs/${pasteur.id}/admin_supprimer_chaine_youtube/`, { supprimer_videos: true });
+      setPasteurs((actuels) => actuels.map(p => p.id === pasteur.id ? { ...p, lien_youtube: null } : p));
+      setMessageSucces('La chaîne YouTube et ses vidéos importées ont été retirées avec succès.');
+      setErreur('');
+    } catch {
+      setErreur('Erreur lors du retrait de la chaîne YouTube.');
       setMessageSucces('');
     } finally {
       setActionEnCours(null);
@@ -245,15 +272,33 @@ export function Administration() {
                                 (p.nom_eglise || '').toLowerCase().includes(recherchePasteur.toLowerCase()) ||
                                 (p.email || '').toLowerCase().includes(recherchePasteur.toLowerCase());
     
-    if (filtreStatutPasteur === 'valides') return correspondRecherche && p.est_valide === true;
-    if (filtreStatutPasteur === 'en_attente') return correspondRecherche && p.est_valide === false && !p.est_rejete;
-    if (filtreStatutPasteur === 'rejetes') return correspondRecherche && p.est_valide === false && p.est_rejete === true;
-    return correspondRecherche;
+    // Pour l'onglet Demandes, on ne veut que les non-validés (sauf si on filtre explicitement, mais gardons la logique pour l'instant et forçons les non-validés si on est sur 'pasteurs')
+    if (ongletActif === 'pasteurs') {
+      if (p.est_valide) return false;
+      if (filtreStatutPasteur === 'en_attente') return correspondRecherche && !p.est_valide && !p.est_rejete;
+      if (filtreStatutPasteur === 'rejetes') return correspondRecherche && !p.est_valide && p.est_rejete;
+      return correspondRecherche;
+    }
+    return false;
+  });
+
+  const pasteursValidesFiltres = pasteurs.filter(p => {
+    const correspondRecherche = (p.nom_affichage || '').toLowerCase().includes(recherchePasteur.toLowerCase()) ||
+                                (p.nom_eglise || '').toLowerCase().includes(recherchePasteur.toLowerCase()) ||
+                                (p.email || '').toLowerCase().includes(recherchePasteur.toLowerCase());
+    if (ongletActif === 'pasteurs_valides') {
+      return correspondRecherche && p.est_valide;
+    }
+    return false;
   });
 
   const indexDebutPasteurs = (pagePasteurs - 1) * ELEMENTS_PAR_PAGE;
   const pasteursAffiches = pasteursFiltres.slice(indexDebutPasteurs, indexDebutPasteurs + ELEMENTS_PAR_PAGE);
   const totalPagesPasteurs = Math.ceil(pasteursFiltres.length / ELEMENTS_PAR_PAGE);
+
+  const indexDebutPasteursValides = (pagePasteursValides - 1) * ELEMENTS_PAR_PAGE;
+  const pasteursValidesAffiches = pasteursValidesFiltres.slice(indexDebutPasteursValides, indexDebutPasteursValides + ELEMENTS_PAR_PAGE);
+  const totalPagesPasteursValides = Math.ceil(pasteursValidesFiltres.length / ELEMENTS_PAR_PAGE);
 
   const indexDebutSignalements = (pageSignalements - 1) * ELEMENTS_PAR_PAGE;
   const signalementsAffiches = signalements.slice(indexDebutSignalements, indexDebutSignalements + ELEMENTS_PAR_PAGE);
@@ -295,6 +340,10 @@ export function Administration() {
           <button type="button" className={`menu-item ${ongletActif === 'pasteurs' ? 'active' : ''}`} onClick={() => setOngletActif('pasteurs')}>
             <Users size={18} />
             <span>Demandes Pasteurs</span>
+          </button>
+          <button type="button" className={`menu-item ${ongletActif === 'pasteurs_valides' ? 'active' : ''}`} onClick={() => setOngletActif('pasteurs_valides')}>
+            <BadgeCheck size={18} />
+            <span>Pasteurs Validés</span>
           </button>
           <button type="button" className={`menu-item ${ongletActif === 'signalements' ? 'active' : ''}`} onClick={() => setOngletActif('signalements')}>
             <ShieldCheck size={18} />
@@ -402,15 +451,12 @@ export function Administration() {
       <section className="admin-section">
         <div className="admin-section-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <BadgeCheck size={20} />
-            <h2>{t('admin.manage_pastors', 'Gestion des Pasteurs')}</h2>
+            <Users size={20} />
+            <h2>Demandes Pasteurs</h2>
             <span className="admin-badge-count">{pasteursFiltres.length}</span>
           </div>
           
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <Button variant="primary" onClick={() => setShowCreatePasteur(true)} style={{ fontSize: '0.9rem' }}>
-              {t('admin.create_pastor', 'Créer un pasteur')}
-            </Button>
             <input 
               type="text" 
               placeholder="Rechercher par nom, église, email..." 
@@ -423,8 +469,7 @@ export function Administration() {
               onChange={(e) => setFiltreStatutPasteur(e.target.value)}
               style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
             >
-              <option value="tous">Tous les statuts</option>
-              <option value="valides">Validés</option>
+              <option value="tous">Toutes les demandes</option>
               <option value="en_attente">En attente</option>
               <option value="rejetes">Rejetés</option>
             </select>
@@ -435,13 +480,13 @@ export function Administration() {
             <table className="premium-table">
               <thead>
                 <tr>
-                  <th style={{ width: '60px' }}>{t('admin.col_avatar', 'Avatar')}</th>
-                  <th>{t('admin.col_name', 'Nom complet')}</th>
-                  <th>{t('admin.col_church', 'Église')}</th>
-                  <th>{t('admin.col_contact', 'Contact')}</th>
-                  <th>{t('admin.col_status', 'Statut')}</th>
-                  <th>{t('admin.col_date', 'Inscription')}</th>
-                  <th style={{ textAlign: 'right' }}>{t('admin.col_actions', 'Actions')}</th>
+                  <th style={{ width: '60px' }}>Avatar</th>
+                  <th>Nom complet</th>
+                  <th>Église</th>
+                  <th>Contact</th>
+                  <th>Statut</th>
+                  <th>Inscription</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -463,9 +508,7 @@ export function Administration() {
                     <td>{pasteur.nom_eglise || '-'}</td>
                     <td>{pasteur.contact || '-'}</td>
                     <td>
-                      {pasteur.est_valide ? (
-                        <span className="status-badge published">Validé</span>
-                      ) : pasteur.est_rejete ? (
+                      {pasteur.est_rejete ? (
                         <span className="status-badge archived" style={{ color: '#ef4444', backgroundColor: '#fee2e2' }}>Rejeté</span>
                       ) : (
                         <span className="status-badge draft" style={{ color: '#004a94', backgroundColor: '#e0f2fe' }}>En attente</span>
@@ -474,47 +517,38 @@ export function Administration() {
                     <td>{new Date(pasteur.cree_le).toLocaleDateString()}</td>
                     <td>
                       <div className="admin-table-actions">
-                        {pasteur.cree_par_admin && (
-                          <Button variant="secondary" onClick={() => { setSelectedPasteurId(pasteur.id); setShowPublishMedia(true); }} style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>
-                            {t('admin.publish_media', 'Publier un média')}
-                          </Button>
-                        )}
-                        {!pasteur.est_valide && (
-                          <Button
-                            variant="green"
-                            icon={CheckCircle}
-                            onClick={() => demanderConfirmation(
-                              'Valider le pasteur',
-                              `Êtes-vous sûr de vouloir valider le compte de ${pasteur.nom_affichage} ? Il pourra alors publier des vidéos.`,
-                              'Valider le compte',
-                              'success',
-                              CheckCircle,
-                              () => validerPasteur(pasteur)
-                            )}
-                            disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}`}
-                            style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                          >
-                            {t('admin.validate_btn')}
-                          </Button>
-                        )}
-                        {(!pasteur.est_rejete || pasteur.est_valide) && (
-                          <Button
-                            variant="red"
-                            icon={XCircle}
-                            onClick={() => demanderConfirmation(
-                              'Rejeter le pasteur',
-                              `Êtes-vous sûr de vouloir rejeter le compte de ${pasteur.nom_affichage} ?`,
-                              'Rejeter le compte',
-                              'danger',
-                              XCircle,
-                              () => rejeterPasteur(pasteur)
-                            )}
-                            disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}` || actionEnCours === `supprimer-${pasteur.id}`}
-                            style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                          >
-                            {t('admin.reject_btn')}
-                          </Button>
-                        )}
+                        <Button
+                          variant="green"
+                          icon={UserCheck}
+                          onClick={() => demanderConfirmation(
+                            'Valider le pasteur',
+                            `Êtes-vous sûr de vouloir valider le compte de ${pasteur.nom_affichage} ? Il pourra alors publier des vidéos.`,
+                            'Valider le compte',
+                            'success',
+                            UserCheck,
+                            () => validerPasteur(pasteur)
+                          )}
+                          disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}`}
+                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                        >
+                          Valider
+                        </Button>
+                        <Button
+                          variant="red"
+                          icon={UserX}
+                          onClick={() => demanderConfirmation(
+                            'Rejeter le pasteur',
+                            `Êtes-vous sûr de vouloir rejeter le compte de ${pasteur.nom_affichage} ?`,
+                            'Rejeter le compte',
+                            'danger',
+                            UserX,
+                            () => rejeterPasteur(pasteur)
+                          )}
+                          disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}` || actionEnCours === `supprimer-${pasteur.id}`}
+                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                        >
+                          Rejeter
+                        </Button>
                         <Button
                           variant="red"
                           icon={Trash2}
@@ -545,7 +579,132 @@ export function Administration() {
         ) : (
           <div className="admin-empty-state">
             <CheckCircle size={32} />
-            <p>{t('admin.no_pending_pastors')}</p>
+            <p>Aucune demande de pasteur en attente.</p>
+          </div>
+        )}
+      </section>
+      )}
+
+      {/* Pasteurs Validés */}
+      {ongletActif === 'pasteurs_valides' && (
+      <section className="admin-section">
+        <div className="admin-section-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <BadgeCheck size={20} />
+            <h2>Pasteurs Validés</h2>
+            <span className="admin-badge-count">{pasteursValidesFiltres.length}</span>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <Button variant="primary" onClick={() => setShowCreatePasteur(true)} style={{ fontSize: '0.9rem' }}>
+              Créer un pasteur
+            </Button>
+            <input 
+              type="text" 
+              placeholder="Rechercher par nom, église, email..." 
+              value={recherchePasteur}
+              onChange={(e) => setRecherchePasteur(e.target.value)}
+              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', width: '250px' }}
+            />
+          </div>
+        </div>
+        {pasteursValidesFiltres.length ? (
+          <div className="datatable-responsive">
+            <table className="premium-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '60px' }}>Avatar</th>
+                  <th>Nom complet</th>
+                  <th>Église</th>
+                  <th>Contact</th>
+                  <th>Statut</th>
+                  <th>Inscription</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pasteursValidesAffiches.map((pasteur) => (
+                  <tr key={pasteur.id} className="datatable-row">
+                    <td>
+                      <div className="admin-table-avatar">
+                        {pasteur.avatar ? (
+                          <img src={pasteur.avatar} alt={pasteur.nom_affichage} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                          <span>{(pasteur.nom_affichage || '?')[0].toUpperCase()}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="cell-title">
+                      <strong>{pasteur.nom_affichage}</strong>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>{pasteur.email}</div>
+                    </td>
+                    <td>{pasteur.nom_eglise || '-'}</td>
+                    <td>{pasteur.contact || '-'}</td>
+                    <td>
+                      <span className="status-badge published">Validé</span>
+                    </td>
+                    <td>{new Date(pasteur.cree_le).toLocaleDateString()}</td>
+                    <td>
+                      <div className="admin-table-actions">
+                        {pasteur.cree_par_admin && (
+                          <Button
+                            variant="primary"
+                            icon={MonitorPlay}
+                            onClick={() => { setSelectedPasteurId(pasteur.id); setShowPublishMedia(true); }}
+                            style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                          >
+                            Publier média
+                          </Button>
+                        )}
+                        {pasteur.cree_par_admin && (
+                          <Button
+                            variant="secondary"
+                            icon={Video}
+                            onClick={() => demanderConfirmation(
+                              'Retirer la chaîne YouTube',
+                              `Êtes-vous sûr de vouloir retirer la chaîne YouTube de ${pasteur.nom_affichage} ? Toutes les vidéos associées seront supprimées.`,
+                              'Retirer la chaîne',
+                              'warning',
+                              Video,
+                              () => supprimerChaineYoutube(pasteur)
+                            )}
+                            disabled={actionEnCours === `supprimer-chaine-${pasteur.id}`}
+                            style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', backgroundColor: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5' }}
+                          >
+                            Détacher YouTube
+                          </Button>
+                        )}
+                        <Button
+                          variant="red"
+                          icon={Trash2}
+                          onClick={() => demanderConfirmation(
+                            'Supprimer le compte',
+                            `Êtes-vous sûr de vouloir supprimer définitivement le compte de ${pasteur.nom_affichage} ? Cette action est irréversible.`,
+                            'Supprimer',
+                            'danger',
+                            Trash2,
+                            () => supprimerPasteur(pasteur)
+                          )}
+                          disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}` || actionEnCours === `supprimer-${pasteur.id}`}
+                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                        >
+                          Supprimer
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
+              <Pagination current={pagePasteursValides} total={totalPagesPasteursValides} onChange={setPagePasteursValides} />
+            </div>
+          </div>
+        ) : (
+          <div className="admin-empty-state">
+            <CheckCircle size={32} />
+            <p>Aucun pasteur validé.</p>
           </div>
         )}
       </section>

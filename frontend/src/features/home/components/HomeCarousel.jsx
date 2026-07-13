@@ -79,22 +79,34 @@ const HomeCarousel = ({ medias }) => {
         ref={scrollRef}
         onScroll={handleScroll}
       >
-        {displayMedias.map((media) => {
+        {displayMedias.map((media, idx) => {
           let mediaContent = null;
           if (media.type_media === 'VIDEO' && media.url_video) {
             const youtubeId = extractYouTubeId(media.url_video);
             if (youtubeId) {
-              mediaContent = (
-                <iframe
-                  src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&showinfo=0`}
-                  title={media.titre || "Video"}
-                  className="carousel-media"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  style={{ pointerEvents: 'none' }}
-                />
-              );
+              if (idx === activeIndex) {
+                mediaContent = (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&modestbranding=1&showinfo=0`}
+                    title={media.titre || "Video"}
+                    className="carousel-media"
+                    frameBorder="0"
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{ pointerEvents: 'none' }}
+                  />
+                );
+              } else {
+                mediaContent = (
+                  <img 
+                    src={`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`} 
+                    alt={media.titre || "Video Thumbnail"} 
+                    className="carousel-media"
+                    style={{ objectFit: 'cover' }}
+                  />
+                );
+              }
             }
           } else {
             mediaContent = (

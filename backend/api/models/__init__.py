@@ -40,3 +40,9 @@ from .cms import (  # noqa: F401
     CarrouselMedia,
     ConfigurationSite,
 )
+
+from .paiement import (  # noqa: F401
+    PlanTarifaire,
+    SouscriptionPasteur,
+    Transaction,
+)

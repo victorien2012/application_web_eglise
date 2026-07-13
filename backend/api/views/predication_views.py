@@ -45,7 +45,7 @@ class PredicationViewSet(viewsets.ModelViewSet):
         return PredicationSerializer
 
     def get_queryset(self):
-        queryset = Predication.objects.select_related('pasteur', 'serie').all().order_by('-date_publication', '-cree_le')
+        queryset = Predication.objects.select_related('pasteur', 'serie').prefetch_related('categories', 'etiquettes', 'pieces_jointes').all().order_by('-date_publication', '-cree_le')
         user = self.request.user
         espace_pasteur = self.request.query_params.get('espace_pasteur', 'false') == 'true'
 
@@ -101,6 +101,13 @@ class PredicationViewSet(viewsets.ModelViewSet):
                     raise serializers.ValidationError(
                         {"detail": "Votre compte n'est pas encore validé. Vous ne pouvez pas publier de prédications."}
                     )
+                
+                # Vérifier la souscription
+                if not hasattr(pasteur, 'souscription') or not pasteur.souscription.est_active:
+                    raise serializers.ValidationError(
+                        {"detail": "Votre abonnement est expiré. Veuillez le renouveler pour publier de nouvelles vidéos."}
+                    )
+                    
                 serializer.save(pasteur=pasteur)
             except Pasteur.DoesNotExist:
                 raise serializers.ValidationError(

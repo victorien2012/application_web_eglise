@@ -44,3 +44,9 @@ from .cms_views import (
 )
 
 from .documents import DocumentViewSet
+
+from .paiement_views import (
+    PlanTarifaireViewSet,
+    SouscriptionPasteurViewSet,
+    PaiementSimulationViewSet,
+)

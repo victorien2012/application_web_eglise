@@ -48,3 +48,9 @@ from .cms import (  # noqa: F401
     CarrouselMediaSerializer,
     ConfigurationSiteSerializer,
 )
+
+from .paiement import (  # noqa: F401
+    PlanTarifaireSerializer,
+    SouscriptionPasteurSerializer,
+    TransactionSerializer,
+)
