@@ -1,9 +1,9 @@
 /* src/components/PiedDePage.css */
 
 .footer-premium {
-  background-color: var(--primary-dark);
+  background: linear-gradient(180deg, var(--primary-dark) 0%, #001f3f 100%);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 1.5rem 1rem 0.5rem;
+  padding: 2rem 1.5rem 1rem;
   font-family: 'Outfit', system-ui, sans-serif;
   color: rgba(255, 255, 255, 0.7);
   margin-top: auto;
@@ -20,7 +20,7 @@
   display: grid;
   grid-template-columns: 2fr 1fr 1.5fr 1fr;
   gap: 1.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 @media (max-width: 1024px) {
@@ -42,11 +42,25 @@
   flex-direction: column;
 }
 
+.footer-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.footer-brand-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
 .footer-logo {
   font-size: 1.5rem;
   font-weight: 800;
   color: #ffffff;
-  margin: 0 0 1rem 0;
+  margin: 0;
   letter-spacing: -0.02em;
 }
 
@@ -145,7 +159,8 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 0.5rem;
+  border-top: 2px solid rgba(255, 255, 255, 0.15);
   font-size: 0.85rem;
 }
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useRef } from 'react';
 
 
 import { Link } from 'react-router-dom';
-import { ArrowRight, Play, Mic, Star } from 'lucide-react';
+import { ArrowRight, Play, Mic, Star, Film, Clock, Eye, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 
@@ -94,13 +94,14 @@ export function Home() {
   /* =========================
      DERIVED DATA
   ========================= */
-  const aLaUneItems = predications.filter(p => p.est_a_la_une).slice(0, 4);
+  let aLaUneItems = predications.filter(p => p.est_a_la_une).slice(0, 4);
   if (aLaUneItems.length === 0 && predications.length > 0) {
-    aLaUneItems.push(predications[0]);
+    aLaUneItems = predications.slice(0, 4);
   }
   const tendances = predications.slice(1, 4);
   const dernieres = predications.slice(0, 6);
   const topPasteurs = pasteurs.slice(0, 4);
+  const videoFeed = predications.slice(0, 20);
 
 
 
@@ -114,6 +115,26 @@ export function Home() {
       video,
     };
   }, [predications]);
+
+  const aLaUneMedias = useMemo(() => {
+    return aLaUneItems.map(item => {
+      let coverUrl = item.image_couverture;
+      if (!coverUrl && item.url_video) {
+        const match = item.url_video.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+        if (match && match[1]) {
+          coverUrl = `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`;
+        }
+      }
+      return {
+        id: item.id,
+        fichier: coverUrl,
+        titre: item.titre,
+        description: item.description?.substring(0, 100) || '',
+        type_media: 'VIDEO',
+        url_video: item.url_video
+      };
+    });
+  }, [aLaUneItems]);
 
   const isLoading = chargement;
   const hasError = !!erreur;
@@ -134,7 +155,6 @@ export function Home() {
     }, 5000);
     return () => clearInterval(interval);
   }, [isLoading, aLaUneItems]);
-  // const hasError = !!erreur; // duplicate removed
 
   /* =========================
      RENDER
@@ -158,9 +178,16 @@ export function Home() {
           </div>
         )}
 
-        {/* CAROUSEL BACKGROUND */}
-        <div className="fade-in" style={{ animationDelay: '0.2s' }}>
-          <HomeCarousel medias={carrouselMedias} />
+        {/* CAROUSEL BACKGROUND (DUAL) */}
+        <div className="home-dual-carousel-wrapper fade-in" style={{ animationDelay: '0.2s' }}>
+          <div className="carousel-half">
+            <h2 className="carousel-half-title">{t('home.banners', 'Affiches')}</h2>
+            <HomeCarousel medias={carrouselMedias} />
+          </div>
+          <div className="carousel-half">
+            <h2 className="carousel-half-title">{t('home.featured_title', 'À La Une')}</h2>
+            <HomeCarousel medias={aLaUneMedias} />
+          </div>
         </div>
       </div>
 
@@ -190,179 +217,201 @@ export function Home() {
         </header>
       </section>
 
-      <section className="home-page">
+      {/* ================= SPLIT VIEW : Vidéos + Contenu ================= */}
+      <div className="home-split-view">
 
+        {/* ======= PANNEAU GAUCHE : Contenu principal (scroll indépendant) ======= */}
+        <div className="home-main-content">
+          <section className="home-page">
 
+            {/* L'ancienne section "À La Une" a été déplacée dans le double carrousel en haut */}
 
-        {/* ================= À LA UNE (Actualité) ================= */}
-        {!isLoading && !hasError && aLaUneItems.length > 0 && (
-          <section className="home-section reveal-on-scroll">
-            <div className="section-heading">
-              <h2>{t('home.featured_title', 'À La Une')}</h2>
-              <p>{t('home.featured_subtitle', 'Découvrez notre actualité principale')}</p>
+            {/* ================= TENDANCES ================= */}
+            <section className="home-section section-tendances reveal-on-scroll">
+              <div className="section-heading">
+                <h2 style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  {t('home.trends_title')}
+                  {tendances.length > 0 && <span className="video-feed-count">{tendances.length}</span>}
+                </h2>
+                <p>{t('home.trends_subtitle')}</p>
+              </div>
+
+              {isLoading ? (
+                <div className="grid sermon-grid">
+                  <SermonCardSkeleton />
+                  <SermonCardSkeleton />
+                  <SermonCardSkeleton />
+                </div>
+              ) : hasError ? (
+                <p className="page-state error">{t('home.error_loading')}</p>
+              ) : tendances.length ? (
+                <div className="grid sermon-grid">
+                  {tendances.map((item, i) => (
+                    <div key={item.id} className="reveal-cascade" style={{ transitionDelay: `${i * 0.1}s` }}>
+                      <SermonCard sermon={item} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="page-state">{t('home.no_trends')}</p>
+              )}
+            </section>
+
+            {/* ================= MINISTÈRES (Pasteurs) ================= */}
+            <section className="home-section reveal-on-scroll">
+              <div className="section-heading-row">
+                <div className="section-heading">
+                  <h2>{t('home.ministries_title')}</h2>
+                  <p>{t('home.ministries_subtitle')}</p>
+                </div>
+                <Button to="/pasteurs" variant="primary">
+                  {t('home.all_pastors')}
+                </Button>
+              </div>
+
+              {isLoading ? (
+                <div className="home-pastors-grid">
+                  <PastorCardSkeleton />
+                  <PastorCardSkeleton />
+                  <PastorCardSkeleton />
+                  <PastorCardSkeleton />
+                </div>
+              ) : !hasError && topPasteurs.length ? (
+                <div className="home-pastors-grid">
+                  {topPasteurs.map((pasteur, i) => (
+                    <Link
+                      key={pasteur.id}
+                      to={`/pasteurs/${pasteur.id}`}
+                      className="home-pastor-card premium-hover-lift reveal-cascade"
+                      style={{ transitionDelay: `${i * 0.1}s` }}
+                    >
+                      <div className="home-pastor-avatar">
+                        {pasteur.avatar ? (
+                          <img src={pasteur.avatar} alt={pasteur.nom_affichage} />
+                        ) : (
+                          <span>{pasteur.nom_affichage.charAt(0)}</span>
+                        )}
+                      </div>
+                      <h3>{pasteur.nom_affichage}</h3>
+                      <p>{pasteur.nom_eglise || t('home.unknown_church')}</p>
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+
+            {/* ================= DERNIERS ================= */}
+            <section className="home-section reveal-on-scroll" style={{ marginTop: '2rem' }}>
+              <div className="section-heading">
+                <h2 style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  {t('home.recent_title')}
+                  {dernieres.length > 0 && <span className="video-feed-count">{dernieres.length}</span>}
+                </h2>
+                <p>{t('home.recent_subtitle')}</p>
+              </div>
+
+              {isLoading ? (
+                <div className="grid sermon-grid">
+                  <SermonCardSkeleton />
+                  <SermonCardSkeleton />
+                  <SermonCardSkeleton />
+                  <SermonCardSkeleton />
+                  <SermonCardSkeleton />
+                  <SermonCardSkeleton />
+                </div>
+              ) : !hasError && dernieres.length ? (
+                <div className="grid sermon-grid">
+                  {dernieres.map((item, i) => (
+                    <div key={item.id} className="reveal-cascade" style={{ transitionDelay: `${(i % 3) * 0.1}s` }}>
+                      <SermonCard sermon={item} />
+                    </div>
+                  ))}
+                </div>
+              ) : !hasError ? (
+                <p className="page-state">{t('home.no_recent')}</p>
+              ) : null}
+            </section>
+
+          </section>
+        </div>
+
+        {/* ======= PANNEAU DROIT : Feed Vidéos (scroll indépendant) ======= */}
+        <aside className="home-video-feed">
+          <div className="video-feed-header">
+            <div className="video-feed-title-row">
+              <Film size={20} />
+              <h2>{t('home.video_feed_title', 'Vidéos')}</h2>
             </div>
+            <span className="video-feed-count">{videoFeed.length}</span>
+          </div>
 
-            <div className="featured-scroll-container" ref={featuredRef}>
-              {aLaUneItems.map((item) => {
-                let coverUrl = item.image_couverture;
-                if (!coverUrl && item.url_video) {
+          <div className="video-feed-list">
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="video-feed-item-skeleton">
+                  <div className="vf-skeleton-thumb" />
+                  <div className="vf-skeleton-info">
+                    <div className="vf-skeleton-line long" />
+                    <div className="vf-skeleton-line short" />
+                  </div>
+                </div>
+              ))
+            ) : videoFeed.length > 0 ? (
+              videoFeed.map((item, i) => {
+                let thumbUrl = item.image_couverture;
+                if (!thumbUrl && item.url_video) {
                   const match = item.url_video.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
                   if (match && match[1]) {
-                    coverUrl = `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`;
+                    thumbUrl = `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
                   }
                 }
-                const pastorName = item.nom_predicateur || item.pasteur?.nom_affichage;
-
                 return (
-                  <div key={item.id} className="premium-featured-card scroll-snap-card">
-                    {coverUrl && (
-                      <>
-                        <div className="featured-image-bg">
-                          <img src={coverUrl} alt={item.titre} />
+                  <Link
+                    key={item.id}
+                    to={`/sermon/${item.id}`}
+                    className="video-feed-item"
+                    style={{ animationDelay: `${i * 0.05}s` }}
+                  >
+                    <div className="vf-thumb">
+                      {thumbUrl ? (
+                        <img src={thumbUrl} alt={item.titre} loading="lazy" />
+                      ) : (
+                        <div className="vf-thumb-placeholder">
+                          {item.type_media === 'AUDIO' ? <Mic size={20} /> : <Play size={20} />}
                         </div>
-                        <div className="featured-overlay"></div>
-                      </>
-                    )}
-                    <div className="home-highlight-copy">
-                      <div className="featured-badge">
-                        <Star size={14} /> {t('home.featured_badge', 'ACTUALITÉ')}
-                      </div>
-                      <h2 className="featured-title">{item.titre}</h2>
-                      {item.description && (
-                        <p className="featured-desc" dangerouslySetInnerHTML={{ __html: item.description.substring(0, 150) + (item.description.length > 150 ? '...' : '') }}></p>
                       )}
-                      <div className="home-highlight-meta">
-                        {pastorName && (
-                          <span className="meta-badge">{pastorName}</span>
-                        )}
-                        {item.date_publication && (
-                          <>
-                            <span className="meta-dot">•</span>
-                            <span>{new Date(item.date_publication).toLocaleDateString()}</span>
-                          </>
-                        )}
-                        <span className="meta-dot">•</span>
-                        <span>{item.type_media === 'AUDIO' ? <Mic size={16} /> : <Play size={16} />}</span>
+                      <div className="vf-media-badge">
+                        {item.type_media === 'AUDIO' ? <Mic size={10} /> : <Play size={10} />}
                       </div>
-                      <Button to={`/sermon/${item.id}`} variant="primary">
-                        {t('home.watch_now', 'Découvrir')}
-                      </Button>
                     </div>
-                  </div>
+                    <div className="vf-info">
+                      <h4 className="vf-title">{item.titre}</h4>
+                      <p className="vf-pastor">{item.nom_predicateur || item.pasteur?.nom_affichage}</p>
+                      <div className="vf-meta">
+                        {item.date_publication && (
+                          <span><Clock size={11} /> {new Date(item.date_publication).toLocaleDateString()}</span>
+                        )}
+                        {item.nombre_vues > 0 && (
+                          <span><Eye size={11} /> {item.nombre_vues}</span>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="vf-chevron" />
+                  </Link>
                 );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* ================= TENDANCES ================= */}
-        <section className="home-section reveal-on-scroll">
-
-          <div className="section-heading">
-            <h2>{t('home.trends_title')}</h2>
-            <p>{t('home.trends_subtitle')}</p>
+              })
+            ) : (
+              <p className="video-feed-empty">{t('home.no_trends')}</p>
+            )}
           </div>
 
-          {isLoading ? (
-            <div className="grid sermon-grid">
-              <SermonCardSkeleton />
-              <SermonCardSkeleton />
-              <SermonCardSkeleton />
-            </div>
-          ) : hasError ? (
-            <p className="page-state error">{t('home.error_loading')}</p>
-          ) : tendances.length ? (
-            <div className="grid sermon-grid">
-              {tendances.map((item, i) => (
-                <div key={item.id} className="reveal-cascade" style={{ transitionDelay: `${i * 0.1}s` }}>
-                  <SermonCard sermon={item} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="page-state">{t('home.no_trends')}</p>
+          {!isLoading && videoFeed.length > 0 && (
+            <Link to="/videos" className="video-feed-see-all">
+              {t('home.hero_btn_explore', 'Voir tout')} <ArrowRight size={16} />
+            </Link>
           )}
-
-        </section>
-
-        {/* ================= MINISTÈRES (Pasteurs) ================= */}
-        <section className="home-section reveal-on-scroll">
-
-          <div className="section-heading-row">
-            <div className="section-heading">
-              <h2>{t('home.ministries_title')}</h2>
-              <p>{t('home.ministries_subtitle')}</p>
-            </div>
-            <Button to="/pasteurs" variant="primary">
-              {t('home.all_pastors')}
-            </Button>
-          </div>
-
-          {isLoading ? (
-            <div className="home-pastors-grid">
-              <PastorCardSkeleton />
-              <PastorCardSkeleton />
-              <PastorCardSkeleton />
-              <PastorCardSkeleton />
-            </div>
-          ) : !hasError && topPasteurs.length ? (
-            <div className="home-pastors-grid">
-              {topPasteurs.map((pasteur, i) => (
-                <Link
-                  key={pasteur.id}
-                  to={`/pasteurs/${pasteur.id}`}
-                  className="home-pastor-card premium-hover-lift reveal-cascade"
-                  style={{ transitionDelay: `${i * 0.1}s` }}
-                >
-                  <div className="home-pastor-avatar">
-                    {pasteur.avatar ? (
-                      <img src={pasteur.avatar} alt={pasteur.nom_affichage} />
-                    ) : (
-                      <span>{pasteur.nom_affichage.charAt(0)}</span>
-                    )}
-                  </div>
-                  <h3>{pasteur.nom_affichage}</h3>
-                  <p>{pasteur.nom_eglise || t('home.unknown_church')}</p>
-                </Link>
-              ))}
-            </div>
-          ) : null}
-
-        </section>
-
-        {/* ================= DERNIERS ================= */}
-        <section className="home-section reveal-on-scroll" style={{ marginTop: '2rem' }}>
-
-          <div className="section-heading">
-            <h2>{t('home.recent_title')}</h2>
-            <p>{t('home.recent_subtitle')}</p>
-          </div>
-
-          {isLoading ? (
-            <div className="grid sermon-grid">
-              <SermonCardSkeleton />
-              <SermonCardSkeleton />
-              <SermonCardSkeleton />
-              <SermonCardSkeleton />
-              <SermonCardSkeleton />
-              <SermonCardSkeleton />
-            </div>
-          ) : !hasError && dernieres.length ? (
-            <div className="grid sermon-grid">
-              {dernieres.map((item, i) => (
-                <div key={item.id} className="reveal-cascade" style={{ transitionDelay: `${(i % 3) * 0.1}s` }}>
-                  <SermonCard sermon={item} />
-                </div>
-              ))}
-            </div>
-          ) : !hasError ? (
-            <p className="page-state">{t('home.no_recent')}</p>
-          ) : null}
-
-        </section>
-
-
-      </section>
+        </aside>
+      </div>
 
     </main>
   );

@@ -8,7 +8,6 @@ import { useSite } from "./context/SiteContext";
 // Layout components
 import { AudioPlayer } from "./components/layout/AudioPlayer";
 import { BanniereCookies } from "./components/layout/BanniereCookies";
-import { PiedDePage } from "./components/layout/PiedDePage";
 import { LanguageSelector } from "./components/layout/LanguageSelector";
 import { ThemeToggle } from "./components/layout/ThemeToggle";
 
@@ -100,7 +99,7 @@ export default function App() {
             <div className="app-brand-divider" />
             <span className="app-brand-copy">
               <strong>Plateforme Église</strong>
-              <small>Version Web</small>
+              <small>Parole &amp; Lumière</small>
             </span>
           </Link>
 
@@ -238,7 +237,6 @@ export default function App() {
         </Suspense>
       </main>
 
-      {!masquerBanniereEtFooter && <PiedDePage />}
       <BanniereCookies />
     </>
   );

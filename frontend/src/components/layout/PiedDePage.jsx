@@ -1,17 +1,22 @@
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Youtube, Mail, MapPin, Phone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useSite } from '../../context/SiteContext';
 import './PiedDePage.css';
 
 export function PiedDePage() {
   const { t } = useTranslation();
+  const { siteConfig } = useSite();
   return (
     <footer className="footer-premium">
       <div className="footer-container">
         <div className="footer-grid">
           {/* Colonne 1 : Marque et description */}
           <div className="footer-col brand-col">
-            <h3 className="footer-logo">Plateforme Église</h3>
+            <div className="footer-brand-header">
+              <img src={siteConfig?.logo || "/user_eagle.png"} alt="Logo" className="footer-brand-img" />
+              <h3 className="footer-logo">Plateforme Église</h3>
+            </div>
             <p className="footer-desc">
               {t('footer.desc')}
             </p>
@@ -56,13 +61,8 @@ export function PiedDePage() {
           </div>
         </div>
 
-        <div className="footer-bottom">
+        <div className="footer-bottom" style={{ justifyContent: 'center' }}>
           <p>&copy; {new Date().getFullYear()} Plateforme Église. {t('footer.rights')}</p>
-          <div className="footer-bottom-links">
-            <Link to="/confidentialite">{t('footer.legal_privacy')}</Link>
-            <span className="separator">•</span>
-            <Link to="/conditions">{t('footer.legal_terms')}</Link>
-          </div>
         </div>
       </div>
     </footer>
