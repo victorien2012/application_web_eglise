@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import { Toast } from 'primereact/toast';
@@ -117,6 +117,10 @@ export function PastorDashboard() {
   const [filtrePublicationInput, setFiltrePublicationInput] = useState('tous');
   const [rechercheInput, setRechercheInput] = useState('');
   const [pageActuelle, setPageActuelle] = useState(1);
+  const [totalPredications, setTotalPredications] = useState(0);
+  const [chargementListe, setChargementListe] = useState(false);
+  // Incremente pour forcer un rechargement apres creation ou suppression.
+  const [compteurRafraichissement, setCompteurRafraichissement] = useState(0);
   const elementsParPage = 5;
 
   const appliquerFiltres = () => {
@@ -301,14 +305,22 @@ export function PastorDashboard() {
     }
   }
 
+  // Parametres de la page de predications demandee au serveur.
+  function parametresPredications(page = pageActuelle) {
+    const params = { espace_pasteur: true, page, page_size: elementsParPage };
+    if (recherche.trim()) params.search = recherche.trim();
+    if (filtrePublication === 'publiees') params.est_publie = 'true';
+    if (filtrePublication === 'brouillons') params.est_publie = 'false';
+    return params;
+  }
+
   useEffect(() => {
     let active = true;
 
     async function chargerDonnees() {
       try {
-        const [statsResponse, predicationsResponse, seriesResponse, categoriesResponse, souscriptionResponse] = await Promise.all([
+        const [statsResponse, seriesResponse, categoriesResponse, souscriptionResponse] = await Promise.all([
           api.get('/pasteurs/statistiques_tableau_de_bord/'),
-          api.get('/predications/?espace_pasteur=true'),
           api.get('/series/'),
           api.get('/categories/'),
           api.get('/souscriptions/courante/').catch(() => ({ data: null }))
@@ -316,7 +328,6 @@ export function PastorDashboard() {
 
         if (active) {
           setStats(statsResponse.data);
-          setPredications(extraireListe(predicationsResponse.data));
           setSeries(extraireListe(seriesResponse.data));
           setCategories(extraireListe(categoriesResponse.data));
           if (souscriptionResponse.data) {
@@ -338,33 +349,40 @@ export function PastorDashboard() {
     return () => { active = false; };
   }, []);
 
-  // --- Moteur de recherche et filtrage du Datatable ---
-  const predicationsTraitees = useMemo(() => {
-    return predications
-      .filter((p) => {
-        if (filtrePublication === 'publiees') return p.est_publie;
-        if (filtrePublication === 'brouillons') return !p.est_publie;
-        return true;
-      })
-      .filter((p) => {
-        const terme = recherche.toLowerCase();
-        return (
-          p.titre?.toLowerCase().includes(terme) ||
-          p.description?.toLowerCase().includes(terme) ||
-          p.type_media?.toLowerCase().includes(terme)
+  // La liste des predications est rechargee a chaque changement de page, de
+  // recherche ou de filtre : le serveur ne renvoie que la page demandee.
+  useEffect(() => {
+    let active = true;
+    setChargementListe(true);
+    api
+      .get('/predications/', { params: parametresPredications() })
+      .then((reponse) => {
+        if (!active) return;
+        setPredications(extraireListe(reponse.data));
+        setTotalPredications(
+          typeof reponse.data?.count === 'number'
+            ? reponse.data.count
+            : extraireListe(reponse.data).length
         );
+      })
+      .catch((error) => {
+        if (active) setErreurStats(error.response?.data?.detail || t('dashboard.load_error'));
+      })
+      .finally(() => {
+        if (active) setChargementListe(false);
       });
-  }, [predications, filtrePublication, recherche]);
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageActuelle, recherche, filtrePublication, compteurRafraichissement]);
 
-  // --- Segmentation pour la pagination ---
-  const totalPages = Math.ceil(predicationsTraitees.length / elementsParPage) || 1;
-  // Supprimer les derniers elements d'une page y laissait l'utilisateur devant
-  // un tableau vide, la page n'existant plus.
+  // Recherche, filtre et pagination sont traites par le serveur : la liste
+  // recue est deja la page a afficher. Charger tout le catalogue d'un pasteur
+  // (jusqu'a un millier de predications) pour n'en montrer que cinq etait le
+  // principal cout de cet ecran.
+  const predicationsTraitees = predications;
+  const totalPages = Math.max(1, Math.ceil(totalPredications / elementsParPage));
   const pageCourante = Math.min(Math.max(pageActuelle, 1), totalPages);
-  const predicationsPagination = useMemo(() => {
-    const debut = (pageCourante - 1) * elementsParPage;
-    return predicationsTraitees.slice(debut, debut + elementsParPage);
-  }, [predicationsTraitees, pageCourante]);
+  const predicationsPagination = predications;
 
   // Réinitialiser automatiquement l'index de page en cas de filtrage, et oublier
   // les selections devenues invisibles : elles restaient comptees dans l'action
@@ -430,12 +448,11 @@ export function PastorDashboard() {
   }
 
   async function rechargerResume() {
-    const [statsResponse, predicationsResponse] = await Promise.all([
-      api.get('/pasteurs/statistiques_tableau_de_bord/'),
-      api.get('/predications/?espace_pasteur=true'),
-    ]);
+    const statsResponse = await api.get('/pasteurs/statistiques_tableau_de_bord/');
     setStats(statsResponse.data);
-    setPredications(extraireListe(predicationsResponse.data));
+    // La liste est rechargee par son propre effet, en conservant la page, la
+    // recherche et le filtre en cours.
+    setCompteurRafraichissement((n) => n + 1);
   }
 
   function construireCorps() {
@@ -692,7 +709,7 @@ export function PastorDashboard() {
               <div className="table-card-header">
                 <div className="table-title">
                   <h3>{t('dashboard.videos_title')}</h3>
-                  <span>{t('dashboard.videos_loaded', { count: predicationsTraitees.length })}</span>
+                  <span>{t('dashboard.videos_loaded', { count: totalPredications })}</span>
                 </div>
                 <div className="search-input-wrapper">
                   <Search className="search-icon" size={16} />
@@ -745,7 +762,7 @@ export function PastorDashboard() {
               {/* Contrôles de Pagination du Datatable */}
               <div className="datatable-footer-pagination" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', color: 'var(--pd-text-muted)', fontSize: '0.85rem' }}>
                 <span>
-                  {t('dashboard.pagination_info', { current: predicationsPagination.length, total: predicationsTraitees.length })}
+                  {t('dashboard.pagination_info', { current: predicationsPagination.length, total: totalPredications })}
                 </span>
                 <div className="pagination-controls" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   <button 

@@ -3,6 +3,7 @@
 from .auth_views import (
     ConnexionTokenSerializer,
     ConnexionTokenView,
+    RafraichirTokenView,
     InscriptionView,
     DemandeReinitialisationMotDePasseView,
     ConfirmationReinitialisationMotDePasseView,

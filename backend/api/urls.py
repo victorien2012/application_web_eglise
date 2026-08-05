@@ -1,6 +1,6 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenRefreshView
+
 
 from .views import (
     AbonnementViewSet,
@@ -8,6 +8,7 @@ from .views import (
     CommentaireViewSet,
     ConfirmationReinitialisationMotDePasseView,
     ConnexionTokenView,
+    RafraichirTokenView,
     DemandeReinitialisationMotDePasseView,
     EtiquetteViewSet,
     FavoriViewSet,
@@ -58,7 +59,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('auth/inscription/', InscriptionView.as_view(), name='inscription'),
     path('auth/connexion/', ConnexionTokenView.as_view(), name='token_obtain_pair'),
-    path('auth/rafraichir/', TokenRefreshView.as_view(), name='token_refresh'),
+    path("auth/rafraichir/", RafraichirTokenView.as_view(), name="token_refresh"),
     path(
         'auth/mot-de-passe-oublie/',
         DemandeReinitialisationMotDePasseView.as_view(),

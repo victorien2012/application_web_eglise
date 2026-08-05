@@ -14,7 +14,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from api.models import Pasteur, ProfilUtilisateur
 from api.serializers import (
@@ -37,6 +37,25 @@ from api.services.email_service import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class RafraichirTokenView(TokenRefreshView):
+    """Rafraîchissement de jeton tolérant à la disparition du compte.
+
+    SimpleJWT charge l'utilisateur référencé par le jeton sans intercepter son
+    absence : un compte supprimé — ce qu'un administrateur peut faire depuis
+    l'interface — provoquait une erreur 500 au lieu d'une déconnexion propre,
+    et le client restait bloqué au lieu d'être renvoyé vers la connexion.
+    """
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except User.DoesNotExist:
+            return Response(
+                {'detail': "Ce compte n'existe plus. Veuillez vous reconnecter."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
 
 def _payload_pasteur(user, request=None):

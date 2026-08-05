@@ -65,7 +65,10 @@ class PredicationViewSet(viewsets.ModelViewSet):
         elif espace_pasteur and user.is_authenticated:
             if pasteur_courant is None:
                 return queryset.none()
-            return queryset.filter(pasteur=pasteur_courant)
+            # Restreint au pasteur courant, puis on laisse s'appliquer les
+            # filtres communs ci-dessous : un retour immediat les court-circuitait,
+            # empechant l'espace pasteur de filtrer sa propre liste.
+            queryset = queryset.filter(pasteur=pasteur_courant)
         else:
             # Une predication est publique si elle est publiee ET (sans date de
             # publication planifiee OU dont la date est deja passee).
@@ -94,6 +97,12 @@ class PredicationViewSet(viewsets.ModelViewSet):
         a_la_une = self.request.query_params.get('est_a_la_une')
         if a_la_une in ('true', 'false'):
             queryset = queryset.filter(est_a_la_une=(a_la_une == 'true'))
+
+        # Distinction publiees / brouillons de l'espace pasteur. N'a d'effet que
+        # pour un utilisateur voyant deja ses propres brouillons.
+        est_publie = self.request.query_params.get('est_publie')
+        if est_publie in ('true', 'false'):
+            queryset = queryset.filter(est_publie=(est_publie == 'true'))
 
         # Les champs média sont blank=True ET null=True : l'absence de valeur peut
         # donc être soit une chaîne vide, soit NULL. Les deux cas sont couverts.
