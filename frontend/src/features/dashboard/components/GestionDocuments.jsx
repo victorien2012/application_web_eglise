@@ -28,6 +28,8 @@ export function GestionDocuments() {
   });
   const [fichier, setFichier] = useState(null);
   const [imageCouverture, setImageCouverture] = useState(null);
+  const [enCours, setEnCours] = useState(false);
+  const [erreurFichier, setErreurFichier] = useState('');
 
   useEffect(() => {
     chargerDonnees();
@@ -71,8 +73,13 @@ export function GestionDocuments() {
 
   async function handleSoumettre(e) {
     e.preventDefault();
+    if (enCours) return;
     if (!enEdition && !fichier) {
       toast.current?.show({ severity: 'error', summary: 'Erreur', detail: 'Un fichier est requis.' });
+      return;
+    }
+    if (erreurFichier) {
+      toast.current?.show({ severity: 'error', summary: 'Fichier invalide', detail: erreurFichier });
       return;
     }
 
@@ -84,6 +91,7 @@ export function GestionDocuments() {
     if (fichier) formData.append('fichier', fichier);
     if (imageCouverture) formData.append('image_couverture', imageCouverture);
 
+    setEnCours(true);
     try {
       if (enEdition) {
         await api.patch(`/documents/${enEdition}/`, formData);
@@ -95,9 +103,49 @@ export function GestionDocuments() {
       reinitialiserFormulaire();
       chargerDonnees();
     } catch (err) {
-      console.error(err);
-      toast.current?.show({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de l\'enregistrement.' });
+      // Les messages de validation du serveur (format refusé, fichier trop
+      // lourd, abonnement expiré) étaient remplacés par un texte générique.
+      const donnees = err.response?.data;
+      const premierChamp = donnees && typeof donnees === 'object'
+        ? Object.values(donnees).flat().find((valeur) => typeof valeur === 'string')
+        : null;
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Erreur',
+        detail: donnees?.detail || premierChamp || "Erreur lors de l'enregistrement.",
+        life: 6000,
+      });
+    } finally {
+      setEnCours(false);
     }
+  }
+
+  // Mêmes limites que le serializer DocumentEcritureSerializer.
+  const CONTRAINTES = {
+    fichier: { extensions: ['pdf', 'doc', 'docx', 'odt', 'txt', 'rtf', 'ppt', 'pptx', 'xls', 'xlsx'], tailleMaxMo: 50 },
+    image_couverture: { extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif'], tailleMaxMo: 5 },
+  };
+
+  function choisirFichier(cle, fichierChoisi, appliquer) {
+    if (!fichierChoisi) {
+      appliquer(null);
+      setErreurFichier('');
+      return;
+    }
+    const contrainte = CONTRAINTES[cle];
+    const extension = fichierChoisi.name.split('.').pop()?.toLowerCase();
+    if (!contrainte.extensions.includes(extension)) {
+      setErreurFichier(`Format non supporté (${extension || 'inconnu'}). Acceptés : ${contrainte.extensions.join(', ')}.`);
+      appliquer(null);
+      return;
+    }
+    if (fichierChoisi.size > contrainte.tailleMaxMo * 1024 * 1024) {
+      setErreurFichier(`Fichier trop volumineux (${(fichierChoisi.size / (1024 * 1024)).toFixed(1)} Mo). Maximum : ${contrainte.tailleMaxMo} Mo.`);
+      appliquer(null);
+      return;
+    }
+    setErreurFichier('');
+    appliquer(fichierChoisi);
   }
 
   function demanderSuppression(doc) {
@@ -260,8 +308,8 @@ export function GestionDocuments() {
                 </label>
                 <input 
                   type="file" 
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
-                  onChange={(e) => setFichier(e.target.files[0])}
+                  accept=".pdf,.doc,.docx,.odt,.txt,.rtf,.ppt,.pptx,.xls,.xlsx"
+                  onChange={(e) => choisirFichier("fichier", e.target.files?.[0] || null, setFichier)}
                   style={{ width: '100%', fontSize: '0.85rem' }}
                 />
                 {enEdition && <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem', fontSize: '0.75rem' }}>Vide = conserver l'actuel.</small>}
@@ -274,7 +322,7 @@ export function GestionDocuments() {
                 <input 
                   type="file" 
                   accept="image/*"
-                  onChange={(e) => setImageCouverture(e.target.files[0])}
+                  onChange={(e) => choisirFichier("image_couverture", e.target.files?.[0] || null, setImageCouverture)}
                   style={{ width: '100%', fontSize: '0.85rem' }}
                 />
               </div>
@@ -290,7 +338,7 @@ export function GestionDocuments() {
                     onClick={() => basculerCategorie(cat.id)}
                     style={{
                       padding: '0.3rem 0.6rem', borderRadius: '20px', fontSize: '0.8rem', border: '1px solid', cursor: 'pointer',
-                      backgroundColor: formulaire.categories_ids.includes(cat.id) ? '#004a94' : 'transparent',
+                      backgroundColor: formulaire.categories_ids.includes(cat.id) ? 'var(--primary)' : 'transparent',
                       color: formulaire.categories_ids.includes(cat.id) ? 'white' : 'var(--text-muted)',
                       borderColor: formulaire.categories_ids.includes(cat.id) ? 'var(--primary)' : 'var(--pd-border)'
                     }}
@@ -311,12 +359,18 @@ export function GestionDocuments() {
               <span style={{ fontWeight: 500 }}>Publier immédiatement</span>
             </label>
 
+            {erreurFichier && (
+              <p role="alert" style={{ margin: 0, color: 'var(--danger)', fontSize: '0.85rem', fontWeight: 600 }}>
+                {erreurFichier}
+              </p>
+            )}
+
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-              <Button type="submit" variant="primary" style={{ flex: 1 }}>
-                {enEdition ? 'Enregistrer' : 'Ajouter'}
+              <Button type="submit" variant="primary" style={{ flex: 1 }} disabled={enCours}>
+                {enCours ? 'Enregistrement…' : (enEdition ? 'Enregistrer' : 'Ajouter')}
               </Button>
               {enEdition && (
-                <Button type="button" variant="outline" onClick={reinitialiserFormulaire}>
+                <Button type="button" variant="outline" onClick={reinitialiserFormulaire} disabled={enCours}>
                   Annuler
                 </Button>
               )}

@@ -66,7 +66,7 @@ export function GestionPiecesJointes({ predicationId }) {
       setNom('');
       setFichier(null);
       setResetKey((cle) => cle + 1);
-      toast.current.show({ severity: 'success', summary: 'Succès', detail: t('dashboard.attachments_add_success'), life: 5000 });
+      toast.current?.show({ severity: 'success', summary: 'Succès', detail: t('dashboard.attachments_add_success'), life: 5000 });
       charger();
     } catch (error) {
       const data = error.response?.data;
@@ -85,7 +85,7 @@ export function GestionPiecesJointes({ predicationId }) {
     try {
       await api.delete(`/pieces-jointes/${pieceASupprimer.id}/`);
       setPieces((actuels) => actuels.filter((item) => item.id !== pieceASupprimer.id));
-      toast.current.show({ severity: 'success', summary: 'Succès', detail: t('dashboard.attachments_delete_success'), life: 5000 });
+      toast.current?.show({ severity: 'success', summary: 'Succès', detail: t('dashboard.attachments_delete_success'), life: 5000 });
     } catch {
       setErreur(t('dashboard.attachments_delete_error'));
     } finally {
