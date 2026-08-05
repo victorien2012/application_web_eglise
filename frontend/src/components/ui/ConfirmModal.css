@@ -14,7 +14,8 @@
 }
 
 .modal-content {
-  background: white;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   width: 90%;
   max-width: 450px;
@@ -30,7 +31,7 @@
   right: 1rem;
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 50%;
@@ -41,8 +42,8 @@
 }
 
 .modal-close:hover {
-  background-color: #f1f5f9;
-  color: #334155;
+  background-color: var(--bg-alt);
+  color: var(--text-main);
 }
 
 .modal-header {
@@ -62,36 +63,38 @@
   flex-shrink: 0;
 }
 
+/* Pastilles derivees des jetons semantiques : les fonds pastel figes
+   apparaissaient comme des taches claires sur une carte sombre. */
 .modal-icon-danger {
-  background-color: #fef2f2;
-  color: #ef4444;
+  background-color: rgba(var(--danger-rgb), 0.14);
+  color: var(--danger);
 }
 
 .modal-icon-success {
-  background-color: #f0fdf4;
-  color: #22c55e;
+  background-color: rgba(var(--success-rgb), 0.14);
+  color: var(--success);
 }
 
 .modal-icon-primary {
-  background-color: #eff6ff;
-  color: #004a94;
+  background-color: rgba(var(--primary-rgb), 0.14);
+  color: var(--primary);
 }
 
 .modal-icon-warning {
-  background-color: #fefce8;
-  color: #eab308;
+  background-color: rgba(var(--warning-rgb), 0.14);
+  color: var(--warning);
 }
 
 .modal-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
   padding-top: 0.5rem;
 }
 
 .modal-body {
-  color: #475569;
+  color: var(--text-muted);
   font-size: 0.95rem;
   line-height: 1.5;
   margin-bottom: 1.5rem;
@@ -116,46 +119,48 @@
 }
 
 .modal-btn-cancel {
-  background-color: white;
-  border: 1px solid #cbd5e1;
-  color: #475569;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
 }
 
 .modal-btn-cancel:hover {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--bg-alt);
+  color: var(--text-main);
+}
+
+/* Boutons pleins : la teinte reste franche dans les deux themes, seul le
+   survol l'assombrit legerement. */
+.modal-btn-primary,
+.modal-btn-danger,
+.modal-btn-success,
+.modal-btn-warning {
+  color: #ffffff;
+}
+
+.modal-btn-primary:hover,
+.modal-btn-danger:hover,
+.modal-btn-success:hover,
+.modal-btn-warning:hover {
+  filter: brightness(0.9);
 }
 
 .modal-btn-primary {
   background-color: #004a94;
-  color: white;
-}
-.modal-btn-primary:hover {
-  background-color: #2563eb;
 }
 
 .modal-btn-danger {
   background-color: #ef4444;
-  color: white;
-}
-.modal-btn-danger:hover {
-  background-color: #dc2626;
 }
 
 .modal-btn-success {
-  background-color: #22c55e;
-  color: white;
-}
-.modal-btn-success:hover {
   background-color: #16a34a;
 }
 
+/* Le survol basculait vers le bleu marine du bouton primaire : le bouton
+   d'avertissement changeait de couleur au passage de la souris. */
 .modal-btn-warning {
-  background-color: #eab308;
-  color: white;
-}
-.modal-btn-warning:hover {
-  background-color: #004a94;
+  background-color: #d97706;
 }
 
 @keyframes fadeIn {

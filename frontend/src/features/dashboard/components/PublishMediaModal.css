@@ -61,7 +61,7 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
   color: #fff;
   display: flex;
   align-items: center;
@@ -81,7 +81,7 @@
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.25rem;
-  border-bottom: 2px solid var(--border-color, #e2e8f0);
+  border-bottom: 2px solid var(--border-color);
   padding-bottom: 0;
 }
 
@@ -106,8 +106,8 @@
 }
 
 .pmmodal-tab.active {
-  color: #0ea5e9;
-  border-bottom-color: #0ea5e9;
+  color: var(--primary);
+  border-bottom-color: var(--primary);
 }
 
 /* ── Form ── */
@@ -135,7 +135,7 @@
 .pmmodal-field select,
 .pmmodal-field textarea {
   padding: 0.6rem 0.75rem;
-  border: 1.5px solid var(--border-color, #e2e8f0);
+  border: 1.5px solid var(--border-color);
   border-radius: 8px;
   font-size: 0.9rem;
   background: var(--bg-alt);
@@ -148,7 +148,7 @@
 .pmmodal-field select:focus,
 .pmmodal-field textarea:focus {
   outline: none;
-  border-color: #0ea5e9;
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
 }
 
@@ -181,7 +181,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--border-color, #e2e8f0);
+  background: var(--border-color);
 }
 
 .pmmodal-separator span {
@@ -197,43 +197,43 @@
   align-items: flex-start;
   gap: 1rem;
   padding: 1rem;
-  background: linear-gradient(135deg, #fef2f2, #fff1f2);
-  border: 1px solid #fecaca;
+  background: rgba(var(--danger-rgb), 0.12);
+  border: 1px solid rgba(var(--danger-rgb), 0.35);
   border-radius: 12px;
-  color: #dc2626;
+  color: var(--danger);
 }
 
 .pmmodal-youtube-info h4 {
   margin: 0 0 0.25rem;
   font-size: 1rem;
   font-weight: 700;
-  color: #b91c1c;
+  color: var(--danger);
 }
 
 .pmmodal-youtube-info p {
   margin: 0;
   font-size: 0.85rem;
-  color: #7f1d1d;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 
 /* ── Messages ── */
 .pmmodal-error {
-  background: #fef2f2;
-  color: #dc2626;
+  background: rgba(var(--danger-rgb), 0.12);
+  color: var(--danger);
   padding: 0.6rem 0.8rem;
   border-radius: 8px;
   font-size: 0.85rem;
-  border: 1px solid #fecaca;
+  border: 1px solid rgba(var(--danger-rgb), 0.35);
 }
 
 .pmmodal-success {
-  background: #f0fdf4;
-  color: #16a34a;
+  background: rgba(var(--success-rgb), 0.12);
+  color: var(--success);
   padding: 0.6rem 0.8rem;
   border-radius: 8px;
   font-size: 0.85rem;
-  border: 1px solid #bbf7d0;
+  border: 1px solid rgba(var(--success-rgb), 0.35);
 }
 
 /* ── Footer ── */
@@ -269,11 +269,11 @@
 }
 
 .pmmodal-btn-confirm {
-  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
   color: #fff;
 }
 .pmmodal-btn-confirm:hover {
-  background: linear-gradient(135deg, #0284c7, #0891b2);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
 }
 .pmmodal-btn-confirm:disabled {
   opacity: 0.6;
@@ -281,11 +281,11 @@
 }
 
 .pmmodal-btn-youtube {
-  background: linear-gradient(135deg, #dc2626, #ef4444);
+  background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
   color: #fff;
 }
 .pmmodal-btn-youtube:hover {
-  background: linear-gradient(135deg, #b91c1c, #dc2626);
+  background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
 }
 .pmmodal-btn-youtube:disabled {
   opacity: 0.6;

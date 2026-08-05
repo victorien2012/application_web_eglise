@@ -38,7 +38,7 @@
 .annonce-form input:focus,
 .annonce-form textarea:focus {
   outline: none;
-  border-color: #004a94;
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -89,12 +89,12 @@
 }
 
 .checkbox-container:hover input ~ .checkmark {
-  border-color: #004a94;
+  border-color: var(--primary);
 }
 
 .checkbox-container input:checked ~ .checkmark {
-  background-color: #004a94;
-  border-color: #004a94;
+  background-color: var(--primary);
+  border-color: var(--primary);
 }
 
 .checkmark:after {
