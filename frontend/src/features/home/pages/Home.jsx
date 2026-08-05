@@ -38,7 +38,7 @@ export function Home() {
         // les dernieres publications de l'autre.
         const [resALaUne, resRecentes, resPasteurs, resAnnonces, resCarrousel] = await Promise.all([
           api.get('/predications/', { params: { est_a_la_une: 'true', page: 1, page_size: 4 } }),
-          api.get('/predications/', { params: { page: 1, page_size: 9 } }),
+          api.get('/predications/', { params: { page: 1, page_size: 20 } }),
           api.get('/pasteurs/'),
           api.get('/annonces/'),
           api.get('/carrousel/')
@@ -108,9 +108,13 @@ export function Home() {
   // Le heros met en avant une seule predication : celle choisie par
   // l'administration, a defaut la plus recente.
   const aLaUne = misesEnAvant[0] || predications[0] || null;
+  // Les autres mises en avant restent accessibles depuis le héros plutôt que
+  // dans un second carrousel concurrent.
+  const autresMisesEnAvant = misesEnAvant.slice(1, 4);
   const tendances = predications.slice(1, 4);
   const dernieres = predications.slice(0, 6);
   const topPasteurs = pasteurs.slice(0, 4);
+  const filVideos = predications.slice(0, 12);
 
   function imageDe(item) {
     if (!item) return null;
@@ -193,6 +197,24 @@ export function Home() {
                   <ArrowRight size={16} />
                 </Link>
               </div>
+              {autresMisesEnAvant.length > 0 && (
+                <div className="hero-une-autres">
+                  <p className="hero-une-autres-label">{t('home.also_featured', 'Également à la une')}</p>
+                  <div className="hero-une-autres-liste">
+                    {autresMisesEnAvant.map((item) => (
+                      <Link key={item.id} to={`/sermon/${item.id}`} className="hero-une-autre">
+                        <span
+                          className="hero-une-autre-vignette"
+                          style={imageDe(item) ? { backgroundImage: `url(${imageDe(item)})` } : undefined}
+                          aria-hidden="true"
+                        />
+                        <span className="hero-une-autre-titre">{item.titre}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {totalPredications > 0 && (
                 <p className="hero-une-compteur">
                   {totalPredications.toLocaleString('fr-FR')} {t('home.sermons_available', 'prédications disponibles')}
@@ -212,6 +234,24 @@ export function Home() {
             </div>
           </div>
         )}
+      </section>
+
+      {/* Promesse du site : replacée après le héros, elle explique ce qu'on
+          trouve ici sans disputer la vedette au message mis en avant. */}
+      <section className="home-promesse reveal-on-scroll">
+        <p className="section-kicker home-kicker-pill">{t('home.kicker_pill')}</p>
+        <h2 className="home-promesse-titre">
+          {t('home.hero_title_1')} <span className="text-primary">{t('home.hero_title_2')}</span>
+        </h2>
+        <p className="home-promesse-texte">{t('home.hero_subtitle')}</p>
+        <div className="home-promesse-actions">
+          <Button to="/videos" variant="accent" icon={ArrowRight} iconPosition="right">
+            {t('home.hero_btn_explore')}
+          </Button>
+          <Link to="/pasteurs" className="btn btn-outline-dark">
+            {t('home.hero_btn_pastors')}
+          </Link>
+        </div>
       </section>
 
       {/* Actualités gérées par l'administration : un seul carrousel, plus deux
@@ -333,6 +373,59 @@ export function Home() {
                 </div>
               ) : !hasError ? (
                 <p className="page-state">{t('home.no_recent')}</p>
+              ) : null}
+            </section>
+
+            {/* ================= FIL VIDÉOS =================
+                Réintégré depuis l'ancien panneau latéral, mais en flux normal :
+                il ne défile plus indépendamment de la page. */}
+            <section className="home-section home-fil reveal-on-scroll">
+              <div className="section-heading-row">
+                <div className="section-heading">
+                  <h2>{t('home.video_feed_title', 'Vidéos')}</h2>
+                  <p>{t('home.video_feed_subtitle', 'Les dernières mises en ligne, en un coup d’œil.')}</p>
+                </div>
+                <Button to="/videos" variant="primary">
+                  {t('home.hero_btn_explore')}
+                </Button>
+              </div>
+
+              {isLoading ? (
+                <div className="home-fil-liste">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="video-feed-item-skeleton">
+                      <div className="vf-skeleton-thumb" />
+                      <div className="vf-skeleton-info">
+                        <div className="vf-skeleton-line long" />
+                        <div className="vf-skeleton-line short" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filVideos.length > 0 ? (
+                <div className="home-fil-liste">
+                  {filVideos.map((item) => (
+                    <Link key={item.id} to={`/sermon/${item.id}`} className="video-feed-item">
+                      <div className="vf-thumb">
+                        {imageDe(item) ? (
+                          <img src={imageDe(item)} alt="" loading="lazy" />
+                        ) : (
+                          <div className="vf-thumb-placeholder">
+                            <Play size={20} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="vf-info">
+                        <h4 className="vf-title">{item.titre}</h4>
+                        <p className="vf-pastor">{item.nom_predicateur || item.pasteur?.nom_affichage}</p>
+                        <div className="vf-meta">
+                          {item.duree_secondes ? <span>{Math.round(item.duree_secondes / 60)} min</span> : null}
+                          {item.nombre_vues > 0 ? <span>{item.nombre_vues} vues</span> : null}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               ) : null}
             </section>
 

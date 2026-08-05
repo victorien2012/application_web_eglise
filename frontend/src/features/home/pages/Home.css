@@ -1162,3 +1162,144 @@
     justify-content: center;
   }
 }
+
+/* ---- Réintégration : promesse, autres mises en avant, fil vidéos ---- */
+
+.home-promesse {
+  max-width: 800px;
+  margin: 3rem auto 0;
+  padding: 0 1.5rem;
+  text-align: center;
+}
+
+.home-promesse-titre {
+  margin: 0.9rem 0 0.75rem;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.home-promesse-texte {
+  margin: 0 auto 1.5rem;
+  max-width: 62ch;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.home-promesse-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  justify-content: center;
+}
+
+.hero-une-autres {
+  margin-top: 1.9rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.hero-une-autres-label {
+  margin: 0 0 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.hero-une-autres-liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.hero-une-autre {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: 260px;
+  padding: 0.4rem 0.75rem 0.4rem 0.4rem;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  text-decoration: none;
+  transition: background-color 0.18s ease;
+}
+
+.hero-une-autre:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.hero-une-autre-vignette {
+  width: 46px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.18);
+  background-size: cover;
+  background-position: center;
+}
+
+.hero-une-autre-titre {
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.94);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Le fil reprend l'apparence des anciennes lignes latérales, mais sur deux
+   colonnes et dans le flux de la page : aucun défilement interne. */
+.home-fil-liste {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 0.6rem;
+}
+
+.home-fil .video-feed-item {
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+
+.home-fil .video-feed-item:hover {
+  border-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+  .home-fil-liste {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-une-autre {
+    max-width: none;
+    flex: 1 1 100%;
+  }
+}
+
+/* Les enfants de grille ont min-width: auto : une image large empêche alors la
+   colonne de rétrécir et pousse toute la page au-delà de l'écran. Le défaut
+   existait déjà, mais l'ancien panneau à largeur fixe le masquait. */
+.home-flux .grid > *,
+.home-flux .sermon-grid > *,
+.home-flux .home-pastors-grid > *,
+.home-fil-liste > * {
+  min-width: 0;
+}
+
+.home-flux img,
+.home-actualites img {
+  max-width: 100%;
+}
+
+.home-flux .vf-info,
+.home-flux .vf-title,
+.home-flux .vf-pastor {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
