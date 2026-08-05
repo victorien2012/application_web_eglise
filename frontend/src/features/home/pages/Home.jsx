@@ -107,10 +107,6 @@ export function Home() {
   ========================= */
   // Le heros met en avant une seule predication : celle choisie par
   // l'administration, a defaut la plus recente.
-  const aLaUne = misesEnAvant[0] || predications[0] || null;
-  // Les autres mises en avant restent accessibles depuis le héros plutôt que
-  // dans un second carrousel concurrent.
-  const autresMisesEnAvant = misesEnAvant.slice(1, 4);
   const tendances = predications.slice(1, 4);
   const dernieres = predications.slice(0, 6);
   const topPasteurs = pasteurs.slice(0, 4);
@@ -129,6 +125,18 @@ export function Home() {
     }
     return null;
   }
+
+  // Alimente le carrousel « Vidéos à la une » : le composant attend des médias
+  // avec une vignette, un titre et une destination.
+  const aLaUneMedias = misesEnAvant.map((item) => ({
+    id: item.id,
+    fichier: imageDe(item),
+    titre: item.titre,
+    description: item.description ? item.description.slice(0, 100) : '',
+    type_media: 'VIDEO',
+    url_video: item.url_video,
+    to: `/sermon/${item.id}`,
+  }));
 
   const isLoading = chargement;
   const hasError = !!erreur;
@@ -157,93 +165,33 @@ export function Home() {
 
       </div>
 
-      {/* ================= HÉROS : LE MESSAGE À LA UNE ================= */}
-      <section className="home-hero-une" aria-labelledby="titre-a-la-une">
-        {isLoading ? (
-          <div className="home-hero-une-inner">
-            <div className="hero-une-skeleton" />
-          </div>
-        ) : aLaUne ? (
-          <>
-            {imageDe(aLaUne) && (
-              <div
-                className="home-hero-une-image"
-                style={{ backgroundImage: `url(${imageDe(aLaUne)})` }}
-                aria-hidden="true"
-              />
-            )}
-            <div className="home-hero-une-voile" aria-hidden="true" />
-            <div className="home-hero-une-inner">
-              <p className="hero-une-kicker">{t('home.featured_title', 'À la une')}</p>
-              <h1 id="titre-a-la-une" className="hero-une-titre">{aLaUne.titre}</h1>
-              {aLaUne.description ? (
-                <p className="hero-une-desc">
-                  {aLaUne.description.length > 180
-                    ? `${aLaUne.description.slice(0, 180)}…`
-                    : aLaUne.description}
-                </p>
-              ) : null}
-              <p className="hero-une-meta">
-                {aLaUne.nom_predicateur || aLaUne.pasteur?.nom_affichage || ''}
-                {aLaUne.duree_secondes ? ` · ${Math.round(aLaUne.duree_secondes / 60)} min` : ''}
-              </p>
-              <div className="hero-une-actions">
-                <Link to={`/sermon/${aLaUne.id}`} className="btn hero-une-btn-principal">
-                  <Play size={17} fill="currentColor" />
-                  {t('home.hero_btn_listen', 'Écouter le message')}
-                </Link>
-                <Link to="/videos" className="btn hero-une-btn-secondaire">
-                  {t('home.hero_btn_explore')}
-                  <ArrowRight size={16} />
-                </Link>
-              </div>
-              {autresMisesEnAvant.length > 0 && (
-                <div className="hero-une-autres">
-                  <p className="hero-une-autres-label">{t('home.also_featured', 'Également à la une')}</p>
-                  <div className="hero-une-autres-liste">
-                    {autresMisesEnAvant.map((item) => (
-                      <Link key={item.id} to={`/sermon/${item.id}`} className="hero-une-autre">
-                        <span
-                          className="hero-une-autre-vignette"
-                          style={imageDe(item) ? { backgroundImage: `url(${imageDe(item)})` } : undefined}
-                          aria-hidden="true"
-                        />
-                        <span className="hero-une-autre-titre">{item.titre}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
+      {/* ================= DEUX CARROUSELS : ACTUALITÉS | À LA UNE =================
+          Deux moitiés de même largeur, chacune avec son propre défilement
+          automatique. */}
+      <div className="home-dual-carousel-wrapper fade-in" style={{ animationDelay: '0.2s' }}>
+        <div className="carousel-half">
+          <h2 className="carousel-half-title">{t('home.banners', 'Actualités')}</h2>
+          <HomeCarousel medias={carrouselMedias} />
+        </div>
+        <div className="carousel-half">
+          <h2 className="carousel-half-title">{t('home.featured_title', 'Vidéos à la une')}</h2>
+          <HomeCarousel medias={aLaUneMedias} />
+        </div>
+      </div>
 
-              {totalPredications > 0 && (
-                <p className="hero-une-compteur">
-                  {totalPredications.toLocaleString('fr-FR')} {t('home.sermons_available', 'prédications disponibles')}
-                </p>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="home-hero-une-inner">
-            <h1 id="titre-a-la-une" className="hero-une-titre">{t('home.hero_title_1')}</h1>
-            <p className="hero-une-desc">{t('home.hero_subtitle')}</p>
-            <div className="hero-une-actions">
-              <Link to="/videos" className="btn hero-une-btn-principal">
-                {t('home.hero_btn_explore')}
-                <ArrowRight size={16} />
-              </Link>
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* Promesse du site : replacée après le héros, elle explique ce qu'on
-          trouve ici sans disputer la vedette au message mis en avant. */}
+      {/* Promesse du site : elle explique ce qu'on trouve ici, sous les deux
+          carrousels. */}
       <section className="home-promesse reveal-on-scroll">
         <p className="section-kicker home-kicker-pill">{t('home.kicker_pill')}</p>
         <h2 className="home-promesse-titre">
           {t('home.hero_title_1')} <span className="text-primary">{t('home.hero_title_2')}</span>
         </h2>
         <p className="home-promesse-texte">{t('home.hero_subtitle')}</p>
+        {totalPredications > 0 && (
+          <p className="home-promesse-compteur">
+            {totalPredications.toLocaleString('fr-FR')} {t('home.sermons_available', 'prédications disponibles')}
+          </p>
+        )}
         <div className="home-promesse-actions">
           <Button to="/videos" variant="accent" icon={ArrowRight} iconPosition="right">
             {t('home.hero_btn_explore')}
@@ -253,17 +201,6 @@ export function Home() {
           </Link>
         </div>
       </section>
-
-      {/* Actualités gérées par l'administration : un seul carrousel, plus deux
-          qui se disputaient l'attention. */}
-      {!isLoading && carrouselMedias.length > 0 && (
-        <section className="home-section home-actualites reveal-on-scroll">
-          <div className="section-heading">
-            <h2>{t('home.banners', 'Actualités')}</h2>
-          </div>
-          <HomeCarousel medias={carrouselMedias} />
-        </section>
-      )}
 
       {/* Défilement vertical normal : les anciens panneaux à défilement interne
           enfermaient le contenu dans une page haute d'un seul écran. */}
