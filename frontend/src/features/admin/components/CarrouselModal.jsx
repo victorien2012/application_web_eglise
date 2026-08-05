@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Upload, Image as ImageIcon, Film, Save } from 'lucide-react';
 import { Button } from '../../../components/Button';
 import './CarrouselModal.css';
+
+const EXTENSIONS_IMAGE = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
+const TAILLE_MAX_MO = 5;
 
 const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
   const { t } = useTranslation();
@@ -14,6 +17,9 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
   const [urlVideo, setUrlVideo] = useState('');
   const [estActif, setEstActif] = useState(true);
   const [ordre, setOrdre] = useState(0);
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState('');
+  const apercuLocal = useRef(null);
 
   useEffect(() => {
     if (mediaToEdit) {
@@ -41,43 +47,78 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setFichier(file);
-      setFichierPreview(URL.createObjectURL(file));
-      // Détection automatique du type
-      if (file.type.startsWith('video/')) {
-        setTypeMedia('VIDEO');
-      } else {
-        setTypeMedia('IMAGE');
-      }
+    if (!file) return;
+
+    // Le carrousel s'affiche en page d'accueil : refuser ici ce que le serveur
+    // refusera de toute facon evite un envoi inutile et un message obscur.
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    if (!EXTENSIONS_IMAGE.includes(extension)) {
+      setErreur(`Format non supporté. Formats acceptés : ${EXTENSIONS_IMAGE.join(', ')}.`);
+      e.target.value = '';
+      return;
     }
+    if (file.size > TAILLE_MAX_MO * 1024 * 1024) {
+      setErreur(`Fichier trop volumineux (${(file.size / (1024 * 1024)).toFixed(1)} Mo). Maximum : ${TAILLE_MAX_MO} Mo.`);
+      e.target.value = '';
+      return;
+    }
+
+    setErreur('');
+    setFichier(file);
+    if (apercuLocal.current) URL.revokeObjectURL(apercuLocal.current);
+    apercuLocal.current = URL.createObjectURL(file);
+    setFichierPreview(apercuLocal.current);
+    setTypeMedia('IMAGE');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (enCours) return;
+
     const formData = new FormData();
     if (titre) formData.append('titre', titre);
     if (description) formData.append('description', description);
     formData.append('type_media', typeMedia);
     formData.append('est_actif', estActif);
     formData.append('ordre', ordre);
-    
+
     if (typeMedia === 'IMAGE' && fichier) {
       formData.append('fichier', fichier);
     } else if (typeMedia === 'VIDEO' && urlVideo) {
       formData.append('url_video', urlVideo);
     }
 
-    onSave(formData);
+    setErreur('');
+    setEnCours(true);
+    try {
+      // Sans attente ni verrou, un double-clic creait deux entrees identiques.
+      await onSave(formData);
+    } catch (err) {
+      const donnees = err?.response?.data;
+      const premierChamp = donnees && typeof donnees === 'object'
+        ? Object.values(donnees).flat().find((valeur) => typeof valeur === 'string')
+        : null;
+      // L'erreur s'affichait derriere la modale restee ouverte : elle est
+      // desormais montree dans le formulaire lui-meme.
+      setErreur(donnees?.detail || premierChamp || "Erreur lors de l'enregistrement du média.");
+    } finally {
+      setEnCours(false);
+    }
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={enCours ? undefined : onClose}>
       <div className="modal-content carrousel-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{mediaToEdit ? "Modifier le média" : "Ajouter un média au carrousel"}</h2>
-          <button className="close-btn" onClick={onClose}><X size={24} /></button>
+          <button className="close-btn" onClick={onClose} disabled={enCours} aria-label="Fermer"><X size={24} /></button>
         </div>
+
+        {erreur && (
+          <div className="modal-error" role="alert" style={{ margin: '0 1.5rem', color: 'var(--danger)', fontWeight: 600 }}>
+            {erreur}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="modal-body carrousel-form">
           <div className="form-group">
@@ -187,10 +228,10 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
           </div>
 
           <div className="modal-actions">
-            <Button type="button" variant="outline" onClick={onClose}>Annuler</Button>
-            <Button type="submit" variant="primary" disabled={!mediaToEdit && (typeMedia === 'IMAGE' ? !fichier : !urlVideo)}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={enCours}>Annuler</Button>
+            <Button type="submit" variant="primary" disabled={enCours || (!mediaToEdit && (typeMedia === 'IMAGE' ? !fichier : !urlVideo))}>
               <Save size={18} style={{ marginRight: '8px' }} />
-              Enregistrer
+              {enCours ? 'Enregistrement…' : 'Enregistrer'}
             </Button>
           </div>
         </form>

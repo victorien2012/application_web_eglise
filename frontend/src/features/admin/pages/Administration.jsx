@@ -299,8 +299,9 @@ export function Administration() {
       setCarrouselSelectionne(null);
       charger();
     } catch (error) {
-      console.error(error);
-      setErreur("Erreur lors de l'enregistrement du média.");
+      // L'erreur est relancee pour que la modale reste ouverte et l'affiche
+      // elle-meme : auparavant elle s'affichait derriere, donc invisible.
+      throw error;
     }
   }
 
@@ -389,6 +390,21 @@ export function Administration() {
   // Les predications sont paginees par le serveur : la liste recue est deja la
   // page a afficher, il n'y a rien a decouper.
   const totalPagesPredications = Math.max(1, Math.ceil(totalPredications / ELEMENTS_PAR_PAGE));
+
+  // Agregats de la serie analytique deja fournie par l'API.
+  const activite30Jours = (stats?.serie_analytique || []).reduce(
+    (acc, jour) => {
+      const lectures = jour.lectures || 0;
+      const telechargements = jour.telechargements || 0;
+      return {
+        lectures: acc.lectures + lectures,
+        telechargements: acc.telechargements + telechargements,
+        total: acc.total + lectures + telechargements,
+        max: Math.max(acc.max, lectures + telechargements),
+      };
+    },
+    { lectures: 0, telechargements: 0, total: 0, max: 0 }
+  );
 
   if (chargement) {
     return (
@@ -517,6 +533,79 @@ export function Administration() {
               </div>
             </div>
           </div>
+
+          {/* Ces deux blocs exploitent des donnees que /admin/statistiques/
+              calculait et transmettait deja, mais que la page n'affichait pas. */}
+          {activite30Jours.total > 0 && (
+            <div style={{ marginTop: '2rem' }}>
+              <h3 style={{ fontSize: '1rem', margin: '0 0 0.25rem', color: 'var(--text-main)' }}>
+                Activité des 30 derniers jours
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0 0 1rem' }}>
+                {activite30Jours.lectures.toLocaleString('fr-FR')} lectures et{' '}
+                {activite30Jours.telechargements.toLocaleString('fr-FR')} téléchargements
+              </p>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '90px' }}>
+                {stats.serie_analytique.map((jour) => {
+                  const valeur = (jour.lectures || 0) + (jour.telechargements || 0);
+                  const hauteur = activite30Jours.max ? Math.max(2, (valeur / activite30Jours.max) * 100) : 2;
+                  return (
+                    <div
+                      key={jour.date}
+                      title={`${jour.date} : ${jour.lectures} lectures, ${jour.telechargements} téléchargements`}
+                      style={{
+                        flex: 1,
+                        height: `${hauteur}%`,
+                        background: valeur ? 'var(--primary)' : 'var(--border-color)',
+                        borderRadius: '3px 3px 0 0',
+                        minWidth: '4px',
+                      }}
+                    />
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+                <span>{stats.serie_analytique[0]?.date}</span>
+                <span>{stats.serie_analytique[stats.serie_analytique.length - 1]?.date}</span>
+              </div>
+            </div>
+          )}
+
+          {stats.meilleures_predications?.length ? (
+            <div style={{ marginTop: '2rem' }}>
+              <h3 style={{ fontSize: '1rem', margin: '0 0 1rem', color: 'var(--text-main)' }}>
+                Contenus les plus consultés
+              </h3>
+              <div className="datatable-responsive">
+                <table className="premium-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '50px' }}>#</th>
+                      <th>Titre</th>
+                      <th>Pasteur</th>
+                      <th style={{ textAlign: 'right' }}>Vues</th>
+                      <th style={{ textAlign: 'right' }}>Téléchargements</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.meilleures_predications.map((predication, index) => (
+                      <tr key={predication.id} className="datatable-row">
+                        <td style={{ fontWeight: 700, color: 'var(--text-muted)' }}>{index + 1}</td>
+                        <td className="cell-title">
+                          <a href={`/sermon/${predication.id}`} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: 600 }}>
+                            {predication.titre}
+                          </a>
+                        </td>
+                        <td>{predication.nom_predicateur || predication.pasteur?.nom_affichage || '-'}</td>
+                        <td style={{ textAlign: 'right' }}>{(predication.nombre_vues || 0).toLocaleString('fr-FR')}</td>
+                        <td style={{ textAlign: 'right' }}>{(predication.nombre_telechargements || 0).toLocaleString('fr-FR')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 

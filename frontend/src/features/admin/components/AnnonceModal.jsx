@@ -61,16 +61,27 @@ export function AnnonceModal({ isOpen, onClose, onSaved, annonceInitiale = null 
       onSaved();
       onClose();
     } catch (err) {
-      setErreur(err.response?.data?.detail || err.response?.data?.titre?.[0] || 'Erreur lors de la sauvegarde.');
+      // Les erreurs de validation par champ (date d'expiration passée, titre
+      // manquant) étaient noyées dans un message générique.
+      const donnees = err.response?.data;
+      const premierChamp = donnees && typeof donnees === 'object'
+        ? Object.values(donnees).flat().find((valeur) => typeof valeur === 'string')
+        : null;
+      setErreur(donnees?.detail || premierChamp || 'Erreur lors de la sauvegarde.');
     } finally {
       setEnCours(false);
     }
   };
 
+  // Une annonce expirant dans le passé ne s'afficherait jamais.
+  const maintenantLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 16);
+
   return (
     <div className="modal-overlay">
       <div className="modal-content annonce-modal-content">
-        <button className="modal-close" onClick={onClose} type="button">
+        <button className="modal-close" onClick={onClose} type="button" disabled={enCours} aria-label="Fermer">
           <X size={24} />
         </button>
 
@@ -122,6 +133,7 @@ export function AnnonceModal({ isOpen, onClose, onSaved, annonceInitiale = null 
             <input
               id="dateExpiration"
               type="datetime-local"
+              min={maintenantLocal}
               value={dateExpiration}
               onChange={(e) => setDateExpiration(e.target.value)}
             />
@@ -129,7 +141,7 @@ export function AnnonceModal({ isOpen, onClose, onSaved, annonceInitiale = null 
           </div>
 
           <div className="modal-actions">
-            <Button variant="secondary" onClick={onClose} type="button">
+            <Button variant="secondary" onClick={onClose} type="button" disabled={enCours}>
               Annuler
             </Button>
             <Button variant="primary" type="submit" icon={Save} disabled={enCours}>
