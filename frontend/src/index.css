@@ -31,10 +31,15 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+/* min-height plutôt que height : avec une hauteur fixe, `overflow-x: hidden`
+   (qui force `overflow-y` à `auto` d'après la spécification) transformait
+   #root en conteneur de défilement. Sa barre interne rognait 8 px à droite,
+   décalant tout le contenu centré vers la gauche, et empêchait window.scrollTo
+   de fonctionner sur l'ensemble du site. */
 html,
 body,
 #root {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   font-family: 'Outfit', sans-serif;
   background-color: var(--bg-main);
