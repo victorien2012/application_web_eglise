@@ -994,3 +994,171 @@
     max-height: 300px;
   }
 }
+/* =====================================================================
+   DIRECTION A — « Le message d'abord »
+   Un héros unique consacré à la prédication mise en avant, puis un
+   défilement vertical normal. Remplace le double carrousel concurrent
+   et les panneaux à défilement interne.
+   ===================================================================== */
+
+.home-hero-une {
+  position: relative;
+  isolation: isolate;
+  min-height: 62vh;
+  display: flex;
+  align-items: flex-end;
+  background-color: var(--navbar-bg);
+  overflow: hidden;
+}
+
+.home-hero-une-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: -2;
+}
+
+/* Voile assombrissant : garantit la lisibilité du texte quelle que soit
+   l'image de couverture téléversée. */
+.home-hero-une-voile {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(var(--navbar-bg-rgb), 0.96) 0%,
+    rgba(var(--navbar-bg-rgb), 0.82) 45%,
+    rgba(var(--navbar-bg-rgb), 0.45) 100%
+  );
+  z-index: -1;
+}
+
+.home-hero-une-inner {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem 3rem;
+  color: #fff;
+}
+
+.hero-une-kicker {
+  display: inline-block;
+  margin: 0 0 0.9rem;
+  padding: 0.28rem 0.85rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--primary-dark);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.hero-une-titre {
+  margin: 0 0 0.9rem;
+  max-width: 20ch;
+  font-size: clamp(1.9rem, 4.6vw, 3.4rem);
+  line-height: 1.08;
+  font-weight: 800;
+  color: #fff;
+}
+
+.hero-une-desc {
+  margin: 0 0 0.75rem;
+  max-width: 62ch;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.hero-une-meta {
+  margin: 0 0 1.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.hero-une-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.hero-une-btn-principal,
+.hero-une-btn-secondaire {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: transform 0.18s ease, background-color 0.18s ease;
+}
+
+.hero-une-btn-principal {
+  background: var(--accent);
+  color: var(--primary-dark);
+  border: none;
+}
+
+.hero-une-btn-principal:hover {
+  background: var(--accent-light, var(--accent));
+  transform: translateY(-2px);
+}
+
+.hero-une-btn-secondaire {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.hero-une-btn-secondaire:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.hero-une-compteur {
+  margin: 1.5rem 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.hero-une-skeleton {
+  height: 260px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.home-flux {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.home-actualites {
+  max-width: 1180px;
+  margin: 2.5rem auto 0;
+  padding: 0 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .home-hero-une {
+    min-height: 0;
+  }
+
+  .home-hero-une-inner {
+    padding: 2.5rem 1.15rem 2.25rem;
+  }
+
+  .hero-une-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-une-btn-principal,
+  .hero-une-btn-secondaire {
+    justify-content: center;
+  }
+}
