@@ -89,6 +89,12 @@ class PredicationViewSet(viewsets.ModelViewSet):
         # Filtre média de la page publique Vidéos. Il ne se contente pas du champ
         # `type_media` : une prédication est "regardable" si elle porte une vidéo
         # ou un lien YouTube, et "écoutable seulement" si elle n'a qu'un audio.
+        # Utilisé par l'onglet Vidéos de l'administration : retrouver les vidéos
+        # mises en avant sans parcourir tout le catalogue page par page.
+        a_la_une = self.request.query_params.get('est_a_la_une')
+        if a_la_une in ('true', 'false'):
+            queryset = queryset.filter(est_a_la_une=(a_la_une == 'true'))
+
         # Les champs média sont blank=True ET null=True : l'absence de valeur peut
         # donc être soit une chaîne vide, soit NULL. Les deux cas sont couverts.
         filtre_media = self.request.query_params.get('filtre_media')

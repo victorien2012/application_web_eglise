@@ -42,8 +42,13 @@ export function Administration() {
   const [pageAnnonces, setPageAnnonces] = useState(1);
   const [pageCarrousel, setPageCarrousel] = useState(1);
   const [pagePredications, setPagePredications] = useState(1);
-  const [predicationsChargees, setPredicationsChargees] = useState(false);
+  const [totalPredications, setTotalPredications] = useState(0);
   const [chargementPredications, setChargementPredications] = useState(false);
+  const [rechercheVideo, setRechercheVideo] = useState('');
+  const [rechercheVideoAppliquee, setRechercheVideoAppliquee] = useState('');
+  const [filtreALaUne, setFiltreALaUne] = useState('toutes');
+  // Incremente pour forcer un rechargement de la liste apres une publication.
+  const [compteurRafraichissementVideos, setCompteurRafraichissementVideos] = useState(0);
   const ELEMENTS_PAR_PAGE = 5;
   const [ongletActif, setOngletActif] = useState('apercu');
   
@@ -105,12 +110,29 @@ export function Administration() {
     }
   }
 
+  // Pagination serveur : le catalogue compte plus de 1500 videos, les charger
+  // toutes pour n'en afficher que cinq etait le principal cout de cette page.
   async function chargerPredications() {
     setChargementPredications(true);
     try {
-      const reponse = await api.get('/predications/?espace_admin=true');
+      const params = {
+        espace_admin: true,
+        page: pagePredications,
+        page_size: ELEMENTS_PAR_PAGE,
+      };
+      if (rechercheVideoAppliquee) {
+        params.search = rechercheVideoAppliquee;
+      }
+      if (filtreALaUne !== 'toutes') {
+        params.est_a_la_une = filtreALaUne === 'a_la_une' ? 'true' : 'false';
+      }
+      const reponse = await api.get('/predications/', { params });
       setPredications(extraireListe(reponse.data));
-      setPredicationsChargees(true);
+      setTotalPredications(
+        typeof reponse.data?.count === 'number'
+          ? reponse.data.count
+          : extraireListe(reponse.data).length
+      );
     } catch (error) {
       setErreur(error.response?.data?.detail || t('admin.load_error'));
     } finally {
@@ -123,12 +145,24 @@ export function Administration() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Anti-rebond de la recherche vidéo : sans cela chaque frappe partirait au serveur.
   useEffect(() => {
-    if (ongletActif === 'videos' && !predicationsChargees && !chargementPredications) {
-      chargerPredications();
-    }
+    const minuteur = setTimeout(() => {
+      setRechercheVideoAppliquee(rechercheVideo.trim());
+      setPagePredications(1);
+    }, 350);
+    return () => clearTimeout(minuteur);
+  }, [rechercheVideo]);
+
+  useEffect(() => {
+    setPagePredications(1);
+  }, [filtreALaUne]);
+
+  useEffect(() => {
+    if (ongletActif !== 'videos') return;
+    chargerPredications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ongletActif, predicationsChargees]);
+  }, [ongletActif, pagePredications, rechercheVideoAppliquee, filtreALaUne, compteurRafraichissementVideos]);
 
   useEffect(() => {
     setPagePasteurs(1);
@@ -275,6 +309,12 @@ export function Administration() {
       const nouveauStatut = !predication.est_a_la_une;
       await api.patch(`/predications/${predication.id}/`, { est_a_la_une: nouveauStatut });
       setPredications((actuels) => actuels.map(p => p.id === predication.id ? { ...p, est_a_la_une: nouveauStatut } : p));
+      // Le compteur global vient des statistiques : il doit suivre l'action
+      // sans attendre un rechargement complet de la page.
+      setStats((actuelles) => actuelles && ({
+        ...actuelles,
+        total_predications_a_la_une: Math.max(0, (actuelles.total_predications_a_la_une || 0) + (nouveauStatut ? 1 : -1)),
+      }));
       setMessageSucces(nouveauStatut ? "La vidéo a été ajoutée à la une." : "La vidéo a été retirée de la une.");
       setErreur('');
     } catch {
@@ -346,7 +386,9 @@ export function Administration() {
   const vueSignalements = decouperPage(signalements, pageSignalements);
   const vueAnnonces = decouperPage(annonces, pageAnnonces);
   const vueCarrousel = decouperPage(carrouselMedias, pageCarrousel);
-  const vuePredications = decouperPage(predications, pagePredications);
+  // Les predications sont paginees par le serveur : la liste recue est deja la
+  // page a afficher, il n'y a rien a decouper.
+  const totalPagesPredications = Math.max(1, Math.ceil(totalPredications / ELEMENTS_PAR_PAGE));
 
   if (chargement) {
     return (
@@ -1083,10 +1125,31 @@ export function Administration() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Video size={20} />
             <h2>Gestion des Vidéos et Actualités</h2>
-            <span className="admin-badge-count">{predications.length}</span>
+            <span className="admin-badge-count">{totalPredications}</span>
           </div>
-          <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-            <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{predications.filter(p => p.est_a_la_une).length}</span> vidéos à la une
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Compteur global : la page affichée ne contient que 5 vidéos. */}
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginRight: '0.5rem' }}>
+              <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{stats?.total_predications_a_la_une ?? 0}</span> à la une
+            </div>
+            <input
+              type="text"
+              aria-label="Rechercher une vidéo par titre, description ou pasteur"
+              placeholder="Rechercher une vidéo..."
+              value={rechercheVideo}
+              onChange={(e) => setRechercheVideo(e.target.value)}
+              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.9rem', width: '230px' }}
+            />
+            <select
+              aria-label="Filtrer les vidéos par mise en avant"
+              value={filtreALaUne}
+              onChange={(e) => setFiltreALaUne(e.target.value)}
+              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+            >
+              <option value="toutes">Toutes les vidéos</option>
+              <option value="a_la_une">À la une</option>
+              <option value="standard">Standard</option>
+            </select>
           </div>
         </div>
 
@@ -1108,7 +1171,7 @@ export function Administration() {
                 </tr>
               </thead>
               <tbody>
-                {vuePredications.elements.map((predication) => (
+                {predications.map((predication) => (
                   <tr key={predication.id} className="datatable-row">
                     <td className="cell-title">
                       <strong>{predication.titre}</strong>
@@ -1151,13 +1214,17 @@ export function Administration() {
             </table>
             
             <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
-              <Pagination current={vuePredications.page} total={vuePredications.total} onChange={setPagePredications} />
+              <Pagination current={pagePredications} total={totalPagesPredications} onChange={setPagePredications} />
             </div>
           </div>
         ) : (
           <div className="admin-empty-state">
             <CheckCircle size={32} />
-            <p>Aucune vidéo disponible.</p>
+            {rechercheVideoAppliquee || filtreALaUne !== 'toutes' ? (
+              <p>Aucune vidéo ne correspond à votre recherche ou à votre filtre.</p>
+            ) : (
+              <p>Aucune vidéo disponible.</p>
+            )}
           </div>
         )}
       </section>
@@ -1193,9 +1260,8 @@ export function Administration() {
           setMessageSucces('Le média a été publié avec succès.');
           setErreur('');
           setSelectedPasteurId(null);
-          // Le nouveau média doit apparaître dans l'onglet Vidéos : on invalide
-          // la liste pour qu'elle soit rechargée à sa prochaine ouverture.
-          setPredicationsChargees(false);
+          // Le nouveau média doit apparaître dans l'onglet Vidéos.
+          setCompteurRafraichissementVideos((n) => n + 1);
           charger();
         }}
       />

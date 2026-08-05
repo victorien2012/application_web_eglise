@@ -75,6 +75,9 @@ class StatistiquesGlobalesView(APIView):
             'total_pasteurs_valides': Pasteur.objects.filter(est_valide=True).count(),
             'total_predications': predications.count(),
             'total_predications_publiees': predications.filter(est_publie=True).count(),
+            # Compte global : l'onglet Videos etant pagine cote serveur, il ne
+            # peut plus deduire ce total de la page qu'il affiche.
+            'total_predications_a_la_une': predications.filter(est_a_la_une=True).count(),
             'total_vues': total_vues,
             'total_telechargements': total_telechargements,
             'total_commentaires': Commentaire.objects.count(),
