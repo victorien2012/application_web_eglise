@@ -1,9 +1,12 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import status
@@ -22,7 +25,27 @@ from api.models import (
     ProfilUtilisateur,
     Serie,
     Signalement,
+    SouscriptionPasteur,
 )
+
+
+def creer_pasteur_publiant(utilisateur, nom_affichage, **extra):
+    """Cree un pasteur reellement autorise a publier : valide et avec un abonnement actif.
+
+    Publier exige `est_valide=True` (defaut du modele : False) et une souscription
+    active ; sans cela l'API repond 400 avant meme d'atteindre le serializer.
+    """
+    pasteur = Pasteur.objects.create(
+        utilisateur=utilisateur,
+        nom_affichage=nom_affichage,
+        est_valide=True,
+        **extra,
+    )
+    SouscriptionPasteur.objects.create(
+        pasteur=pasteur,
+        date_fin=timezone.now() + timedelta(days=30),
+    )
+    return pasteur
 
 
 class UploadPredicationTests(APITestCase):
@@ -32,10 +55,7 @@ class UploadPredicationTests(APITestCase):
             email="upload@example.com",
             password="MotDePasseSolide123",
         )
-        self.pasteur = Pasteur.objects.create(
-            utilisateur=self.utilisateur,
-            nom_affichage="Pasteur Upload",
-        )
+        self.pasteur = creer_pasteur_publiant(self.utilisateur, "Pasteur Upload")
         self.client.force_authenticate(user=self.utilisateur)
 
     def test_upload_audio_valide_est_accepte(self):
@@ -84,6 +104,8 @@ class UploadPredicationTests(APITestCase):
             titre="Titre initial",
             type_media="AUDIO",
             est_publie=False,
+            # Une predication doit avoir une source media pour pouvoir etre publiee.
+            fichier_audio=SimpleUploadedFile("initial.mp3", b"audio", content_type="audio/mpeg"),
         )
 
         response = self.client.patch(
@@ -118,8 +140,9 @@ class PublicationPlanifieeTests(APITestCase):
             date_publication=timezone.now() + timedelta(days=2),
         )
 
+        # La liste des predications n'est pas paginee (pagination_class = None).
         response = self.client.get("/api/predications/")
-        self.assertEqual(len(response.data["results"]), 0)
+        self.assertEqual(len(response.data), 0)
 
     def test_predication_planifiee_passee_est_visible_au_public(self):
         from django.utils import timezone
@@ -133,8 +156,9 @@ class PublicationPlanifieeTests(APITestCase):
             date_publication=timezone.now() - timedelta(hours=1),
         )
 
+        # La liste des predications n'est pas paginee (pagination_class = None).
         response = self.client.get("/api/predications/")
-        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(len(response.data), 1)
 
     def test_pasteur_voit_sa_predication_planifiee(self):
         from django.utils import timezone

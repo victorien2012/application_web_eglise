@@ -44,6 +44,26 @@ class SouscriptionPasteur(models.Model):
         delta = self.date_fin - timezone.now()
         return max(0, delta.days)
 
+DUREE_ESSAI_JOURS = 365
+
+
+def creer_souscription_essai(pasteur, duree_jours=DUREE_ESSAI_JOURS):
+    """Ouvre une période d'essai gratuite pour un pasteur qui n'en a pas encore.
+
+    Publier exige une souscription active : tout chemin de création de pasteur doit
+    donc passer par ici, sous peine de créer un compte validé mais incapable de
+    publier quoi que ce soit. Idempotent — un pasteur déjà abonné n'est pas touché.
+    """
+    souscription_existante = getattr(pasteur, 'souscription', None)
+    if souscription_existante is not None:
+        return souscription_existante
+    return SouscriptionPasteur.objects.create(
+        pasteur=pasteur,
+        date_fin=timezone.now() + datetime.timedelta(days=duree_jours),
+        est_essai=True,
+    )
+
+
 class Transaction(models.Model):
     STATUT_CHOICES = [
         ('PENDING', 'En attente'),

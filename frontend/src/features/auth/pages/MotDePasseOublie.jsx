@@ -42,10 +42,10 @@ export function MotDePasseOublie() {
       <div className="auth-form-side">
         <div className="auth-form-container">
           <div className="auth-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <span className="app-brand-mark" style={{ width: '36px', height: '36px', fontSize: '0.9rem', borderRadius: '8px', boxShadow: '0 3px 6px rgba(124, 92, 255, 0.1)' }}>PE</span>
+            <span className="auth-brand-mark" style={{ width: '36px', height: '36px', fontSize: '0.9rem', borderRadius: '8px', boxShadow: '0 3px 6px rgba(124, 92, 255, 0.1)' }}>PE</span>
             <div style={{ textAlign: 'left' }}>
-              <h1 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>{t('auth.password_recovery')}</h1>
-              <p style={{ fontSize: '0.75rem', margin: 0, color: '#64748b', lineHeight: 1.3 }}>{t('auth.password_recovery_subtitle')}</p>
+              <h1 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800, color: 'var(--text-main)' }}>{t('auth.password_recovery')}</h1>
+              <p style={{ fontSize: '0.75rem', margin: 0, color: 'var(--text-muted)', lineHeight: 1.3 }}>{t('auth.password_recovery_subtitle')}</p>
             </div>
           </div>
 

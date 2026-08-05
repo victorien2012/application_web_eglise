@@ -71,6 +71,7 @@
 }
 
 .carousel-cta {
+  display: inline-block;
   background: var(--accent, #f59e0b);
   color: var(--primary-dark, #001f3f);
   border: none;
@@ -78,6 +79,7 @@
   border-radius: 999px;
   font-weight: 700;
   font-size: 0.95rem;
+  text-decoration: none;
   cursor: pointer;
   pointer-events: auto;
   transition: all 0.3s ease;

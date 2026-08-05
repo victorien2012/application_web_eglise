@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, Send, Trash2, Loader2, UserRound, LogIn } from 'lucide-react';
+import { MessageSquare, Send, Trash2, Loader2, UserRound, LogIn, AlertTriangle } from 'lucide-react';
 import { api, extraireListe } from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
+import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import './SectionCommentaires.css';
 
 const MAX_CHARS = 500;
@@ -43,6 +44,7 @@ export function SectionCommentaires({ predicationId }) {
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState('');
   const [suppressions, setSuppressions] = useState(new Set());
+  const [commentaireASupprimer, setCommentaireASupprimer] = useState(null);
   const textareaRef = useRef(null);
 
   useEffect(() => {
@@ -73,7 +75,10 @@ export function SectionCommentaires({ predicationId }) {
     }
   }
 
-  async function supprimer(id) {
+  async function confirmerSuppression() {
+    if (!commentaireASupprimer) return;
+    const id = commentaireASupprimer;
+    setCommentaireASupprimer(null);
     setSuppressions((s) => new Set(s).add(id));
     try {
       await api.delete(`/commentaires/${id}/`);
@@ -183,7 +188,7 @@ export function SectionCommentaires({ predicationId }) {
                       <button
                         type="button"
                         className="sc-delete-btn"
-                        onClick={() => supprimer(c.id)}
+                        onClick={() => setCommentaireASupprimer(c.id)}
                         disabled={suppressions.has(c.id)}
                         title="Supprimer ce commentaire"
                         aria-label="Supprimer"
@@ -202,6 +207,17 @@ export function SectionCommentaires({ predicationId }) {
           </ul>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={!!commentaireASupprimer}
+        onClose={() => setCommentaireASupprimer(null)}
+        onConfirm={confirmerSuppression}
+        title="Supprimer le commentaire"
+        message="Voulez-vous vraiment supprimer ce commentaire ? Cette action est irréversible."
+        confirmText="Supprimer"
+        variant="danger"
+        icon={AlertTriangle}
+      />
     </section>
   );
 }

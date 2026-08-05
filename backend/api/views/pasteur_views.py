@@ -3,6 +3,8 @@ import logging
 import os
 from datetime import timedelta
 
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.contrib.auth.password_validation import validate_password
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.utils import timezone
@@ -57,6 +59,10 @@ class PasteurViewSet(viewsets.ModelViewSet):
             return Response({"username": ["Ce nom d'utilisateur est déjà pris."]}, status=status.HTTP_400_BAD_REQUEST)
         if User.objects.filter(email=email).exists():
             return Response({"email": ["Cette adresse email est déjà utilisée."]}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            validate_password(password)
+        except DjangoValidationError as erreur:
+            return Response({"password": list(erreur.messages)}, status=status.HTTP_400_BAD_REQUEST)
         user = User.objects.create_user(username=username, email=email, password=password)
         # Create profile utilisateur if needed
         ProfilUtilisateur.objects.create(utilisateur=user, contact=contact)
@@ -71,6 +77,10 @@ class PasteurViewSet(viewsets.ModelViewSet):
             est_rejete=False,
             cree_par_admin=True,
         )
+        # Sans souscription, le compte serait validé mais bloqué à la publication
+        # (« Votre abonnement est expiré »), comme à l'inscription publique.
+        from api.models.paiement import creer_souscription_essai
+        creer_souscription_essai(pasteur)
         serializer = self.get_serializer(pasteur)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

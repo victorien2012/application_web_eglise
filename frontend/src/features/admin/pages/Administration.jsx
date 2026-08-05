@@ -1100,6 +1100,8 @@ export function Administration() {
         isOpen={showCreatePasteur}
         onClose={() => setShowCreatePasteur(false)}
         onCreated={() => {
+          setMessageSucces('Le compte pasteur a été créé avec succès. Pensez à communiquer le mot de passe au pasteur.');
+          setErreur('');
           charger();
         }}
       />

@@ -417,7 +417,7 @@ export function SermonDetail() {
       {/* Sermons Similaires */}
       {sermonsSimilaires.length > 0 && !modeCinema && (
         <div className="similar-sermons-section" style={{ marginTop: '4rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.5rem', color: '#0f172a' }}>Recommandé pour vous</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text-main)' }}>Recommandé pour vous</h2>
           <div className="sermon-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
             {sermonsSimilaires.map((item, i) => (
               <div key={item.id} className="reveal-cascade" style={{ transitionDelay: `${i * 0.1}s` }}>
@@ -440,7 +440,7 @@ export function SermonDetail() {
             
             {telechargement.statut === 'confirmation' ? (
               <>
-                <div style={{ color: '#005eb8', marginBottom: '1.5rem' }}>
+                <div style={{ color: 'var(--primary)', marginBottom: '1.5rem' }}>
                   <Download size={54} style={{ margin: '0 auto', display: 'block' }} />
                 </div>
                 <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.6, marginBottom: '2rem', margin: '0 0 2rem 0' }}>
@@ -459,7 +459,7 @@ export function SermonDetail() {
               </>
             ) : telechargement.statut === 'chargement' ? (
               <>
-                <div style={{ color: '#005eb8', margin: '0 auto 1.5rem auto', display: 'flex', justifyContent: 'center' }}>
+                <div style={{ color: 'var(--primary)', margin: '0 auto 1.5rem auto', display: 'flex', justifyContent: 'center' }}>
                   <svg className="animate-spin" width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 12a9 9 0 11-6.219-8.56"></path>
                   </svg>
@@ -476,7 +476,7 @@ export function SermonDetail() {
                   <svg width="54" height="54" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ margin: '0 auto', display: 'block' }}><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
                 </div>
                 <p style={{ color: '#ef4444', fontWeight: '600', marginBottom: '2rem' }}>{telechargement.erreurMsg}</p>
-                <button type="button" onClick={() => setTelechargement(null)} style={{ padding: '0.75rem 2rem', fontSize: '1rem', background: '#005eb8', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>
+                <button type="button" onClick={() => setTelechargement(null)} style={{ padding: '0.75rem 2rem', fontSize: '1rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>
                   {t('videos.modal_dl_close')}
                 </button>
               </>

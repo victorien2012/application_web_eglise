@@ -10,7 +10,7 @@
   margin-left: -50vw;
   margin-right: -50vw;
   flex: 1;
-  min-height: calc(100vh - 70px);
+  min-height: calc(100vh - var(--nav-height));
   display: flex;
   background: var(--bg-alt);
 }
@@ -116,9 +116,16 @@
 
 .auth-brand-mark {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 48px !important;
   height: 48px !important;
   font-size: 1.2rem !important;
+  font-weight: 800;
+  background: var(--primary);
+  color: #ffffff;
+  border-radius: 12px;
 }
 
 .auth-header h1 {
@@ -201,8 +208,8 @@
 }
 
 .auth-input-wrapper:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: var(--bg-card);
+  border-color: var(--text-muted);
 }
 
 .auth-input-wrapper:focus-within {
@@ -314,6 +321,62 @@
   background: #fef2f2;
   border: 1px solid #fecaca;
   border-radius: 12px;
+}
+
+.auth-success {
+  color: #15803d;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0 0 1rem 0;
+  padding: 1rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+}
+
+.auth-footer-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 1rem 0;
+}
+
+/* ==========================================================================
+   ÉCRAN DE CONFIRMATION (Demande envoyée)
+   ========================================================================== */
+.auth-visual-emoji {
+  font-size: 3.5rem;
+  margin-bottom: 1.5rem;
+  z-index: 1;
+}
+
+.auth-confirmation-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.auth-confirmation-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 1rem 0;
+  letter-spacing: -0.02em;
+}
+
+.auth-confirmation-text {
+  color: var(--text-muted);
+  line-height: 1.7;
+  font-size: 1rem;
+  margin: 0 0 1.5rem 0;
+}
+
+.auth-confirmation-info {
+  background: var(--bg-alt);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
 }
 
 .auth-submit-btn {
@@ -442,7 +505,7 @@
   .auth-layout-wrapper {
     flex-direction: column;
     height: auto;
-    min-height: calc(100vh - 66px);
+    min-height: calc(100vh - var(--nav-height));
   }
 
   .auth-visual-side {

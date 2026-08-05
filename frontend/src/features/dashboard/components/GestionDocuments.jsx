@@ -142,25 +142,25 @@ export function GestionDocuments() {
       <div className="docs-layout-grid">
         
         {/* Liste des documents */}
-        <div className="dashboard-section" style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+        <div className="dashboard-section" style={{ backgroundColor: 'var(--bg-card)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--pd-border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0 }}>Vos documents publiés ({documents.length})</h3>
+            <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Vos documents publiés ({documents.length})</h3>
             <div style={{ position: 'relative' }}>
-              <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
-              <input 
-                type="text" 
-                placeholder="Rechercher..." 
+              <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                placeholder="Rechercher..."
                 value={recherche}
                 onChange={(e) => setRecherche(e.target.value)}
-                style={{ padding: '0.5rem 1rem 0.5rem 2.25rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                style={{ padding: '0.5rem 1rem 0.5rem 2.25rem', borderRadius: '6px', border: '1px solid var(--pd-border)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
               />
             </div>
           </div>
 
           {chargement ? (
-            <p>Chargement...</p>
+            <p style={{ color: 'var(--text-muted)' }}>Chargement...</p>
           ) : documentsFiltres.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', backgroundColor: 'var(--bg-alt)', borderRadius: '8px' }}>
               <FileText size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
               <p>Aucun document trouvé.</p>
             </div>
@@ -168,7 +168,7 @@ export function GestionDocuments() {
             <Table 
               data={documentsFiltres}
               keyExtractor={(doc) => doc.id}
-              rowStyle={(doc) => doc.id === enEdition ? { backgroundColor: '#f0f9ff' } : {}}
+              rowStyle={(doc) => doc.id === enEdition ? { backgroundColor: 'rgba(var(--primary-rgb), 0.08)' } : {}}
               columns={[
                 { 
                   header: 'Document',
@@ -181,19 +181,19 @@ export function GestionDocuments() {
                         ) : (
                           <DocumentIcon url={doc.fichier || doc.url_fichier} size={24} />
                         )}
-                        <span style={{ fontWeight: 500, color: '#0f172a' }}>{doc.titre}</span>
+                        <span style={{ fontWeight: 500, color: 'var(--text-main)' }}>{doc.titre}</span>
                       </div>
                     );
                   }
                 },
                 { 
                   header: 'Date',
-                  cellStyle: { color: '#64748b', fontSize: '0.9rem' },
+                  cellStyle: { color: 'var(--text-muted)', fontSize: '0.9rem' },
                   render: (doc) => new Date(doc.cree_le).toLocaleDateString()
                 },
                 { 
                   header: 'Statistiques',
-                  cellStyle: { color: '#64748b', fontSize: '0.9rem' },
+                  cellStyle: { color: 'var(--text-muted)', fontSize: '0.9rem' },
                   render: (doc) => (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <Download size={14} /> {doc.nombre_telechargements}
@@ -225,8 +225,8 @@ export function GestionDocuments() {
         </div>
 
         {/* Formulaire d'ajout/modification */}
-        <div className="dashboard-section form-card" style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', position: 'sticky', top: '2rem' }}>
-          <h3 style={{ margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="dashboard-section form-card" style={{ backgroundColor: 'var(--bg-card)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--pd-border)', position: 'sticky', top: '2rem' }}>
+          <h3 style={{ margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)' }}>
             {enEdition ? <PencilLine size={20} /> : <PlusCircle size={20} />}
             {enEdition ? 'Modifier le document' : 'Nouveau document'}
           </h3>
@@ -239,7 +239,7 @@ export function GestionDocuments() {
                 required 
                 value={formulaire.titre} 
                 onChange={(e) => setFormulaire({...formulaire, titre: e.target.value})}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--pd-border)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
               />
             </div>
             
@@ -249,7 +249,7 @@ export function GestionDocuments() {
                 rows="2" 
                 value={formulaire.description} 
                 onChange={(e) => setFormulaire({...formulaire, description: e.target.value})}
-                style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', resize: 'vertical' }}
+                style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid var(--pd-border)', resize: 'vertical', background: 'var(--bg-card)', color: 'var(--text-main)' }}
               />
             </div>
 
@@ -264,7 +264,7 @@ export function GestionDocuments() {
                   onChange={(e) => setFichier(e.target.files[0])}
                   style={{ width: '100%', fontSize: '0.85rem' }}
                 />
-                {enEdition && <small style={{ color: '#64748b', display: 'block', marginTop: '0.25rem', fontSize: '0.75rem' }}>Vide = conserver l'actuel.</small>}
+                {enEdition && <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem', fontSize: '0.75rem' }}>Vide = conserver l'actuel.</small>}
               </div>
 
               <div style={{ flex: 1 }}>
@@ -291,8 +291,8 @@ export function GestionDocuments() {
                     style={{
                       padding: '0.3rem 0.6rem', borderRadius: '20px', fontSize: '0.8rem', border: '1px solid', cursor: 'pointer',
                       backgroundColor: formulaire.categories_ids.includes(cat.id) ? '#004a94' : 'transparent',
-                      color: formulaire.categories_ids.includes(cat.id) ? 'white' : '#64748b',
-                      borderColor: formulaire.categories_ids.includes(cat.id) ? '#004a94' : '#cbd5e1'
+                      color: formulaire.categories_ids.includes(cat.id) ? 'white' : 'var(--text-muted)',
+                      borderColor: formulaire.categories_ids.includes(cat.id) ? 'var(--primary)' : 'var(--pd-border)'
                     }}
                   >
                     {cat.nom}

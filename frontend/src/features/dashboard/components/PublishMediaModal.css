@@ -17,7 +17,7 @@
 }
 
 .pmmodal-content {
-  background: var(--card-bg, #fff);
+  background: var(--bg-card);
   border-radius: 16px;
   width: 95%;
   max-width: 580px;
@@ -40,14 +40,14 @@
   right: 1rem;
   background: none;
   border: none;
-  color: var(--text-secondary, #64748b);
+  color: var(--text-muted);
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 6px;
   transition: background 0.15s;
 }
 .pmmodal-close:hover {
-  background: var(--hover-bg, #f1f5f9);
+  background: var(--bg-alt);
 }
 
 .pmmodal-header {
@@ -73,7 +73,7 @@
   margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--text-primary, #1e293b);
+  color: var(--text-main);
 }
 
 /* ── Tabs ── */
@@ -94,7 +94,7 @@
   background: none;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--text-secondary, #64748b);
+  color: var(--text-muted);
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
@@ -102,7 +102,7 @@
 }
 
 .pmmodal-tab:hover {
-  color: var(--text-primary, #1e293b);
+  color: var(--text-main);
 }
 
 .pmmodal-tab.active {
@@ -126,7 +126,7 @@
 .pmmodal-field label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-secondary, #475569);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
 }
@@ -138,8 +138,8 @@
   border: 1.5px solid var(--border-color, #e2e8f0);
   border-radius: 8px;
   font-size: 0.9rem;
-  background: var(--input-bg, #f8fafc);
-  color: var(--text-primary, #1e293b);
+  background: var(--bg-alt);
+  color: var(--text-main);
   transition: border-color 0.15s, box-shadow 0.15s;
   resize: vertical;
 }
@@ -159,7 +159,7 @@
 
 .pmmodal-help {
   font-size: 0.78rem;
-  color: var(--text-secondary, #94a3b8);
+  color: var(--text-muted);
   margin-top: 0.15rem;
 }
 
@@ -186,7 +186,7 @@
 
 .pmmodal-separator span {
   font-size: 0.8rem;
-  color: var(--text-secondary, #94a3b8);
+  color: var(--text-muted);
   font-weight: 500;
   text-transform: uppercase;
 }
@@ -261,11 +261,11 @@
 }
 
 .pmmodal-btn-cancel {
-  background: var(--hover-bg, #f1f5f9);
-  color: var(--text-secondary, #475569);
+  background: var(--bg-alt);
+  color: var(--text-muted);
 }
 .pmmodal-btn-cancel:hover {
-  background: #e2e8f0;
+  background: var(--border-color);
 }
 
 .pmmodal-btn-confirm {

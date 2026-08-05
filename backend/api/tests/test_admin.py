@@ -134,3 +134,68 @@ class StatistiquesGlobalesTests(APITestCase):
         response = self.client.get("/api/admin/statistiques/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+
+class CreationPasteurParAdminTests(APITestCase):
+    """Un compte cree par un admin doit etre immediatement operationnel.
+
+    Sans souscription, le compte est valide mais bloque a la publication avec
+    « Votre abonnement est expire » : c'est le bug qui avait rendu 3 pasteurs
+    sur 4 incapables de publier.
+    """
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="admin_createur",
+            email="admin-createur@example.com",
+            password="MotDePasseSolide123",
+            is_staff=True,
+        )
+        self.client.force_authenticate(user=self.admin)
+
+    def test_pasteur_cree_par_admin_recoit_une_souscription_active(self):
+        response = self.client.post(
+            "/api/pasteurs/creer_compte_admin/",
+            {
+                "username": "pasteur_par_admin",
+                "email": "pasteur-par-admin@example.com",
+                "password": "MotDePasseSolide123",
+                "nom_affichage": "Pasteur Cree Par Admin",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        pasteur = Pasteur.objects.get(utilisateur__username="pasteur_par_admin")
+        self.assertTrue(pasteur.est_valide)
+        souscription = getattr(pasteur, "souscription", None)
+        self.assertIsNotNone(souscription, "Aucune souscription creee : le pasteur ne pourra pas publier.")
+        self.assertTrue(souscription.est_active)
+        self.assertTrue(souscription.est_essai)
+
+    def test_pasteur_cree_par_admin_peut_publier_immediatement(self):
+        self.client.post(
+            "/api/pasteurs/creer_compte_admin/",
+            {
+                "username": "pasteur_publiant",
+                "email": "pasteur-publiant@example.com",
+                "password": "MotDePasseSolide123",
+                "nom_affichage": "Pasteur Publiant",
+            },
+            format="json",
+        )
+        nouveau = User.objects.get(username="pasteur_publiant")
+        self.client.force_authenticate(user=nouveau)
+
+        response = self.client.post(
+            "/api/predications/",
+            {
+                "titre": "Premiere predication",
+                "type_media": "VIDEO",
+                "est_publie": True,
+                "url_video": "https://www.youtube.com/watch?v=ddddddddddd",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+

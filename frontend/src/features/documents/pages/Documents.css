@@ -12,7 +12,7 @@
   padding: 0.5rem 1.25rem;
   border-radius: 999px;
   border: 1px solid var(--pd-border);
-  background-color: white;
+  background-color: var(--bg-card);
   color: var(--pd-text-muted);
   font-size: 0.9rem;
   font-weight: 600;

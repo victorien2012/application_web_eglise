@@ -91,14 +91,8 @@ class InscriptionSerializer(serializers.Serializer):
                 avatar=validated_data.get('avatar', None),
                 logo_eglise=validated_data.get('logo_eglise', None)
             )
-            from django.utils import timezone
-            from datetime import timedelta
-            from api.models.paiement import SouscriptionPasteur
-            SouscriptionPasteur.objects.create(
-                pasteur=pasteur,
-                date_fin=timezone.now() + timedelta(days=365),
-                est_essai=True
-            )
+            from api.models.paiement import creer_souscription_essai
+            creer_souscription_essai(pasteur)
         return user
 
 

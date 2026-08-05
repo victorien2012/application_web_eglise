@@ -7,7 +7,7 @@
   border-radius: 16px;
   border: 1px solid var(--pd-border);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  background-color: #fff;
+  background-color: var(--bg-card);
 }
 
 .premium-table {
@@ -33,7 +33,7 @@
 
 .datatable-row {
   border-bottom: 1px solid var(--pd-border);
-  background-color: #fff;
+  background-color: var(--bg-card);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   animation: fadeRowIn 0.5s ease-out backwards;
@@ -52,7 +52,7 @@
 }
 
 .datatable-row:hover {
-  background-color: #f8fafc;
+  background-color: var(--bg-alt);
   transform: translateY(-2px) scale(1.002);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
   z-index: 10;
@@ -78,7 +78,7 @@
   height: 50px;
   border-radius: 8px;
   overflow: hidden;
-  background-color: #e2e8f0;
+  background-color: var(--bg-alt);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -126,7 +126,7 @@
 
 .cell-title {
   font-weight: 700;
-  color: #0a192f;
+  color: var(--text-main);
   font-size: 1rem;
   white-space: normal; /* Override nowrap */
   max-width: 300px;

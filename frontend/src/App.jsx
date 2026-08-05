@@ -1,7 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Link, NavLink, Route, Routes, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
-import { Compass, LayoutDashboard, LogOut, ShieldCheck, UserRound, Menu, X, ChevronDown, User, LogIn, UserPlus, Church } from "lucide-react";
+import { Home as HomeIcon, Compass, FileText, Users, LayoutDashboard, LogOut, ShieldCheck, UserRound, Menu, X, ChevronDown, User, LogIn, UserPlus, Church } from "lucide-react";
 import { useAuth } from "./context/AuthContext";
 import { useSite } from "./context/SiteContext";
 
@@ -10,6 +10,7 @@ import { AudioPlayer } from "./components/layout/AudioPlayer";
 import { BanniereCookies } from "./components/layout/BanniereCookies";
 import { LanguageSelector } from "./components/layout/LanguageSelector";
 import { ThemeToggle } from "./components/layout/ThemeToggle";
+import { PiedDePage } from "./components/layout/PiedDePage";
 
 // Shared components
 import { RouteProtegee } from "./components/shared/RouteProtegee";
@@ -104,22 +105,34 @@ export default function App() {
           </Link>
 
           {/* Menu Mobile Toggle */}
-          <button className="mobile-menu-toggle" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          <button
+            className="mobile-menu-toggle"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? t('nav.close_menu', 'Fermer le menu') : t('nav.open_menu', 'Ouvrir le menu')}
+            aria-expanded={isMobileMenuOpen}
+          >
             {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
 
           {/* Wrapper des liens et actions (Desktop + Mobile) */}
           <div className={`app-nav-wrapper ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
             <div className="app-nav-links">
-              <NavLink to="/" end className="nav-link">{t('nav.home')}</NavLink>
+              <NavLink to="/" end className="nav-link">
+                <HomeIcon size={16} />
+                {t('nav.home')}
+              </NavLink>
               <NavLink to="/videos" className="nav-link">
                 <Compass size={16} />
                 {t('nav.videos')}
               </NavLink>
               <NavLink to="/documents" className="nav-link">
+                <FileText size={16} />
                 {t('nav.documents', 'Documents')}
               </NavLink>
-              <NavLink to="/pasteurs" className="nav-link">{t('nav.pastors')}</NavLink>
+              <NavLink to="/pasteurs" className="nav-link">
+                <Users size={16} />
+                {t('nav.pastors')}
+              </NavLink>
               {estAdmin ? (
                 <NavLink to="/administration" className="nav-link">
                   <ShieldCheck size={16} />
@@ -197,7 +210,7 @@ export default function App() {
       </nav>
 
       <main id="contenu-principal" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Chargement en cours...</div>}>
+        <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Chargement en cours...</div>}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/videos" element={<Videos />} />
@@ -236,6 +249,8 @@ export default function App() {
           </Routes>
         </Suspense>
       </main>
+
+      {!masquerBanniereEtFooter && <PiedDePage />}
 
       <BanniereCookies />
     </>

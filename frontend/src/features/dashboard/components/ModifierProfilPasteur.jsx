@@ -69,7 +69,7 @@ export function ModifierProfilPasteur() {
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           {/* Section d'en-tête très compacte */}
-          <div style={{ position: 'relative', background: '#ffffff' }}>
+          <div style={{ position: 'relative', background: 'var(--bg-card)' }}>
             <div style={{ height: '60px', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', inset: 0, opacity: 0.15, backgroundImage: 'radial-gradient(circle at 20px 20px, white 2px, transparent 0)', backgroundSize: '40px 40px' }} />
             </div>
@@ -88,21 +88,21 @@ export function ModifierProfilPasteur() {
                 position: 'relative',
                 zIndex: 10
               }}>
-                <div style={{ width: '100%', height: '100%', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '100%', height: '100%', borderRadius: '10px', overflow: 'hidden', backgroundColor: 'var(--bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {pasteur?.avatar ? (
                     <img src={pasteur.avatar} alt={pasteur?.nom_affichage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <User size={30} color="#94a3b8" />
+                    <User size={30} color="var(--text-muted)" />
                   )}
                 </div>
               </div>
               
               {/* Informations du pasteur */}
               <div style={{ paddingBottom: '0.15rem' }}>
-                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
+                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>
                   {pasteur?.nom_affichage || t('profile.default_user')}
                 </h2>
-                <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#1e3a8a', fontSize: '0.8rem', fontWeight: 600, backgroundColor: '#eff6ff', padding: '0.2rem 0.75rem', borderRadius: '99px', border: '1px solid #dbeafe', width: 'max-content' }}>
+                <div style={{ marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 600, backgroundColor: 'rgba(var(--primary-rgb), 0.1)', padding: '0.2rem 0.75rem', borderRadius: '99px', border: '1px solid rgba(var(--primary-rgb), 0.2)', width: 'max-content' }}>
                   <Church size={12} />
                   {pasteur?.nom_eglise || 'Aucune église spécifiée'}
                 </div>
@@ -111,7 +111,7 @@ export function ModifierProfilPasteur() {
           </div>
 
           {/* Formulaire */}
-          <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f8fafc', background: '#fcfcfc' }}>
+          <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
             {erreur && (
               <div style={{ padding: '0.75rem', background: '#fef2f2', color: '#991b1b', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem' }}>
                 {erreur}

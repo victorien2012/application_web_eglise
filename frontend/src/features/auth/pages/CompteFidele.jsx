@@ -102,8 +102,8 @@ export function CompteFidele() {
           <div className="auth-header">
             <div className="auth-header" style={{ textAlign: 'center', marginBottom: '2rem' }}>
               <img src={siteConfig?.logo || "/user_eagle.png"} alt="Logo Plateforme Église" className="app-brand-logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
-              <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginTop: '1rem', letterSpacing: '-0.025em' }}>{mode === 'login' ? t('auth.login_title') : t('auth.register_title')}</h1>
-              <p style={{ color: '#64748b' }}>{t('auth.faithful_account', 'Compte Fidèle')}</p>
+              <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '1rem', letterSpacing: '-0.025em' }}>{mode === 'login' ? t('auth.login_title') : t('auth.register_title')}</h1>
+              <p style={{ color: 'var(--text-muted)' }}>{t('auth.faithful_account', 'Compte Fidèle')}</p>
             </div>
           </div>
 

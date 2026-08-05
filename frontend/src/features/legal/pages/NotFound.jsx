@@ -20,7 +20,7 @@ export function NotFound() {
         <h1 style={{ 
           fontSize: '8rem', 
           fontWeight: '900', 
-          background: 'var(--primary-gradient, linear-gradient(135deg, #004a94 0%, #004a94 100%))', 
+          background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
           WebkitBackgroundClip: 'text', 
           WebkitTextFillColor: 'transparent',
           marginBottom: '1rem',
@@ -35,7 +35,7 @@ export function NotFound() {
         <h2 style={{ 
           fontSize: '2.5rem', 
           fontWeight: '700', 
-          color: 'var(--text-primary)',
+          color: 'var(--text-main)',
           marginBottom: '1rem'
         }}>
           {t('not_found.title', 'Page introuvable')}
@@ -44,7 +44,7 @@ export function NotFound() {
 
       <div className="fade-in-up" style={{ animationDelay: '0.3s' }}>
         <p style={{ 
-          color: 'var(--text-secondary)', 
+          color: 'var(--text-muted)',
           fontSize: '1.1rem', 
           maxWidth: '500px',
           marginBottom: '2.5rem',

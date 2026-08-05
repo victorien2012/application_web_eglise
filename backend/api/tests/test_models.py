@@ -23,6 +23,7 @@ from api.models import (
     Serie,
     Signalement,
 )
+from .test_predications import creer_pasteur_publiant
 
 
 class ModeleMetierTests(APITestCase):
@@ -37,9 +38,9 @@ class ModeleMetierTests(APITestCase):
             email="pasteur-metier@example.com",
             password="mot-de-passe-test",
         )
-        self.pasteur = Pasteur.objects.create(
-            utilisateur=self.utilisateur_pasteur,
-            nom_affichage="Pasteur Metier",
+        self.pasteur = creer_pasteur_publiant(
+            self.utilisateur_pasteur,
+            "Pasteur Metier",
             nom_eglise="Eglise Metier",
         )
         self.predication = Predication.objects.create(
@@ -126,6 +127,8 @@ class ModeleMetierTests(APITestCase):
                 "categories_ids": [categorie.id],
                 "etiquettes_ids": [etiquette.id],
                 "est_publie": True,
+                # Une predication publiee doit exposer au moins une source media.
+                "url_video": "https://www.youtube.com/watch?v=ccccccccccc",
             },
             format="json",
         )
@@ -160,7 +163,7 @@ class ExtractionNomPredicateurTests(APITestCase):
             email="extraction@example.com",
             password="mot-de-passe-test",
         )
-        pasteur = Pasteur.objects.create(utilisateur=utilisateur, nom_affichage="Pasteur Test")
+        pasteur = creer_pasteur_publiant(utilisateur, "Pasteur Test")
         self.client.force_authenticate(user=utilisateur)
 
         # 1. Sans nom_predicateur fourni : doit extraire depuis le titre
@@ -171,6 +174,7 @@ class ExtractionNomPredicateurTests(APITestCase):
                 "description": "Description de test",
                 "type_media": "AUDIO",
                 "est_publie": True,
+                "url_video": "https://www.youtube.com/watch?v=aaaaaaaaaaa",
             },
             format="json",
         )
@@ -186,6 +190,7 @@ class ExtractionNomPredicateurTests(APITestCase):
                 "type_media": "AUDIO",
                 "nom_predicateur": "Autre Prédicateur",
                 "est_publie": True,
+                "url_video": "https://www.youtube.com/watch?v=bbbbbbbbbbb",
             },
             format="json",
         )

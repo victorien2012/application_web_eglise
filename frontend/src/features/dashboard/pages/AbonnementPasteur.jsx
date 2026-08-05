@@ -70,8 +70,8 @@ export function AbonnementPasteur() {
   if (chargement) {
     return (
       <div style={{ padding: '3rem', textAlign: 'center' }}>
-        <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', margin: '0 auto', color: '#004a94' }} />
-        <p style={{ marginTop: '1rem', color: '#64748b' }}>Chargement de votre espace abonnement...</p>
+        <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', margin: '0 auto', color: 'var(--primary)' }} />
+        <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>Chargement de votre espace abonnement...</p>
       </div>
     );
   }
@@ -120,13 +120,13 @@ export function AbonnementPasteur() {
 
       {/* Plans tarifaires */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'center', marginBottom: '2.5rem' }}>
-        <CreditCard size={28} color="#004a94" />
-        <h3 style={{ fontSize: '1.75rem', margin: 0, color: '#0f172a', fontWeight: '800' }}>Choisissez votre formule</h3>
+        <CreditCard size={28} color="var(--primary)" />
+        <h3 style={{ fontSize: '1.75rem', margin: 0, color: 'var(--text-main)', fontWeight: '800' }}>Choisissez votre formule</h3>
       </div>
-      
+
       <div className="plans-grid">
         {plans.length === 0 ? (
-          <p style={{ color: '#64748b', textAlign: 'center', width: '100%', gridColumn: '1 / -1' }}>Aucun forfait disponible pour le moment.</p>
+          <p style={{ color: 'var(--text-muted)', textAlign: 'center', width: '100%', gridColumn: '1 / -1' }}>Aucun forfait disponible pour le moment.</p>
         ) : (
           plans.map(plan => {
             const isAnnuel = plan.nom.toLowerCase().includes('annuel');

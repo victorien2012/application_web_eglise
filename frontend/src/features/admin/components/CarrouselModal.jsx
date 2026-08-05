@@ -167,7 +167,7 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
                 type="number"
                 id="ordre"
                 value={ordre}
-                onChange={(e) => setOrdre(parseInt(e.target.value, 10))}
+                onChange={(e) => setOrdre(parseInt(e.target.value, 10) || 0)}
                 min="0"
               />
               <small className="help-text">Les médias avec un ordre plus petit s'afficheront en premier.</small>

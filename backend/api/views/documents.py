@@ -10,6 +10,8 @@ class EstPasteurProprietaireOuLectureSeule(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
+        if request.user.is_staff:
+            return True
         return hasattr(request.user, 'profil_pasteur') and obj.pasteur == request.user.profil_pasteur
 
 class DocumentViewSet(viewsets.ModelViewSet):

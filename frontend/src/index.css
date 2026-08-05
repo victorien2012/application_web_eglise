@@ -48,12 +48,18 @@ body,
 
 :root {
   --primary: #004a94;
+  --primary-rgb: 0, 74, 148;
   --primary-dark: #001f45;
+  --primary-dark-rgb: 0, 31, 69;
   --accent: #f59e0b;
+  --accent-rgb: 245, 158, 11;
   --accent-light: #fcd34d;
   --glass-bg: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(255, 255, 255, 0.5);
   --nav-bg: #ffffff; /* La navbar sera blanche par defaut selon la charte */
+  --navbar-bg: #001f45; /* Bandeau institutionnel : bleu marine fixe, identique quel que soit le thème */
+  --navbar-bg-rgb: 0, 31, 69;
+  --nav-height: 84px; /* Hauteur réelle de .app-nav-shell, utilisée par les éléments sticky des pages */
 
   /* Global UI Colors */
   --bg-main: #ffffff;
@@ -62,12 +68,21 @@ body,
   --text-main: #001f45; /* Texte foncé tirant sur le bleu nuit pour plus d'élégance */
   --text-muted: #475569;
   --border-color: #e2e8f0;
+
+  /* Alias utilisés par plusieurs pages (Documents, Pasteurs, Videos, Table, PastorDashboard).
+     Définis ici globalement pour éviter qu'ils ne dépendent du chargement (lazy) de PastorDashboard.css. */
+  --pd-text-main: var(--text-main);
+  --pd-text-muted: var(--text-muted);
+  --pd-border: var(--border-color);
 }
 
 [data-theme="dark"] {
   --primary: #3b82f6;
+  --primary-rgb: 59, 130, 246;
   --primary-dark: #2563eb;
+  --primary-dark-rgb: 37, 99, 235;
   --accent: #f59e0b;
+  --accent-rgb: 245, 158, 11;
   --accent-light: #fcd34d;
   --glass-bg: rgba(15, 23, 42, 0.85);
   --glass-border: rgba(255, 255, 255, 0.1);
@@ -182,20 +197,6 @@ body,
   max-width: 1280px;
   margin: 0 auto;
   width: min(100%, 1280px);
-}
-
-/* Navigation links */
-nav .nav-link {
-  margin-right: 1.5rem;
-  color: var(--text-main);
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s;
-}
-
-nav .nav-link.active,
-nav .nav-link:hover {
-  color: var(--accent);
 }
 
 @media (max-width: 720px) {

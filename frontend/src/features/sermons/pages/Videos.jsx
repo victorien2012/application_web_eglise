@@ -1,5 +1,5 @@
 // src/pages/Videos.jsx
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, PlaySquare, FileText, Loader2, Play, Film, Mic2, Download, LayoutGrid, List } from 'lucide-react';
@@ -12,6 +12,16 @@ import { SermonCard } from '../components/SermonCard';
 import Pagination from '../../../components/Pagination';
 import './Videos.css';
 
+// Doit rester cohérent avec `page_size` demandé au serveur.
+const ELEMENTS_PAR_PAGE = 12;
+
+// Le conteneur de défilement de l'application est #root (et non window) : son
+// overflow-x masqué rend son overflow-y automatique. On remonte donc les deux.
+function remonterEnHaut() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('root')?.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 export function Videos() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -19,13 +29,22 @@ export function Videos() {
   const { estConnecte } = useAuth();
 
   const [recherche, setRecherche] = useState('');
+  // Terme réellement envoyé au serveur, mis à jour après un court délai de frappe.
+  const [rechercheAppliquee, setRechercheAppliquee] = useState('');
   const [predications, setPredications] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState('');
   const [videoEnLecture, setVideoEnLecture] = useState(null);
   const [telechargement, setTelechargement] = useState(null); // { sermon, statut: 'chargement' | 'erreur', erreurMsg: '' }
   const [vueActive, setVueActive] = useState('grille'); // 'grille' ou 'liste'
   const [filtreType, setFiltreType] = useState('tous'); // 'tous', 'video', 'audio'
+
+  const changerFiltre = (type) => {
+    setFiltreType(type);
+    setPage(1);
+  };
 
   const demanderTelechargement = (sermon, format) => {
     if (!estConnecte) {
@@ -58,18 +77,37 @@ export function Videos() {
     }
   };
 
+  // Anti-rebond : sans cela chaque frappe déclenchait une requête réseau.
+  useEffect(() => {
+    const minuteur = setTimeout(() => {
+      setRechercheAppliquee(recherche.trim());
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(minuteur);
+  }, [recherche]);
+
+  // La recherche, le filtre et la pagination sont désormais traités par le
+  // serveur : la page ne télécharge plus que les éléments qu'elle affiche.
   useEffect(() => {
     let active = true;
     async function charger() {
       try {
         setChargement(true);
-        const params = {};
-        if (recherche.trim()) {
-          params.search = recherche.trim();
+        const params = { page, page_size: ELEMENTS_PAR_PAGE };
+        if (rechercheAppliquee) {
+          params.search = rechercheAppliquee;
+        }
+        if (filtreType !== 'tous') {
+          params.filtre_media = filtreType;
         }
         const response = await api.get('/predications/', { params });
         if (active) {
           setPredications(extraireListe(response.data));
+          setTotal(
+            typeof response.data?.count === 'number'
+              ? response.data.count
+              : extraireListe(response.data).length
+          );
           setErreur('');
         }
       } catch (e) {
@@ -80,38 +118,14 @@ export function Videos() {
     }
     charger();
     return () => { active = false; };
-  }, [recherche]);
+  }, [rechercheAppliquee, filtreType, page]);
 
-  const filtered = useMemo(() => {
-    let result = predications;
-    
-    if (filtreType === 'video') {
-      result = result.filter(p => p.type_media === 'VIDEO' || !!p.url_video);
-    } else if (filtreType === 'audio') {
-      result = result.filter(p => p.type_media === 'AUDIO' && !p.fichier_video && !p.url_video);
-    }
+  const totalPages = Math.max(1, Math.ceil(total / ELEMENTS_PAR_PAGE));
 
-    if (!recherche.trim()) return result;
-    const term = recherche.toLowerCase();
-    return result.filter(p =>
-      (p.titre && p.titre.toLowerCase().includes(term)) ||
-      (p.nom_predicateur && p.nom_predicateur.toLowerCase().includes(term)) ||
-      (p.pasteur?.nom_affichage && p.pasteur.nom_affichage.toLowerCase().includes(term))
-    );
-  }, [recherche, predications, filtreType]);
-
-  const [page, setPage] = useState(1);
-  
-  // Réinitialiser à la page 1 lors d'une recherche ou filtre
-  useEffect(() => {
-    setPage(1);
-  }, [recherche, filtreType]);
-
-  const rowsPerPage = 10;
-  const paginated = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return filtered.slice(start, start + rowsPerPage);
-  }, [filtered, page]);
+  const changerPage = (nouvellePage) => {
+    setPage(nouvellePage);
+    remonterEnHaut();
+  };
 
   return (
     <div className="videos-container">
@@ -133,25 +147,25 @@ export function Videos() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <h3 style={{ margin: 0 }}>{t('videos.library_badge')}</h3>
               <span className="badge-count" style={{ background: 'var(--primary)', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                {filtered.length} {filtered.length > 1 ? t('videos.videos_available') : t('videos.videos_available_singular')}
+                {total} {total > 1 ? t('videos.videos_available') : t('videos.videos_available_singular')}
               </span>
             </div>
             <div className="filter-pills" style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-              <button 
+              <button
                 className={`filter-pill ${filtreType === 'tous' ? 'active' : ''}`}
-                onClick={() => setFiltreType('tous')}
+                onClick={() => changerFiltre('tous')}
               >
                 Tous
               </button>
-              <button 
+              <button
                 className={`filter-pill ${filtreType === 'video' ? 'active' : ''}`}
-                onClick={() => setFiltreType('video')}
+                onClick={() => changerFiltre('video')}
               >
                 <Film size={14} /> Vidéos
               </button>
-              <button 
+              <button
                 className={`filter-pill ${filtreType === 'audio' ? 'active' : ''}`}
-                onClick={() => setFiltreType('audio')}
+                onClick={() => changerFiltre('audio')}
               >
                 <Mic2 size={14} /> Audios
               </button>
@@ -166,12 +180,12 @@ export function Videos() {
                 onChange={(e) => setRecherche(e.target.value)}
               />
             </div>
-            <div className="view-toggle" style={{ display: 'flex', background: '#f1f5f9', borderRadius: '8px', padding: '0.2rem' }}>
+            <div className="view-toggle" style={{ display: 'flex', background: 'var(--bg-alt)', borderRadius: '8px', padding: '0.2rem' }}>
               <button
                 className={`toggle-btn ${vueActive === 'grille' ? 'active' : ''}`}
                 onClick={() => setVueActive('grille')}
                 title="Vue Grille"
-                style={{ padding: '0.4rem', border: 'none', background: vueActive === 'grille' ? '#fff' : 'transparent', borderRadius: '6px', boxShadow: vueActive === 'grille' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: vueActive === 'grille' ? '#0f172a' : '#64748b' }}
+                style={{ padding: '0.4rem', border: 'none', background: vueActive === 'grille' ? 'var(--bg-card)' : 'transparent', borderRadius: '6px', boxShadow: vueActive === 'grille' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: vueActive === 'grille' ? 'var(--text-main)' : 'var(--text-muted)' }}
               >
                 <LayoutGrid size={18} />
               </button>
@@ -179,7 +193,7 @@ export function Videos() {
                 className={`toggle-btn ${vueActive === 'liste' ? 'active' : ''}`}
                 onClick={() => setVueActive('liste')}
                 title="Vue Liste"
-                style={{ padding: '0.4rem', border: 'none', background: vueActive === 'liste' ? '#fff' : 'transparent', borderRadius: '6px', boxShadow: vueActive === 'liste' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: vueActive === 'liste' ? '#0f172a' : '#64748b' }}
+                style={{ padding: '0.4rem', border: 'none', background: vueActive === 'liste' ? 'var(--bg-card)' : 'transparent', borderRadius: '6px', boxShadow: vueActive === 'liste' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: vueActive === 'liste' ? 'var(--text-main)' : 'var(--text-muted)' }}
               >
                 <List size={18} />
               </button>
@@ -200,7 +214,7 @@ export function Videos() {
           <>
             {vueActive === 'liste' ? (
               <SermonTable
-                predications={paginated}
+                predications={predications}
                 showStatus={false}
                 showCheckbox={false}
                 onImageClick={(p) => {
@@ -245,12 +259,12 @@ export function Videos() {
               />
             ) : (
               <div className="sermon-grid" style={{ padding: '2rem' }}>
-                {paginated.map((item, i) => (
+                {predications.map((item, i) => (
                   <div key={item.id} style={{ animation: `fadeRowIn 0.5s ease-out backwards`, animationDelay: `${(i % 10) * 0.05}s` }}>
                     <SermonCard sermon={item} />
                   </div>
                 ))}
-                {paginated.length === 0 && (
+                {predications.length === 0 && (
                   <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#64748b' }}>Aucun média trouvé.</p>
                 )}
               </div>
@@ -258,10 +272,10 @@ export function Videos() {
           </>
         )}
 
-        {!chargement && !erreur && paginated.length > 0 && (
+        {!chargement && !erreur && predications.length > 0 && (
           <div className="datatable-footer-pagination">
-            <span>{t('videos.pagination_info_1')} {(page - 1) * rowsPerPage + 1} {t('videos.pagination_info_2')} {Math.min(page * rowsPerPage, filtered.length)} {t('videos.pagination_info_3')} {filtered.length}</span>
-            <Pagination current={page} total={Math.ceil(filtered.length / rowsPerPage)} onChange={setPage} />
+            <span>{t('videos.pagination_info_1')} {(page - 1) * ELEMENTS_PAR_PAGE + 1} {t('videos.pagination_info_2')} {Math.min((page - 1) * ELEMENTS_PAR_PAGE + predications.length, total)} {t('videos.pagination_info_3')} {total}</span>
+            <Pagination current={page} total={totalPages} onChange={changerPage} />
           </div>
         )}
       </div>
@@ -269,21 +283,21 @@ export function Videos() {
       {/* MODAL DE TÉLÉCHARGEMENT */}
       {telechargement && createPortal(
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999 }}>
-          <div style={{ background: '#ffffff', borderRadius: '24px', padding: '3rem 2.5rem', maxWidth: '420px', width: '90%', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', animation: 'fadeInDown 0.3s ease-out' }}>
-            <h3 style={{ marginTop: 0, fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: '1.5rem' }}>{t('videos.modal_dl_title')}</h3>
-            
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '3rem 2.5rem', maxWidth: '420px', width: '90%', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', animation: 'fadeInDown 0.3s ease-out' }}>
+            <h3 style={{ marginTop: 0, fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '1.5rem' }}>{t('videos.modal_dl_title')}</h3>
+
             {telechargement.statut === 'confirmation' ? (
               <>
-                <div style={{ color: '#005eb8', marginBottom: '1.5rem' }}>
+                <div style={{ color: 'var(--primary)', marginBottom: '1.5rem' }}>
                   <Download size={54} style={{ margin: '0 auto', display: 'block' }} />
                 </div>
-                <p style={{ color: '#64748b', fontSize: '1rem', lineHeight: 1.6, marginBottom: '2rem', margin: '0 0 2rem 0' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.6, marginBottom: '2rem', margin: '0 0 2rem 0' }}>
                   {t('videos.modal_dl_confirm')} <strong>{telechargement.sermon.titre}</strong> ?
                   <br /><br />
                   <span style={{ fontSize: '0.9rem' }}>{t('videos.modal_dl_warning')}</span>
                 </p>
                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                  <button type="button" onClick={() => setTelechargement(null)} style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', background: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>
+                  <button type="button" onClick={() => setTelechargement(null)} style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', background: 'var(--bg-alt)', color: 'var(--text-muted)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>
                     {t('videos.modal_dl_cancel')}
                   </button>
                   <button type="button" className="btn-action btn-visionner" onClick={executerTelechargement} style={{ padding: '0.75rem 1.5rem', fontSize: '1rem' }}>
@@ -293,8 +307,8 @@ export function Videos() {
               </>
             ) : telechargement.statut === 'chargement' ? (
               <>
-                <Loader2 size={54} color="#005eb8" style={{ animation: 'spin 1s linear infinite', margin: '0 auto 1.5rem auto', display: 'block' }} />
-                <p style={{ color: '#64748b', fontSize: '1rem', lineHeight: 1.6, margin: 0 }}>
+                <Loader2 size={54} color="var(--primary)" style={{ animation: 'spin 1s linear infinite', margin: '0 auto 1.5rem auto', display: 'block' }} />
+                <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.6, margin: 0 }}>
                   {t('videos.modal_dl_prep')} <strong>{telechargement.sermon.titre}</strong>...
                   <br /><br />
                   <span style={{ fontSize: '0.9rem' }}>{t('videos.modal_dl_prep_desc')}</span>

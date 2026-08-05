@@ -416,10 +416,28 @@ export function PastorDashboard() {
     return premiereCle ? `${premiereCle}: ${message}` : t('dashboard.save_error');
   }
 
+  function validerSourceMedia() {
+    // Sur une édition, un champ média non modifié conserve le fichier déjà enregistré côté serveur.
+    if (enEdition) return true;
+
+    const veutAudio = formulaire.type_media === 'AUDIO' || formulaire.type_media === 'BOTH';
+    const veutVideo = formulaire.type_media === 'VIDEO' || formulaire.type_media === 'BOTH';
+
+    if (veutAudio && !fichiers.fichier_audio) return false;
+    if (veutVideo && !fichiers.fichier_video && !formulaire.url_video.trim()) return false;
+    return true;
+  }
+
   async function handleSoumission(event) {
     event.preventDefault();
     setErreurFormulaire('');
     setMessageFormulaire('');
+
+    if (!validerSourceMedia()) {
+      setErreurFormulaire(t('dashboard.form_media_required', 'Ajoutez un fichier audio, un fichier vidéo ou un lien YouTube correspondant au format choisi avant d\'enregistrer.'));
+      return;
+    }
+
     setSoumission(true);
 
     try {
@@ -870,7 +888,7 @@ export function PastorDashboard() {
                         />
                         {cat.nom}
                       </label>
-                    )) : <span style={{ color: 'var(--pd-muted)' }}>{t('dashboard.no_categories')}</span>}
+                    )) : <span style={{ color: 'var(--pd-text-muted)' }}>{t('dashboard.no_categories')}</span>}
                   </div>
                 </div>
 

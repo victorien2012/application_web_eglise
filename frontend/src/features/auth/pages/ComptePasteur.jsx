@@ -144,7 +144,7 @@ export function ComptePasteur() {
         <div className={`auth-form-container ${mode === 'register' ? 'auth-form-container-wide' : ''}`}>
           <div className="auth-header" style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <img src={siteConfig?.logo || "/user_eagle.png"} alt="Logo Plateforme Église" className="app-brand-logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginTop: '1rem', letterSpacing: '-0.025em' }}>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '1rem', letterSpacing: '-0.025em' }}>
               {mode === 'login' ? t('auth.login_title') : t('auth.pastor_title')}
             </h1>
             <p>{t('auth.pastor_subtitle', 'Compte Ministère')}</p>

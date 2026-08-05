@@ -158,15 +158,15 @@ export function GestionPiecesJointes({ predicationId }) {
           zIndex: 99999,
           animation: 'fadeIn 0.2s ease-out'
         }}>
-          <div style={{ 
-            background: '#ffffff', 
-            borderRadius: '24px', 
-            padding: '2.5rem', 
-            maxWidth: '440px', 
-            width: '90%', 
-            textAlign: 'center', 
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', 
-            border: '1px solid rgba(226, 232, 240, 0.8)',
+          <div style={{
+            background: 'var(--bg-card)',
+            borderRadius: '24px',
+            padding: '2.5rem',
+            maxWidth: '440px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+            border: '1px solid var(--border-color)',
             animation: 'scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' 
           }}>
             <div style={{ 
@@ -187,15 +187,15 @@ export function GestionPiecesJointes({ predicationId }) {
             <h3 style={{ 
               marginTop: 0, 
               fontSize: '1.5rem', 
-              fontWeight: 800, 
-              color: '#0f172a', 
-              marginBottom: '1rem' 
+              fontWeight: 800,
+              color: 'var(--text-main)',
+              marginBottom: '1rem'
             }}>
               {t('dashboard.attachments_modal_title')}
             </h3>
             
-            <p style={{ 
-              color: '#475569', 
+            <p style={{
+              color: 'var(--text-muted)',
               fontSize: '0.975rem', 
               lineHeight: 1.6, 
               margin: '0 0 2rem 0' 
@@ -224,16 +224,16 @@ export function GestionPiecesJointes({ predicationId }) {
                   flex: 1,
                   padding: '0.8rem 1.5rem', 
                   fontSize: '0.95rem', 
-                  background: '#f1f5f9', 
-                  color: '#475569', 
-                  border: '1px solid #e2e8f0', 
-                  borderRadius: '12px', 
-                  cursor: 'pointer', 
+                  background: 'var(--bg-alt)',
+                  color: 'var(--text-muted)',
+                  border: '1px solid var(--pd-border)',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
                   fontWeight: '600',
                   transition: 'background 0.2s',
                 }}
-                onMouseOver={(e) => e.currentTarget.style.background = '#e2e8f0'}
-                onMouseOut={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                onMouseOver={(e) => e.currentTarget.style.background = 'var(--pd-border)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'var(--bg-alt)'}
               >
                 {t('dashboard.attachments_cancel')}
               </button>

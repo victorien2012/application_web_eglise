@@ -118,15 +118,14 @@ export function AnnonceModal({ isOpen, onClose, onSaved, annonceInitiale = null 
           </div>
 
           <div className="form-group">
-            <label htmlFor="dateExpiration">Date d'expiration *</label>
+            <label htmlFor="dateExpiration">Date d'expiration (optionnel)</label>
             <input
               id="dateExpiration"
               type="datetime-local"
               value={dateExpiration}
               onChange={(e) => setDateExpiration(e.target.value)}
-              required
             />
-            <small>L'annonce disparaîtra automatiquement après cette date.</small>
+            <small>Si renseignée, l'annonce disparaîtra automatiquement après cette date. Laissez vide pour une annonce permanente.</small>
           </div>
 
           <div className="modal-actions">

@@ -258,7 +258,7 @@ export function Profil() {
 
 function Spinner({ t }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
       <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> {t ? t('profile.loading') : 'Chargement...'}
     </div>
   );

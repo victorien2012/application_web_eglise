@@ -22,7 +22,7 @@
 .page-state {
   font-size: 1.2rem;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-muted);
   margin-bottom: 1.5rem;
 }
 
@@ -61,7 +61,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 600;
   font-size: 0.95rem;
   text-decoration: none;
@@ -98,7 +98,7 @@
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--pd-border);
   background-color: #0f172a;
   position: relative;
 }
@@ -147,7 +147,7 @@
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -216,16 +216,16 @@
 
 /* Comments Card — override pour ne pas hériter du fond sombre */
 .sermon-comments-card {
-  background: #ffffff !important;
-  border: 1.5px solid #ede9ff !important;
+  background: var(--bg-card) !important;
+  border: 1.5px solid var(--pd-border) !important;
   box-shadow: 0 4px 24px rgba(124, 92, 255, 0.06) !important;
 }
 
 /* Glass card design */
 .sermon-main-col .glass-card {
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 20px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--pd-border);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
   padding: 2.25rem;
   box-sizing: border-box;
@@ -248,7 +248,7 @@
 .sermon-title {
   font-size: clamp(1.8rem, 3.8vw, 2.5rem);
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
   line-height: 1.2;
   letter-spacing: -0.02em;
   margin: 0 0 1.5rem 0;
@@ -258,7 +258,7 @@
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--border-color);
   padding-top: 1.5rem;
 }
 
@@ -267,8 +267,8 @@
   height: 38px;
   border-radius: 50%;
   overflow: hidden;
-  background-color: #e2e8f0;
-  border: 2px solid #ffffff;
+  background-color: var(--bg-alt);
+  border: 2px solid var(--bg-card);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -281,21 +281,21 @@
 .preacher-avatar-placeholder {
   width: 100%;
   height: 100%;
-  background-color: #f1f5f9;
+  background-color: var(--bg-alt);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .byline-details {
   font-size: 0.95rem;
-  color: #475569;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .byline-author a {
-  color: #0f172a;
+  color: var(--text-main);
   font-weight: 700;
   text-decoration: none;
 }
@@ -306,26 +306,26 @@
 }
 
 .byline-publisher a {
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 600;
   text-decoration: none;
 }
 
 .byline-publisher a:hover {
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 /* Description Card */
 .sermon-description-card h2 {
   font-size: 1.4rem;
   font-weight: 750;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0 0 1.25rem 0;
 }
 
 .description-content {
   line-height: 1.8;
-  color: #334155;
+  color: var(--text-main);
   font-size: 1.05rem;
 }
 
@@ -346,13 +346,13 @@
   flex-direction: column;
   gap: 1.5rem;
   position: sticky;
-  top: 100px;
+  top: calc(var(--nav-height) + 1rem);
 }
 
 .sidebar-card {
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 20px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--pd-border);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
   padding: 1.75rem;
   box-sizing: border-box;
@@ -362,12 +362,12 @@
 .sidebar-card h3 {
   font-size: 1.15rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0 0 1.25rem 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding-bottom: 0.75rem;
-  border-bottom: 1.5px solid #f1f5f9;
+  border-bottom: 1.5px solid var(--border-color);
 }
 
 .sidebar-actions-list {
@@ -422,7 +422,7 @@
   justify-content: space-between;
   align-items: center;
   padding-bottom: 0.85rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border-color);
   font-size: 0.95rem;
 }
 
@@ -432,12 +432,12 @@
 }
 
 .stats-label {
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 550;
 }
 
 .stats-value {
-  color: #0f172a;
+  color: var(--text-main);
   font-weight: 700;
   text-align: right;
 }
@@ -457,13 +457,13 @@
 }
 
 .stats-category-pill {
-  background-color: #f1f5f9;
-  color: #475569;
+  background-color: var(--bg-alt);
+  color: var(--text-muted);
   font-size: 0.82rem;
   font-weight: 700;
   padding: 0.3rem 0.65rem;
   border-radius: 6px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--pd-border);
 }
 
 /* Prédicateur */
@@ -478,7 +478,7 @@
   height: 56px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #f1f5f9;
+  border: 2px solid var(--border-color);
   box-shadow: 0 4px 10px rgba(0,0,0,0.06);
 }
 
@@ -486,12 +486,12 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background-color: #f8fafc;
-  border: 2px solid #e2e8f0;
+  background-color: var(--bg-alt);
+  border: 2px solid var(--pd-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .preacher-card-details {
@@ -502,13 +502,13 @@
   margin: 0 0 0.2rem 0;
   font-size: 1.05rem;
   font-weight: 750;
-  color: #0f172a;
+  color: var(--text-main);
 }
 
 .preacher-church {
   margin: 0;
   font-size: 0.85rem;
-  color: #64748b;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -549,10 +549,10 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: rgba(15, 23, 42, 0.05);
-  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: var(--bg-alt);
+  border: 1px solid var(--pd-border);
   border-radius: 999px;
-  color: #0f172a;
+  color: var(--text-main);
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
@@ -560,7 +560,7 @@
 }
 
 .btn-mode-cinema:hover {
-  background: rgba(15, 23, 42, 0.1);
+  background: var(--pd-border);
 }
 
 .btn-mode-cinema.active {
@@ -591,5 +591,5 @@
 .sidebar-card {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--glass-bg);
 }

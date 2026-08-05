@@ -21,16 +21,16 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  color: #475569;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-muted);
   transition: all 0.2s ease;
   line-height: 1;
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: var(--bg-alt);
+  border-color: var(--primary);
   color: var(--primary);
   transform: translateY(-1px);
 }
@@ -51,7 +51,7 @@
   background: var(--primary);
   border-color: var(--primary);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 74, 148, 0.3);
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
 }
 
 .pagination-page.active:hover {
@@ -66,7 +66,7 @@
 
 .pagination-ellipsis {
   padding: 0.5rem 0.25rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 600;
   user-select: none;
 }

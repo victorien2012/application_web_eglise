@@ -55,6 +55,8 @@ def _payload_pasteur(user, request=None):
         'nom_affichage': pasteur.nom_affichage,
         'avatar': avatar_url,
         'nom_eglise': pasteur.nom_eglise,
+        'est_valide': pasteur.est_valide,
+        'lien_youtube': pasteur.lien_youtube,
     }
 
 

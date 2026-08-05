@@ -76,7 +76,7 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
         if (form.url_video) body.append('url_video', form.url_video);
         if (form.nom_predicateur) body.append('nom_predicateur', form.nom_predicateur);
         body.append('est_publie', form.est_publie ? 'true' : 'false');
-        body.append('fichier_video', file);
+        body.append(form.type_media === 'AUDIO' ? 'fichier_audio' : 'fichier_video', file);
         body.append('pasteur_id', pasteurId);
       } else {
         body = {
@@ -219,8 +219,10 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
                 <FileVideo size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
                 Fichier vidéo
               </label>
-              <input type="file" accept="video/*,audio/*" onChange={(e) => setFile(e.target.files[0])} />
-              <small className="pmmodal-help">Formats supportés : MP4, WebM, MOV, MP3, WAV, etc.</small>
+              <input type="file" accept={form.type_media === 'AUDIO' ? 'audio/*' : 'video/*'} onChange={(e) => setFile(e.target.files[0])} />
+              <small className="pmmodal-help">
+                {form.type_media === 'AUDIO' ? 'Formats supportés : MP3, WAV, M4A, AAC, OGG, FLAC.' : 'Formats supportés : MP4, WebM, MOV, M4V, MKV.'}
+              </small>
             </div>
 
             <div className="pmmodal-row-inline">

@@ -19,7 +19,7 @@
   padding: 3rem 2rem 5rem;
   box-sizing: border-box;
   font-family: 'Inter', system-ui, sans-serif;
-  min-height: calc(100vh - 80px);
+  min-height: calc(100vh - var(--nav-height));
   background-color: var(--profil-bg);
 }
 

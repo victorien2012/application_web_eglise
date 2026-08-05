@@ -208,7 +208,7 @@ class VerificationEmailTests(APITestCase):
         self.assertFalse(user.profil.email_verifie)
 
     def test_verification_avec_token_valide_marque_email_verifie(self):
-        from .views import generateur_token_email
+        from api.services.email_service import generateur_token_email
 
         user = User.objects.create_user(
             username="a_verifier",

@@ -69,14 +69,14 @@
 
 /* Contour Sombre (Pour fond clair) */
 .premium-btn.btn-outline-dark {
-  background: #ffffff;
-  color: #0f172a;
-  border-color: #cbd5e1;
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-color: var(--pd-border);
 }
 
 .premium-btn.btn-outline-dark:hover {
-  background: #f1f5f9;
-  border-color: #94a3b8;
+  background: var(--bg-alt);
+  border-color: var(--text-muted);
   transform: translateY(-2px);
 }
 
@@ -94,14 +94,14 @@
 
 /* Gris clair (Action secondaire) */
 .premium-btn.btn-light {
-  background: #f1f5f9;
-  color: #475569;
-  border-color: #e2e8f0;
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  border-color: var(--pd-border);
 }
 
 .premium-btn.btn-light:hover {
-  background: #e2e8f0;
-  color: #0f172a;
+  background: var(--pd-border);
+  color: var(--text-main);
   transform: translateY(-2px);
 }
 
@@ -120,16 +120,16 @@
 
 /* Gris Neutre Premium (Téléchargement / Action discrète) */
 .premium-btn.btn-neutral {
-  background: #f8fafc;
-  color: #64748b;
-  border-color: #e2e8f0;
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  border-color: var(--pd-border);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
 }
 
 .premium-btn.btn-neutral:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-  border-color: #cbd5e1;
+  background: var(--pd-border);
+  color: var(--text-main);
+  border-color: var(--text-muted);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }

@@ -94,9 +94,9 @@ export function PasteurDetail() {
               {pasteur.biographie || t('pastor_detail.default_bio')}
             </p>
             <div className="pasteur-detail-actions">
-              <a href="/videos" className="btn-premium btn-premium-primary">
+              <Link to="/videos" className="btn-premium btn-premium-primary">
                 {t('pastor_detail.explore_sermons')}
-              </a>
+              </Link>
               {estConnecte ? (
                 <button
                   type="button"

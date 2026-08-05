@@ -12,13 +12,36 @@ except ImportError:
     pass
 
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-for-development')
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', os.environ.get('DJANGO_DEBUG', 'True')) == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = os.environ.get(
+    'ALLOWED_HOSTS', os.environ.get('DJANGO_ALLOWED_HOSTS', '*')
+).split(',')
+
+# SECURITY WARNING: keep the secret key used in production secret!
+# Les fichiers .env du projet nomment la variable DJANGO_SECRET_KEY : docker-compose
+# la réinjecte sous le nom SECRET_KEY, mais un lancement hors Docker lit le .env
+# directement. Les deux noms sont donc acceptés, sinon la clé publique ci-dessous
+# serait utilisée sans que personne ne s'en aperçoive.
+SECRET_KEY = os.environ.get('SECRET_KEY') or os.environ.get('DJANGO_SECRET_KEY')
+
+if not SECRET_KEY:
+    if not DEBUG:
+        # Jamais de clé par défaut en production : cette valeur est publique
+        # (versionnée dans le dépôt) et permettrait de forger des jetons JWT.
+        raise RuntimeError(
+            "SECRET_KEY (ou DJANGO_SECRET_KEY) doit être définie lorsque DEBUG=False."
+        )
+    SECRET_KEY = 'django-insecure-default-key-for-development'
+
+# La SECRET_KEY signe aussi les jetons JWT (voir SIMPLE_JWT.SIGNING_KEY) : en HS256
+# une clé de moins de 32 octets est en deçà du minimum recommandé par la RFC 7518.
+if not DEBUG and len(SECRET_KEY) < 32:
+    raise RuntimeError(
+        "SECRET_KEY trop courte ({} caractères) : au moins 32 sont requis en production, "
+        "car elle sert de clé de signature des jetons JWT.".format(len(SECRET_KEY))
+    )
 
 # Application definition
 INSTALLED_APPS = [

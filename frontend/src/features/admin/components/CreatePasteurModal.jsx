@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../../../services/api';
-import { X, UserPlus } from 'lucide-react';
+import { X, UserPlus, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import './CreatePasteurModal.css';
 
@@ -18,6 +18,7 @@ export function CreatePasteurModal({ isOpen, onClose, onCreated }) {
   const [logo, setLogo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [afficherMotDePasse, setAfficherMotDePasse] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -31,6 +32,7 @@ export function CreatePasteurModal({ isOpen, onClose, onCreated }) {
   };
 
   const handleClose = () => {
+    if (loading) return;
     resetForm();
     onClose();
   };
@@ -72,7 +74,7 @@ export function CreatePasteurModal({ isOpen, onClose, onCreated }) {
   return (
     <div className="cpmodal-overlay" onClick={handleClose}>
       <div className="cpmodal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="cpmodal-close" onClick={handleClose} type="button">
+        <button className="cpmodal-close" onClick={handleClose} type="button" disabled={loading} aria-label={t('common.close', 'Fermer')}>
           <X size={20} />
         </button>
 
@@ -86,15 +88,35 @@ export function CreatePasteurModal({ isOpen, onClose, onCreated }) {
         <form className="cpmodal-form" onSubmit={handleSubmit}>
           <div className="cpmodal-field">
             <label htmlFor="cp-username">{t('admin.username', "Nom d'utilisateur")}</label>
-            <input id="cp-username" name="username" value={form.username} onChange={handleChange} required />
+            <input id="cp-username" name="username" value={form.username} onChange={handleChange} autoComplete="off" required />
           </div>
           <div className="cpmodal-field">
             <label htmlFor="cp-email">{t('admin.email', 'Email')}</label>
-            <input id="cp-email" name="email" type="email" value={form.email} onChange={handleChange} required />
+            <input id="cp-email" name="email" type="email" value={form.email} onChange={handleChange} autoComplete="off" required />
           </div>
           <div className="cpmodal-field">
             <label htmlFor="cp-password">{t('admin.password', 'Mot de passe')}</label>
-            <input id="cp-password" name="password" type="password" value={form.password} onChange={handleChange} required />
+            <div className="cpmodal-password-wrapper">
+              <input
+                id="cp-password"
+                name="password"
+                type={afficherMotDePasse ? 'text' : 'password'}
+                value={form.password}
+                onChange={handleChange}
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+              <button
+                type="button"
+                className="cpmodal-password-toggle"
+                onClick={() => setAfficherMotDePasse((v) => !v)}
+                aria-label={afficherMotDePasse ? t('admin.hide_password', 'Masquer le mot de passe') : t('admin.show_password', 'Afficher le mot de passe')}
+              >
+                {afficherMotDePasse ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <p className="cpmodal-field-hint">{t('admin.password_hint', '8 caractères minimum. Évitez un mot de passe trop simple ou trop proche du nom d\'utilisateur.')}</p>
           </div>
           <div className="cpmodal-row">
             <div className="cpmodal-field">
@@ -102,21 +124,21 @@ export function CreatePasteurModal({ isOpen, onClose, onCreated }) {
               <input id="cp-nom" name="nom_affichage" value={form.nom_affichage} onChange={handleChange} required />
             </div>
             <div className="cpmodal-field">
-              <label htmlFor="cp-eglise">{t('admin.church_name', "Nom de l'église")}</label>
+              <label htmlFor="cp-eglise">{t('admin.church_name', "Nom de l'église (optionnel)")}</label>
               <input id="cp-eglise" name="nom_eglise" value={form.nom_eglise} onChange={handleChange} />
             </div>
           </div>
           <div className="cpmodal-field">
-            <label htmlFor="cp-contact">{t('admin.contact', 'Contact')}</label>
+            <label htmlFor="cp-contact">{t('admin.contact', 'Contact (optionnel)')}</label>
             <input id="cp-contact" name="contact" value={form.contact} onChange={handleChange} />
           </div>
           <div className="cpmodal-row">
             <div className="cpmodal-field">
-              <label>{t('admin.avatar', 'Avatar')}</label>
+              <label>{t('admin.avatar', 'Avatar (optionnel)')}</label>
               <input type="file" accept="image/*" onChange={(e) => setAvatar(e.target.files[0])} />
             </div>
             <div className="cpmodal-field">
-              <label>{t('admin.church_logo', "Logo de l'église")}</label>
+              <label>{t('admin.church_logo', "Logo de l'église (optionnel)")}</label>
               <input type="file" accept="image/*" onChange={(e) => setLogo(e.target.files[0])} />
             </div>
           </div>
@@ -124,7 +146,7 @@ export function CreatePasteurModal({ isOpen, onClose, onCreated }) {
           {error && <div className="cpmodal-error">{error}</div>}
 
           <div className="cpmodal-footer">
-            <button type="button" className="cpmodal-btn cpmodal-btn-cancel" onClick={handleClose}>
+            <button type="button" className="cpmodal-btn cpmodal-btn-cancel" onClick={handleClose} disabled={loading}>
               {t('common.cancel', 'Annuler')}
             </button>
             <button type="submit" className="cpmodal-btn cpmodal-btn-confirm" disabled={loading}>

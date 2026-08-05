@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSite } from '../../../context/SiteContext';
 import './HomeCarousel.css';
@@ -150,7 +151,9 @@ const HomeCarousel = ({ medias }) => {
                 <div className="carousel-caption-banner">
                   {media.titre && <h3>{media.titre}</h3>}
                   {media.description && <p>{media.description}</p>}
-                  <button className="carousel-cta">Découvrir</button>
+                  {media.to && (
+                    <Link to={media.to} className="carousel-cta">Découvrir</Link>
+                  )}
                 </div>
               )}
             </div>

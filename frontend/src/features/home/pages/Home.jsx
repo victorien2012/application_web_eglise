@@ -131,7 +131,8 @@ export function Home() {
         titre: item.titre,
         description: item.description?.substring(0, 100) || '',
         type_media: 'VIDEO',
-        url_video: item.url_video
+        url_video: item.url_video,
+        to: `/sermon/${item.id}`
       };
     });
   }, [aLaUneItems]);
@@ -181,7 +182,7 @@ export function Home() {
         {/* CAROUSEL BACKGROUND (DUAL) */}
         <div className="home-dual-carousel-wrapper fade-in" style={{ animationDelay: '0.2s' }}>
           <div className="carousel-half">
-            <h2 className="carousel-half-title">{t('home.banners', 'Affiches')}</h2>
+            <h2 className="carousel-half-title">{t('home.banners', 'Actualités')}</h2>
             <HomeCarousel medias={carrouselMedias} />
           </div>
           <div className="carousel-half">

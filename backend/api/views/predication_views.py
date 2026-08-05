@@ -19,6 +19,7 @@ from api.models import (
     Predication,
     Serie,
 )
+from api.pagination import PaginationOptionnelle
 from api.serializers import (
     CategorieSerializer,
     EtiquetteSerializer,
@@ -37,7 +38,8 @@ class PredicationViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ['titre', 'description', 'pasteur__nom_affichage']
-    pagination_class = None
+    # Pagination activée uniquement si le client passe `?page=` : voir PaginationOptionnelle.
+    pagination_class = PaginationOptionnelle
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -45,7 +47,10 @@ class PredicationViewSet(viewsets.ModelViewSet):
         return PredicationSerializer
 
     def get_queryset(self):
-        queryset = Predication.objects.select_related('pasteur', 'serie').prefetch_related('categories', 'etiquettes', 'pieces_jointes').all().order_by('-date_publication', '-cree_le')
+        # `-id` en dernier critère : sans départage stable, deux prédications de
+        # même date pourraient changer d'ordre entre deux pages et apparaître en
+        # double (ou disparaître) lors de la navigation paginée.
+        queryset = Predication.objects.select_related('pasteur', 'serie').prefetch_related('categories', 'etiquettes', 'pieces_jointes').all().order_by('-date_publication', '-cree_le', '-id')
         user = self.request.user
         espace_pasteur = self.request.query_params.get('espace_pasteur', 'false') == 'true'
 
@@ -81,38 +86,71 @@ class PredicationViewSet(viewsets.ModelViewSet):
         if type_media:
             queryset = queryset.filter(type_media=type_media)
 
+        # Filtre média de la page publique Vidéos. Il ne se contente pas du champ
+        # `type_media` : une prédication est "regardable" si elle porte une vidéo
+        # ou un lien YouTube, et "écoutable seulement" si elle n'a qu'un audio.
+        # Les champs média sont blank=True ET null=True : l'absence de valeur peut
+        # donc être soit une chaîne vide, soit NULL. Les deux cas sont couverts.
+        filtre_media = self.request.query_params.get('filtre_media')
+        sans_lien_video = Q(url_video__isnull=True) | Q(url_video='')
+        sans_fichier_video = Q(fichier_video__isnull=True) | Q(fichier_video='')
+        if filtre_media == 'video':
+            queryset = queryset.filter(Q(type_media='VIDEO') | ~sans_lien_video)
+        elif filtre_media == 'audio':
+            queryset = queryset.filter(
+                Q(type_media='AUDIO') & sans_fichier_video & sans_lien_video
+            )
+
         return queryset
 
-    def perform_create(self, serializer):
-        # Admins can create predications for any validated pastor via pasteur_id in request data
-        if self.request.user.is_staff:
-            pasteur_id = self.request.data.get('pasteur_id')
-            if not pasteur_id:
-                raise serializers.ValidationError({"pasteur_id": ["Champ requis pour les administrateurs."]})
+    def _resoudre_pasteur_publiant(self):
+        """Determine le pasteur au nom duquel la prédication est créée.
+
+        Lève une ValidationError explicite si l'utilisateur n'a pas le droit de publier.
+        """
+        pasteur_id = self.request.data.get('pasteur_id')
+
+        # Un admin qui précise explicitement pasteur_id publie au nom de ce pasteur
+        # (utilisé par l'interface d'Administration). Ceci reste possible même si
+        # l'admin a lui-même un profil pasteur (double rôle).
+        if self.request.user.is_staff and pasteur_id:
             try:
-                pasteur = Pasteur.objects.get(id=pasteur_id, est_valide=True)
+                return Pasteur.objects.get(id=pasteur_id, est_valide=True)
             except Pasteur.DoesNotExist:
                 raise serializers.ValidationError({"detail": "Pasteur spécifié introuvable ou non validé."})
-            serializer.save(pasteur=pasteur)
-        else:
-            try:
-                pasteur = self.request.user.profil_pasteur
-                if not pasteur.est_valide:
-                    raise serializers.ValidationError(
-                        {"detail": "Votre compte n'est pas encore validé. Vous ne pouvez pas publier de prédications."}
-                    )
-                
-                # Vérifier la souscription
-                if not hasattr(pasteur, 'souscription') or not pasteur.souscription.est_active:
-                    raise serializers.ValidationError(
-                        {"detail": "Votre abonnement est expiré. Veuillez le renouveler pour publier de nouvelles vidéos."}
-                    )
-                    
-                serializer.save(pasteur=pasteur)
-            except Pasteur.DoesNotExist:
-                raise serializers.ValidationError(
-                    {"detail": "Seuls les pasteurs authentifiés peuvent créer des prédications."}
-                )
+
+        try:
+            pasteur = self.request.user.profil_pasteur
+        except Pasteur.DoesNotExist:
+            if self.request.user.is_staff:
+                # Admin sans profil pasteur propre : pasteur_id devient obligatoire.
+                raise serializers.ValidationError({"pasteur_id": ["Champ requis pour les administrateurs."]})
+            raise serializers.ValidationError(
+                {"detail": "Seuls les pasteurs authentifiés peuvent créer des prédications."}
+            )
+
+        if not pasteur.est_valide:
+            raise serializers.ValidationError(
+                {"detail": "Votre compte n'est pas encore validé. Vous ne pouvez pas publier de prédications."}
+            )
+
+        # Vérifier la souscription
+        if not hasattr(pasteur, 'souscription') or not pasteur.souscription.est_active:
+            raise serializers.ValidationError(
+                {"detail": "Votre abonnement est expiré. Veuillez le renouveler pour publier de nouvelles vidéos."}
+            )
+
+        return pasteur
+
+    def create(self, request, *args, **kwargs):
+        # Le droit de publier est vérifié AVANT la validation du contenu : sinon un
+        # utilisateur non autorisé recevrait une erreur sur les champs média au lieu
+        # du message expliquant qu'il n'a pas le droit de publier.
+        self._pasteur_publiant = self._resoudre_pasteur_publiant()
+        return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        serializer.save(pasteur=self._pasteur_publiant)
 
     def perform_update(self, serializer):
         predication = self.get_object()
@@ -123,7 +161,7 @@ class PredicationViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     def perform_destroy(self, instance):
-        if instance.pasteur.utilisateur != self.request.user:
+        if not self.request.user.is_staff and instance.pasteur.utilisateur != self.request.user:
             raise serializers.ValidationError(
                 {"detail": "Vous n'êtes pas autorisé à supprimer cette prédication."}
             )

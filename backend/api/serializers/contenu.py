@@ -224,6 +224,26 @@ class PredicationEcritureSerializer(serializers.ModelSerializer):
             if nom_extrait:
                 attrs['nom_predicateur'] = nom_extrait
 
+        def valeur_finale(champ, defaut=None):
+            """Valeur qu'aura le champ apres enregistrement (creation ou mise a jour partielle)."""
+            if champ in attrs:
+                return attrs[champ]
+            if self.instance is not None:
+                return getattr(self.instance, champ, defaut)
+            return defaut
+
+        # Une predication publiee doit etre ecoutable/visionnable : on exige au moins
+        # une source media. Les brouillons restent modifiables sans media, ce qui permet
+        # de preparer une publication en plusieurs etapes.
+        sera_publiee = valeur_finale('est_publie', Predication._meta.get_field('est_publie').default)
+        if sera_publiee and not (
+            valeur_finale('fichier_audio') or valeur_finale('fichier_video') or valeur_finale('url_video')
+        ):
+            raise serializers.ValidationError(
+                "Veuillez fournir au moins un fichier audio, un fichier video ou un lien YouTube "
+                "avant de publier cette predication."
+            )
+
         return attrs
 
 class DocumentSerializer(serializers.ModelSerializer):

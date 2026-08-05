@@ -16,7 +16,7 @@ export function LanguageSelector() {
   const flagUrl = getFlagUrl(i18n.language);
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0, 74, 148, 0.05)', padding: '4px 12px', borderRadius: '20px', color: 'var(--text-main)', border: '1px solid rgba(0, 74, 148, 0.1)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.08)', padding: '4px 12px', borderRadius: '20px', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.18)' }}>
       {flagUrl ? (
         <img src={flagUrl} alt={i18n.language} style={{ width: '20px', height: '15px', objectFit: 'cover', borderRadius: '2px' }} />
       ) : (
@@ -28,7 +28,7 @@ export function LanguageSelector() {
         style={{
           background: 'transparent',
           border: 'none',
-          color: 'var(--text-main)',
+          color: '#ffffff',
           fontWeight: '700',
           cursor: 'pointer',
           outline: 'none',

@@ -23,6 +23,7 @@ from api.models import (
     Serie,
     Signalement,
 )
+from .test_predications import creer_pasteur_publiant
 
 
 class ApiSanteTests(APITestCase):
@@ -49,7 +50,8 @@ class ApiSanteTests(APITestCase):
         response = self.client.get("/api/predications/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        resultats = response.data["results"]
+        # La liste des predications n'est pas paginee (pagination_class = None).
+        resultats = response.data
         self.assertEqual(len(resultats), 1)
         self.assertEqual(resultats[0]["id"], predication_publiee.id)
         self.assertEqual(resultats[0]["titre"], "Predication publiee")
@@ -93,7 +95,7 @@ class ApiSanteTests(APITestCase):
             email="create@example.com",
             password="mot-de-passe-test",
         )
-        pasteur = Pasteur.objects.create(utilisateur=utilisateur, nom_affichage="Pasteur Create")
+        pasteur = creer_pasteur_publiant(utilisateur, "Pasteur Create")
         self.client.force_authenticate(user=utilisateur)
 
         response = self.client.post(
@@ -104,6 +106,8 @@ class ApiSanteTests(APITestCase):
                 "type_media": "AUDIO",
                 "duree_secondes": 120,
                 "est_publie": True,
+                # Une predication publiee doit exposer au moins une source media.
+                "url_video": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
             },
             format="json",
         )
