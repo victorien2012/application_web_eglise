@@ -42,6 +42,8 @@ export function Administration() {
   const [pageAnnonces, setPageAnnonces] = useState(1);
   const [pageCarrousel, setPageCarrousel] = useState(1);
   const [pagePredications, setPagePredications] = useState(1);
+  const [predicationsChargees, setPredicationsChargees] = useState(false);
+  const [chargementPredications, setChargementPredications] = useState(false);
   const ELEMENTS_PAR_PAGE = 5;
   const [ongletActif, setOngletActif] = useState('apercu');
   
@@ -77,23 +79,24 @@ export function Administration() {
     REJETE: XCircle,
   };
 
+  // Le catalogue complet des prédications pèse plusieurs méga-octets : il n'est
+  // plus chargé avec le reste, mais seulement a l'ouverture de l'onglet Vidéos.
+  // Les compteurs du tableau de bord viennent de /admin/statistiques/.
   async function charger() {
     setChargement(true);
     try {
-      const [statsRes, pasteursRes, signalementsRes, annoncesRes, carrouselRes, predicationsRes] = await Promise.all([
+      const [statsRes, pasteursRes, signalementsRes, annoncesRes, carrouselRes] = await Promise.all([
         api.get('/admin/statistiques/'),
         api.get('/pasteurs/'),
         api.get('/signalements/'),
         api.get('/annonces/'),
-        api.get('/carrousel/'),
-        api.get('/predications/?espace_admin=true')
+        api.get('/carrousel/')
       ]);
       setStats(statsRes.data);
       setPasteurs(extraireListe(pasteursRes.data));
       setSignalements(extraireListe(signalementsRes.data));
       setAnnonces(extraireListe(annoncesRes.data));
       setCarrouselMedias(extraireListe(carrouselRes.data));
-      setPredications(extraireListe(predicationsRes.data));
       setErreur('');
     } catch (error) {
       setErreur(error.response?.data?.detail || t('admin.load_error'));
@@ -102,10 +105,30 @@ export function Administration() {
     }
   }
 
+  async function chargerPredications() {
+    setChargementPredications(true);
+    try {
+      const reponse = await api.get('/predications/?espace_admin=true');
+      setPredications(extraireListe(reponse.data));
+      setPredicationsChargees(true);
+    } catch (error) {
+      setErreur(error.response?.data?.detail || t('admin.load_error'));
+    } finally {
+      setChargementPredications(false);
+    }
+  }
+
   useEffect(() => {
     charger();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (ongletActif === 'videos' && !predicationsChargees && !chargementPredications) {
+      chargerPredications();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ongletActif, predicationsChargees]);
 
   useEffect(() => {
     setPagePasteurs(1);
@@ -126,13 +149,6 @@ export function Administration() {
     setModalConfig({ titre, message, texteConfirmer, variante, icone, action });
     setModalOuvert(true);
   };
-
-  useEffect(() => {
-    if (messageSucces) {
-      const timer = setTimeout(() => setMessageSucces(''), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [messageSucces]);
 
   async function validerPasteur(pasteur) {
     setActionEnCours(`valider-${pasteur.id}`);
@@ -267,6 +283,25 @@ export function Administration() {
     }
   }
 
+  // Supprimer un pasteur supprime en cascade ses predications, series et
+  // documents. Annoncer le volume exact evite qu'un administrateur croie ne
+  // retirer qu'un compte alors qu'il efface des annees de contenu.
+  function messageSuppressionPasteur(pasteur) {
+    const nbPredications = pasteur.nombre_predications || 0;
+    const nbDocuments = pasteur.nombre_documents || 0;
+    const pertes = [];
+    if (nbPredications) {
+      pertes.push(`${nbPredications} prédication${nbPredications > 1 ? 's' : ''}`);
+    }
+    if (nbDocuments) {
+      pertes.push(`${nbDocuments} document${nbDocuments > 1 ? 's' : ''}`);
+    }
+    const detailPertes = pertes.length
+      ? ` Tout son contenu sera également supprimé : ${pertes.join(' et ')}.`
+      : '';
+    return `Êtes-vous sûr de vouloir supprimer définitivement le compte de ${pasteur.nom_affichage} ?${detailPertes} Cette action est irréversible.`;
+  }
+
   const pasteursFiltres = pasteurs.filter(p => {
     const correspondRecherche = (p.nom_affichage || '').toLowerCase().includes(recherchePasteur.toLowerCase()) ||
                                 (p.nom_eglise || '').toLowerCase().includes(recherchePasteur.toLowerCase()) ||
@@ -292,29 +327,26 @@ export function Administration() {
     return false;
   });
 
-  const indexDebutPasteurs = (pagePasteurs - 1) * ELEMENTS_PAR_PAGE;
-  const pasteursAffiches = pasteursFiltres.slice(indexDebutPasteurs, indexDebutPasteurs + ELEMENTS_PAR_PAGE);
-  const totalPagesPasteurs = Math.ceil(pasteursFiltres.length / ELEMENTS_PAR_PAGE);
+  // Supprimer le dernier element d'une page laissait l'administrateur sur une
+  // page vide, sans moyen de revenir en arriere puisque la pagination n'affiche
+  // plus ce numero. On ramene la page dans les bornes avant de decouper.
+  function decouperPage(elements, page) {
+    const total = Math.ceil(elements.length / ELEMENTS_PAR_PAGE);
+    const pageCourante = Math.min(Math.max(page, 1), Math.max(total, 1));
+    const debut = (pageCourante - 1) * ELEMENTS_PAR_PAGE;
+    return {
+      elements: elements.slice(debut, debut + ELEMENTS_PAR_PAGE),
+      page: pageCourante,
+      total,
+    };
+  }
 
-  const indexDebutPasteursValides = (pagePasteursValides - 1) * ELEMENTS_PAR_PAGE;
-  const pasteursValidesAffiches = pasteursValidesFiltres.slice(indexDebutPasteursValides, indexDebutPasteursValides + ELEMENTS_PAR_PAGE);
-  const totalPagesPasteursValides = Math.ceil(pasteursValidesFiltres.length / ELEMENTS_PAR_PAGE);
-
-  const indexDebutSignalements = (pageSignalements - 1) * ELEMENTS_PAR_PAGE;
-  const signalementsAffiches = signalements.slice(indexDebutSignalements, indexDebutSignalements + ELEMENTS_PAR_PAGE);
-  const totalPagesSignalements = Math.ceil(signalements.length / ELEMENTS_PAR_PAGE);
-
-  const indexDebutAnnonces = (pageAnnonces - 1) * ELEMENTS_PAR_PAGE;
-  const annoncesAffiches = annonces.slice(indexDebutAnnonces, indexDebutAnnonces + ELEMENTS_PAR_PAGE);
-  const totalPagesAnnonces = Math.ceil(annonces.length / ELEMENTS_PAR_PAGE);
-
-  const indexDebutCarrousel = (pageCarrousel - 1) * ELEMENTS_PAR_PAGE;
-  const carrouselAffiches = carrouselMedias.slice(indexDebutCarrousel, indexDebutCarrousel + ELEMENTS_PAR_PAGE);
-  const totalPagesCarrousel = Math.ceil(carrouselMedias.length / ELEMENTS_PAR_PAGE);
-
-  const indexDebutPredications = (pagePredications - 1) * ELEMENTS_PAR_PAGE;
-  const predicationsAffiches = predications.slice(indexDebutPredications, indexDebutPredications + ELEMENTS_PAR_PAGE);
-  const totalPagesPredications = Math.ceil(predications.length / ELEMENTS_PAR_PAGE);
+  const vuePasteurs = decouperPage(pasteursFiltres, pagePasteurs);
+  const vuePasteursValides = decouperPage(pasteursValidesFiltres, pagePasteursValides);
+  const vueSignalements = decouperPage(signalements, pageSignalements);
+  const vueAnnonces = decouperPage(annonces, pageAnnonces);
+  const vueCarrousel = decouperPage(carrouselMedias, pageCarrousel);
+  const vuePredications = decouperPage(predications, pagePredications);
 
   if (chargement) {
     return (
@@ -459,15 +491,17 @@ export function Administration() {
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <input 
               type="text" 
+              aria-label="Rechercher un pasteur par nom, église ou email"
               placeholder="Rechercher par nom, église, email..." 
               value={recherchePasteur}
               onChange={(e) => setRecherchePasteur(e.target.value)}
-              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', width: '250px' }}
+              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.9rem', width: '250px' }}
             />
-            <select 
-              value={filtreStatutPasteur} 
+            <select
+              aria-label="Filtrer les demandes par statut"
+              value={filtreStatutPasteur}
               onChange={(e) => setFiltreStatutPasteur(e.target.value)}
-              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.9rem' }}
             >
               <option value="tous">Toutes les demandes</option>
               <option value="en_attente">En attente</option>
@@ -490,7 +524,7 @@ export function Administration() {
                 </tr>
               </thead>
               <tbody>
-                {pasteursAffiches.map((pasteur) => (
+                {vuePasteurs.elements.map((pasteur) => (
                   <tr key={pasteur.id} className="datatable-row">
                     <td>
                       <div className="admin-table-avatar">
@@ -503,15 +537,15 @@ export function Administration() {
                     </td>
                     <td className="cell-title">
                       <strong>{pasteur.nom_affichage}</strong>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>{pasteur.email}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{pasteur.email}</div>
                     </td>
                     <td>{pasteur.nom_eglise || '-'}</td>
                     <td>{pasteur.contact || '-'}</td>
                     <td>
                       {pasteur.est_rejete ? (
-                        <span className="status-badge archived" style={{ color: '#ef4444', backgroundColor: '#fee2e2' }}>Rejeté</span>
+                        <span className="status-badge archived" style={{ color: 'var(--danger)', backgroundColor: 'rgba(var(--danger-rgb), 0.14)' }}>Rejeté</span>
                       ) : (
-                        <span className="status-badge draft" style={{ color: '#004a94', backgroundColor: '#e0f2fe' }}>En attente</span>
+                        <span className="status-badge draft" style={{ color: 'var(--primary)', backgroundColor: 'rgba(var(--primary-rgb), 0.14)' }}>En attente</span>
                       )}
                     </td>
                     <td>{new Date(pasteur.cree_le).toLocaleDateString()}</td>
@@ -554,7 +588,7 @@ export function Administration() {
                           icon={Trash2}
                           onClick={() => demanderConfirmation(
                             'Supprimer le compte',
-                            `Êtes-vous sûr de vouloir supprimer définitivement le compte de ${pasteur.nom_affichage} ? Cette action est irréversible.`,
+                            messageSuppressionPasteur(pasteur),
                             'Supprimer',
                             'danger',
                             Trash2,
@@ -572,14 +606,18 @@ export function Administration() {
               </tbody>
             </table>
             
-            <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
-              <Pagination current={pagePasteurs} total={totalPagesPasteurs} onChange={setPagePasteurs} />
+            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
+              <Pagination current={vuePasteurs.page} total={vuePasteurs.total} onChange={setPagePasteurs} />
             </div>
           </div>
         ) : (
           <div className="admin-empty-state">
             <CheckCircle size={32} />
-            <p>Aucune demande de pasteur en attente.</p>
+            {recherchePasteur || filtreStatutPasteur !== 'tous' ? (
+              <p>Aucune demande ne correspond à votre recherche ou à votre filtre.</p>
+            ) : (
+              <p>Aucune demande de pasteur en attente.</p>
+            )}
           </div>
         )}
       </section>
@@ -601,10 +639,11 @@ export function Administration() {
             </Button>
             <input 
               type="text" 
+              aria-label="Rechercher un pasteur par nom, église ou email"
               placeholder="Rechercher par nom, église, email..." 
               value={recherchePasteur}
               onChange={(e) => setRecherchePasteur(e.target.value)}
-              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', width: '250px' }}
+              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.9rem', width: '250px' }}
             />
           </div>
         </div>
@@ -623,7 +662,7 @@ export function Administration() {
                 </tr>
               </thead>
               <tbody>
-                {pasteursValidesAffiches.map((pasteur) => (
+                {vuePasteursValides.elements.map((pasteur) => (
                   <tr key={pasteur.id} className="datatable-row">
                     <td>
                       <div className="admin-table-avatar">
@@ -636,7 +675,7 @@ export function Administration() {
                     </td>
                     <td className="cell-title">
                       <strong>{pasteur.nom_affichage}</strong>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>{pasteur.email}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{pasteur.email}</div>
                     </td>
                     <td>{pasteur.nom_eglise || '-'}</td>
                     <td>{pasteur.contact || '-'}</td>
@@ -656,7 +695,8 @@ export function Administration() {
                             Publier média
                           </Button>
                         )}
-                        {pasteur.cree_par_admin && (
+                        {/* Sans chaine rattachee, le bouton n'avait aucun effet. */}
+                        {pasteur.cree_par_admin && pasteur.lien_youtube && (
                           <Button
                             variant="secondary"
                             icon={Video}
@@ -669,7 +709,7 @@ export function Administration() {
                               () => supprimerChaineYoutube(pasteur)
                             )}
                             disabled={actionEnCours === `supprimer-chaine-${pasteur.id}`}
-                            style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', backgroundColor: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5' }}
+                            style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', backgroundColor: 'rgba(var(--danger-rgb), 0.14)', color: 'var(--danger)', borderColor: 'rgba(var(--danger-rgb), 0.4)' }}
                           >
                             Détacher YouTube
                           </Button>
@@ -679,7 +719,7 @@ export function Administration() {
                           icon={Trash2}
                           onClick={() => demanderConfirmation(
                             'Supprimer le compte',
-                            `Êtes-vous sûr de vouloir supprimer définitivement le compte de ${pasteur.nom_affichage} ? Cette action est irréversible.`,
+                            messageSuppressionPasteur(pasteur),
                             'Supprimer',
                             'danger',
                             Trash2,
@@ -697,14 +737,18 @@ export function Administration() {
               </tbody>
             </table>
             
-            <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
-              <Pagination current={pagePasteursValides} total={totalPagesPasteursValides} onChange={setPagePasteursValides} />
+            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
+              <Pagination current={vuePasteursValides.page} total={vuePasteursValides.total} onChange={setPagePasteursValides} />
             </div>
           </div>
         ) : (
           <div className="admin-empty-state">
             <CheckCircle size={32} />
-            <p>Aucun pasteur validé.</p>
+            {recherchePasteur ? (
+              <p>Aucun pasteur validé ne correspond à « {recherchePasteur} ».</p>
+            ) : (
+              <p>Aucun pasteur validé.</p>
+            )}
           </div>
         )}
       </section>
@@ -726,18 +770,47 @@ export function Administration() {
               <thead>
                 <tr>
                   <th>{t('admin.col_reason', 'Raison')}</th>
+                  <th>Contenu signalé</th>
                   <th>{t('admin.col_details', 'Détails')}</th>
+                  <th>Signalé par</th>
                   <th>{t('admin.col_status', 'Statut')}</th>
                   <th style={{ textAlign: 'right' }}>{t('admin.col_actions', 'Actions')}</th>
                 </tr>
               </thead>
               <tbody>
-                {signalementsAffiches.map((signalement) => {
+                {vueSignalements.elements.map((signalement) => {
                   const IconeStatut = ICONES_STATUT[signalement.statut] || AlertTriangle;
                   return (
                     <tr key={signalement.id} className="datatable-row">
                       <td className="cell-title" style={{ fontWeight: 600 }}>{signalement.raison}</td>
-                      <td style={{ whiteSpace: 'normal', minWidth: '200px' }}>{signalement.details || '-'}</td>
+                      <td style={{ whiteSpace: 'normal', minWidth: '180px' }}>
+                        {signalement.predication ? (
+                          <a
+                            href={`/sermon/${signalement.predication}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ color: 'var(--primary)', fontWeight: 600 }}
+                          >
+                            {signalement.predication_titre || `Prédication #${signalement.predication}`}
+                          </a>
+                        ) : signalement.commentaire ? (
+                          <span>
+                            <em style={{ color: 'var(--text-muted)' }}>Commentaire :</em>{' '}
+                            {signalement.commentaire_contenu
+                              ? `« ${signalement.commentaire_contenu.slice(0, 60)}${signalement.commentaire_contenu.length > 60 ? '…' : ''} »`
+                              : `#${signalement.commentaire}`}
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)' }}>Contenu supprimé</span>
+                        )}
+                      </td>
+                      <td style={{ whiteSpace: 'normal', minWidth: '180px' }}>{signalement.details || '-'}</td>
+                      <td>
+                        <div>{signalement.utilisateur?.username || 'Anonyme'}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                          {signalement.cree_le ? new Date(signalement.cree_le).toLocaleDateString('fr-FR') : ''}
+                        </div>
+                      </td>
                       <td>
                         <span className={`admin-statut admin-statut-${signalement.statut}`}>
                           <IconeStatut size={12} style={{ marginRight: '4px' }} />
@@ -790,8 +863,8 @@ export function Administration() {
               </tbody>
             </table>
             
-            <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
-              <Pagination current={pageSignalements} total={totalPagesSignalements} onChange={setPageSignalements} />
+            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
+              <Pagination current={vueSignalements.page} total={vueSignalements.total} onChange={setPageSignalements} />
             </div>
           </div>
         ) : (
@@ -835,11 +908,11 @@ export function Administration() {
                 </tr>
               </thead>
               <tbody>
-                {annoncesAffiches.map((annonce) => (
+                {vueAnnonces.elements.map((annonce) => (
                   <tr key={annonce.id} className="datatable-row">
                     <td className="cell-title">
                       <strong>{annonce.titre}</strong>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
                         {annonce.message ? (annonce.message.length > 50 ? annonce.message.substring(0, 50) + '...' : annonce.message) : '-'}
                       </div>
                     </td>
@@ -847,7 +920,7 @@ export function Administration() {
                       {annonce.est_actif ? (
                         <span className="status-badge published">Actif</span>
                       ) : (
-                        <span className="status-badge archived" style={{ color: '#64748b', backgroundColor: '#f1f5f9' }}>Inactif</span>
+                        <span className="status-badge archived" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-alt)' }}>Inactif</span>
                       )}
                     </td>
                     <td>
@@ -885,8 +958,8 @@ export function Administration() {
               </tbody>
             </table>
             
-            <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
-              <Pagination current={pageAnnonces} total={totalPagesAnnonces} onChange={setPageAnnonces} />
+            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
+              <Pagination current={vueAnnonces.page} total={vueAnnonces.total} onChange={setPageAnnonces} />
             </div>
           </div>
         ) : (
@@ -927,27 +1000,27 @@ export function Administration() {
                 </tr>
               </thead>
               <tbody>
-                {carrouselAffiches.map((media) => (
+                {vueCarrousel.elements.map((media) => (
                   <tr key={media.id} className="datatable-row">
                     <td style={{ width: '80px' }}>
                       {media.type_media === 'IMAGE' ? (
-                        <div style={{ width: '60px', height: '40px', borderRadius: '4px', overflow: 'hidden', background: '#f1f5f9' }}>
+                        <div style={{ width: '60px', height: '40px', borderRadius: '4px', overflow: 'hidden', background: 'var(--bg-alt)' }}>
                           <img src={media.fichier} alt="Aperçu" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                       ) : (
-                        <div style={{ width: '60px', height: '40px', borderRadius: '4px', overflow: 'hidden', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                        <div style={{ width: '60px', height: '40px', borderRadius: '4px', overflow: 'hidden', background: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg-card)' }}>
                           <Video size={16} />
                         </div>
                       )}
                     </td>
                     <td className="cell-title">
                       <strong>{media.titre || 'Sans titre'}</strong>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
                         {media.type_media === 'IMAGE' ? 'Image' : 'Vidéo'}
                       </div>
                     </td>
                     <td>
-                      <span className="status-badge" style={{ backgroundColor: '#f1f5f9', color: '#334155' }}>
+                      <span className="status-badge" style={{ backgroundColor: 'var(--bg-alt)', color: 'var(--text-main)' }}>
                         {media.ordre}
                       </span>
                     </td>
@@ -955,7 +1028,7 @@ export function Administration() {
                       {media.est_actif ? (
                         <span className="status-badge published">Actif</span>
                       ) : (
-                        <span className="status-badge archived" style={{ color: '#64748b', backgroundColor: '#f1f5f9' }}>Inactif</span>
+                        <span className="status-badge archived" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-alt)' }}>Inactif</span>
                       )}
                     </td>
                     <td>
@@ -990,8 +1063,8 @@ export function Administration() {
               </tbody>
             </table>
             
-            <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
-              <Pagination current={pageCarrousel} total={totalPagesCarrousel} onChange={setPageCarrousel} />
+            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
+              <Pagination current={vueCarrousel.page} total={vueCarrousel.total} onChange={setPageCarrousel} />
             </div>
           </div>
         ) : (
@@ -1012,12 +1085,17 @@ export function Administration() {
             <h2>Gestion des Vidéos et Actualités</h2>
             <span className="admin-badge-count">{predications.length}</span>
           </div>
-          <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-            <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{predications.filter(p => p.est_a_la_une).length}</span> vidéos à la une
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+            <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{predications.filter(p => p.est_a_la_une).length}</span> vidéos à la une
           </div>
         </div>
 
-        {predications.length ? (
+        {chargementPredications ? (
+          <div className="admin-loading" style={{ minHeight: '200px' }}>
+            <div className="admin-loading-spinner" />
+            <p>Chargement des vidéos…</p>
+          </div>
+        ) : predications.length ? (
           <div className="datatable-responsive">
             <table className="premium-table">
               <thead>
@@ -1030,11 +1108,11 @@ export function Administration() {
                 </tr>
               </thead>
               <tbody>
-                {predicationsAffiches.map((predication) => (
+                {vuePredications.elements.map((predication) => (
                   <tr key={predication.id} className="datatable-row">
                     <td className="cell-title">
                       <strong>{predication.titre}</strong>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
                         {new Date(predication.cree_le).toLocaleDateString()}
                       </div>
                     </td>
@@ -1044,9 +1122,9 @@ export function Administration() {
                     </td>
                     <td>
                       {predication.est_a_la_une ? (
-                        <span className="status-badge published" style={{ backgroundColor: '#fef3c7', color: '#d97706' }}>À la une</span>
+                        <span className="status-badge published" style={{ backgroundColor: 'rgba(var(--warning-rgb), 0.16)', color: 'var(--warning)' }}>À la une</span>
                       ) : (
-                        <span className="status-badge archived" style={{ color: '#64748b', backgroundColor: '#f1f5f9' }}>Standard</span>
+                        <span className="status-badge archived" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-alt)' }}>Standard</span>
                       )}
                     </td>
                     <td>
@@ -1072,8 +1150,8 @@ export function Administration() {
               </tbody>
             </table>
             
-            <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center' }}>
-              <Pagination current={pagePredications} total={totalPagesPredications} onChange={setPagePredications} />
+            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
+              <Pagination current={vuePredications.page} total={vuePredications.total} onChange={setPagePredications} />
             </div>
           </div>
         ) : (
@@ -1107,9 +1185,17 @@ export function Administration() {
       />
       <PublishMediaModal
         isOpen={showPublishMedia}
-        onClose={() => setShowPublishMedia(false)}
+        onClose={() => { setShowPublishMedia(false); setSelectedPasteurId(null); }}
         pasteurId={selectedPasteurId}
         onPublished={() => {
+          // La publication ne donnait aucun retour : rien ne distinguait un
+          // enregistrement reussi d'un formulaire simplement referme.
+          setMessageSucces('Le média a été publié avec succès.');
+          setErreur('');
+          setSelectedPasteurId(null);
+          // Le nouveau média doit apparaître dans l'onglet Vidéos : on invalide
+          // la liste pour qu'elle soit rechargée à sa prochaine ouverture.
+          setPredicationsChargees(false);
           charger();
         }}
       />

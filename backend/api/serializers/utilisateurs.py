@@ -20,15 +20,31 @@ class UtilisateurSerializer(serializers.ModelSerializer):
 class PasteurSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='utilisateur.email', read_only=True)
     username = serializers.CharField(source='utilisateur.username', read_only=True)
+    # Supprimer un pasteur supprime en cascade ses predications, series et
+    # documents. L'interface d'administration a besoin de ces volumes pour
+    # annoncer precisement ce qui sera detruit avant de demander confirmation.
+    nombre_predications = serializers.SerializerMethodField()
+    nombre_documents = serializers.SerializerMethodField()
 
     class Meta:
         model = Pasteur
         fields = (
             'id', 'username', 'email', 'nom_affichage', 'biographie',
             'avatar', 'nom_eglise', 'contact', 'logo_eglise', 'lien_twitter', 'lien_facebook',
-            'lien_youtube', 'cree_le', 'est_valide', 'est_rejete', 'cree_par_admin'
+            'lien_youtube', 'cree_le', 'est_valide', 'est_rejete', 'cree_par_admin',
+            'nombre_predications', 'nombre_documents'
         )
         read_only_fields = ('est_valide', 'est_rejete', 'cree_par_admin')
+
+    def get_nombre_predications(self, obj):
+        # Valeur annotee par la vue quand elle est disponible (evite le N+1 sur
+        # la liste), repli sur un comptage direct pour les acces unitaires.
+        valeur = getattr(obj, 'total_predications', None)
+        return valeur if valeur is not None else obj.predications.count()
+
+    def get_nombre_documents(self, obj):
+        valeur = getattr(obj, 'total_documents', None)
+        return valeur if valeur is not None else obj.documents.count()
 
 
 class PasteurMinimalSerializer(serializers.ModelSerializer):

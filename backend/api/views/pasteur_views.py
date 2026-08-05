@@ -32,7 +32,13 @@ logger = logging.getLogger(__name__)
 
 
 class PasteurViewSet(viewsets.ModelViewSet):
-    queryset = Pasteur.objects.all().order_by('-cree_le')
+    # Les volumes de contenu sont annotes ici plutot que comptes par le
+    # serializer : sans cela, afficher la liste des pasteurs declencherait
+    # deux requetes supplementaires par ligne.
+    queryset = Pasteur.objects.all().annotate(
+        total_predications=Count('predications', distinct=True),
+        total_documents=Count('documents', distinct=True),
+    ).select_related('utilisateur').order_by('-cree_le')
     serializer_class = PasteurSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]

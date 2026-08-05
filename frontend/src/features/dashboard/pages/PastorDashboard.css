@@ -388,20 +388,22 @@ body {
   text-align: center;
 }
 
+/* Teintes derivees des jetons semantiques : les couleurs figees precedentes
+   restaient des pastilles claires sur fond sombre. */
 .status-badge.published {
-  background-color: #dcfce7;
-  color: #166534;
+  background-color: rgba(var(--success-rgb), 0.16);
+  color: var(--success);
 }
 
 .status-badge.draft,
 .status-badge.archived {
-  background-color: #f3f4f6;
-  color: #4b5563;
+  background-color: var(--bg-alt);
+  color: var(--text-muted);
 }
 
 .status-badge.scheduled {
-  background-color: #fef9c3;
-  color: #854d0e;
+  background-color: rgba(var(--warning-rgb), 0.16);
+  color: var(--warning);
 }
 
 .cell-actions {

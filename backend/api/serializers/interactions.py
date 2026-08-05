@@ -57,11 +57,17 @@ class HistoriqueLectureSerializer(serializers.ModelSerializer):
 
 class SignalementSerializer(serializers.ModelSerializer):
     utilisateur = UtilisateurSerializer(read_only=True)
+    # Sans ces champs, l'interface de moderation n'affiche que la raison et ne
+    # permet pas de savoir quel contenu est vise : l'administrateur ne peut pas
+    # verifier le bien-fonde du signalement avant de trancher.
+    predication_titre = serializers.CharField(source='predication.titre', read_only=True, default=None)
+    commentaire_contenu = serializers.CharField(source='commentaire.contenu', read_only=True, default=None)
 
     class Meta:
         model = Signalement
         fields = (
-            'id', 'utilisateur', 'predication', 'commentaire',
+            'id', 'utilisateur', 'predication', 'predication_titre',
+            'commentaire', 'commentaire_contenu',
             'raison', 'details', 'statut', 'cree_le'
         )
         read_only_fields = ('utilisateur', 'statut')

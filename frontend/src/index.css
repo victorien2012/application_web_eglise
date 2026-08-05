@@ -74,6 +74,15 @@ body,
   --pd-text-main: var(--text-main);
   --pd-text-muted: var(--text-muted);
   --pd-border: var(--border-color);
+
+  /* Couleurs sémantiques (statuts, alertes). Elles étaient jusqu'ici recopiées
+     en dur dans chaque page, ce qui les rendait illisibles en thème sombre. */
+  --danger: #dc2626;
+  --danger-rgb: 220, 38, 38;
+  --success: #16a34a;
+  --success-rgb: 22, 163, 74;
+  --warning: #d97706;
+  --warning-rgb: 217, 119, 6;
 }
 
 [data-theme="dark"] {
@@ -95,6 +104,15 @@ body,
   --text-main: #f8fafc; /* Slate 50 */
   --text-muted: #94a3b8; /* Slate 400 */
   --border-color: #1e293b; /* Slate 800 */
+
+  /* Teintes sémantiques éclaircies : les versions claires manquent de contraste
+     sur fond sombre. */
+  --danger: #f87171;
+  --danger-rgb: 248, 113, 113;
+  --success: #4ade80;
+  --success-rgb: 74, 222, 128;
+  --warning: #fbbf24;
+  --warning-rgb: 251, 191, 36;
 
   /* Overrides for theme.css */
   --color-primary: #3b82f6;
