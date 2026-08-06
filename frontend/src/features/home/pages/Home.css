@@ -28,27 +28,43 @@
   }
 }
 
-.reveal-on-scroll {
+/* Le contenu est visible par defaut. L'animation d'apparition ne s'active que
+   si le script a installe l'observateur (classe .reveal-actif sur le
+   conteneur) : sinon, une defaillance de celui-ci laissait des sections
+   entieres invisibles de facon permanente. */
+.reveal-on-scroll,
+.reveal-cascade {
+  opacity: 1;
+  transform: none;
+  height: 100%;
+}
+
+.reveal-actif .reveal-on-scroll {
   opacity: 0;
   transform: translateY(30px);
   transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.reveal-on-scroll.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.reveal-cascade {
+.reveal-actif .reveal-cascade {
   opacity: 0;
   transform: translateY(20px);
   transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  height: 100%;
 }
 
-.reveal-on-scroll.is-visible .reveal-cascade {
+.reveal-actif .reveal-on-scroll.is-visible,
+.reveal-actif .reveal-on-scroll.is-visible .reveal-cascade {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Respect du reglage systeme « animations reduites ». */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-actif .reveal-on-scroll,
+  .reveal-actif .reveal-cascade {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
 /* ==========================================================================
@@ -298,10 +314,24 @@
 /* ==========================================================================
    GRILLES DE CONTENU
    ========================================================================== */
+/* Quatre médias par ligne sur grand écran, puis dégressif. minmax(0, 1fr)
+   plutôt que 1fr : sans cela une image large empêche la colonne de rétrécir. */
 .sermon-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 1100px) {
+  .sermon-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .sermon-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* ==========================================================================
@@ -1028,10 +1058,25 @@
 
 /* Le fil reprend l'apparence des anciennes lignes latérales, mais sur deux
    colonnes et dans le flux de la page : aucun défilement interne. */
+/* Trois colonnes et non quatre : ces lignes sont horizontales (vignette +
+   texte). A quatre, le titre ne disposait que de 142 px et devenait illisible.
+   Les grilles de cartes, elles, restent bien a quatre par ligne. */
 .home-fil-liste {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.6rem;
+}
+
+@media (max-width: 1100px) {
+  .home-fil-liste {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .home-fil-liste {
+    grid-template-columns: 1fr;
+  }
 }
 
 .home-fil .video-feed-item {

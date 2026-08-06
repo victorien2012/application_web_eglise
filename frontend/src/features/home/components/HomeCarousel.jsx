@@ -11,20 +11,16 @@ const HomeCarousel = ({ medias }) => {
   const scrollRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Fallback banners if no medias are provided
+  // Contenu de repli, affiché tant qu'aucun média n'a été publié depuis
+  // l'administration. Il ne charge aucune image : les deux photos d'illustration
+  // utilisées auparavant venaient d'un service externe, et l'une d'elles ne
+  // répondait plus — les visiteurs voyaient une image cassée sur l'accueil.
   const displayMedias = (!medias || medias.length === 0) ? [
     {
       id: 'default-1',
-      fichier: 'https://images.unsplash.com/photo-1438032005730-c779502df39b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80',
+      fichier: null,
       titre: "Bienvenue dans notre Église",
       description: "S'Équiper pour Bâtir, S'Unir pour Grandir",
-      type_media: 'IMAGE'
-    },
-    {
-      id: 'default-2',
-      fichier: 'https://images.unsplash.com/photo-1548625361-ec8531ce3e08?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80',
-      titre: "Rejoignez notre Communauté",
-      description: "Des moments de partage et de foi inoubliables",
       type_media: 'IMAGE'
     }
   ] : medias;
@@ -133,14 +129,18 @@ const HomeCarousel = ({ medias }) => {
                 );
               }
             }
-          } else {
+          } else if (media.fichier) {
             mediaContent = (
-              <img 
-                src={media.fichier} 
-                alt={media.titre || "Média du carrousel"} 
+              <img
+                src={media.fichier}
+                alt={media.titre || "Média du carrousel"}
                 className="carousel-media"
               />
             );
+          } else {
+            // Sans image, un fond aux couleurs du site plutôt qu'une vignette
+            // vide ou une image cassée.
+            mediaContent = <div className="carousel-media carousel-media-vide" aria-hidden="true" />;
           }
 
           return (

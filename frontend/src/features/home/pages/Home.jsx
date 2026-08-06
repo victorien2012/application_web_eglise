@@ -79,25 +79,40 @@ export function Home() {
      SCROLL REVEAL ANIMATIONS
   ========================= */
   useEffect(() => {
+    const conteneur = document.querySelector('.home-layout');
+    if (!conteneur || typeof IntersectionObserver === 'undefined') return undefined;
+
+    // La classe n'est posée que si l'observateur peut réellement être installé :
+    // sans elle, le CSS laisse tout visible plutôt que de masquer du contenu.
+    conteneur.classList.add('reveal-actif');
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+      // Seuil à 0 : une section plus haute que l'écran n'atteignait pas
+      // toujours les 10 % exigés auparavant et restait donc masquée.
+      { threshold: 0, rootMargin: '0px 0px -40px 0px' }
     );
 
-    // Timeout pour s'assurer que le DOM est à jour après le chargement
     const timeout = setTimeout(() => {
-      const elements = document.querySelectorAll('.reveal-on-scroll');
-      elements.forEach((el) => observer.observe(el));
+      document.querySelectorAll('.reveal-on-scroll').forEach((el) => observer.observe(el));
     }, 100);
+
+    // Filet de sécurité : au bout de trois secondes, tout ce qui n'a pas été
+    // révélé le devient. Une animation ratée ne doit jamais retenir du contenu.
+    const filet = setTimeout(() => {
+      document.querySelectorAll('.reveal-on-scroll').forEach((el) => el.classList.add('is-visible'));
+    }, 3000);
 
     return () => {
       clearTimeout(timeout);
+      clearTimeout(filet);
       observer.disconnect();
     };
   }, [chargement, predications, pasteurs]);
@@ -107,10 +122,15 @@ export function Home() {
   ========================= */
   // Le heros met en avant une seule predication : celle choisie par
   // l'administration, a defaut la plus recente.
-  const tendances = predications.slice(1, 4);
-  const dernieres = predications.slice(0, 6);
+  // Les listes sont des multiples de 4 pour remplir exactement les lignes de
+  // la grille, sans dernière ligne incomplète.
+  const tendances = predications.slice(1, 5);
+  const dernieres = predications.slice(0, 8);
   const topPasteurs = pasteurs.slice(0, 4);
-  const filVideos = predications.slice(0, 12);
+  // Le fil reprend la suite du catalogue : il affichait auparavant les mêmes
+  // prédications que « Dernières publications », qui apparaissaient donc deux
+  // fois sur la page.
+  const filVideos = predications.slice(8, 20);
 
   function imageDe(item) {
     if (!item) return null;
@@ -219,9 +239,7 @@ export function Home() {
 
               {isLoading ? (
                 <div className="grid sermon-grid">
-                  <SermonCardSkeleton />
-                  <SermonCardSkeleton />
-                  <SermonCardSkeleton />
+                  {Array.from({ length: 4 }).map((_, i) => <SermonCardSkeleton key={i} />)}
                 </div>
               ) : hasError ? (
                 <p className="page-state error">{t('home.error_loading')}</p>
@@ -293,17 +311,12 @@ export function Home() {
 
               {isLoading ? (
                 <div className="grid sermon-grid">
-                  <SermonCardSkeleton />
-                  <SermonCardSkeleton />
-                  <SermonCardSkeleton />
-                  <SermonCardSkeleton />
-                  <SermonCardSkeleton />
-                  <SermonCardSkeleton />
+                  {Array.from({ length: 8 }).map((_, i) => <SermonCardSkeleton key={i} />)}
                 </div>
               ) : !hasError && dernieres.length ? (
                 <div className="grid sermon-grid">
                   {dernieres.map((item, i) => (
-                    <div key={item.id} className="reveal-cascade" style={{ transitionDelay: `${(i % 3) * 0.1}s` }}>
+                    <div key={item.id} className="reveal-cascade" style={{ transitionDelay: `${(i % 4) * 0.08}s` }}>
                       <SermonCard sermon={item} />
                     </div>
                   ))}

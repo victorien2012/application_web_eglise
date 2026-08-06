@@ -17,7 +17,16 @@ export function SermonCard({ sermon }) {
   const youtubeMatch = sermon.url_video ? sermon.url_video.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/) : null;
   const youtubeId = youtubeMatch ? youtubeMatch[1] : null;
   const estVideo = sermon.type_media !== 'AUDIO';
-  const imageUrl = sermon.image_couverture || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null);
+  const imageUrl = sermon.url_image_couverture || sermon.image_couverture || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null);
+
+  // La durée était affichée en secondes brutes (« 4800s ») : illisible.
+  const dureeLisible = (() => {
+    const total = Number(sermon.duree_secondes) || 0;
+    if (total <= 0) return null;
+    const heures = Math.floor(total / 3600);
+    const minutes = Math.round((total % 3600) / 60);
+    return heures ? `${heures} h ${String(minutes).padStart(2, '0')}` : `${minutes} min`;
+  })();
 
   const handlePlay = () => {
     if (sermon.fichier_audio) {
@@ -73,7 +82,14 @@ export function SermonCard({ sermon }) {
       onMouseEnter={() => setSurvol(true)}
       onMouseLeave={() => setSurvol(false)}
     >
-      <div className="cover-wrapper" style={{ position: 'relative', width: '100%', height: '180px', overflow: 'hidden' }}>
+      {/* L'image mène à la prédication : c'est la plus grande zone de la carte,
+          et cliquer dessus ne faisait rien auparavant. */}
+      <Link
+        to={`/sermon/${sermon.id}`}
+        className="cover-wrapper"
+        aria-label={`Ouvrir : ${sermon.titre}`}
+        style={{ position: 'relative', display: 'block', width: '100%', height: '180px', overflow: 'hidden' }}
+      >
         {estVideo && survol && (sermon.fichier_video || youtubeId) ? (
           sermon.fichier_video ? (
             <video 
@@ -99,7 +115,7 @@ export function SermonCard({ sermon }) {
           imageUrl ? (
             <img src={imageUrl} alt={sermon.titre} className="cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            <div className="cover" style={{ width: '100%', height: '100%', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cbd5e1' }}>
+            <div className="cover" style={{ width: '100%', height: '100%', backgroundColor: 'var(--bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
               {estVideo ? <MonitorPlay size={48} /> : <Headphones size={48} />}
             </div>
           )
@@ -127,22 +143,35 @@ export function SermonCard({ sermon }) {
             </div>
           </div>
         )}
-      </div>
+      </Link>
       <div className="info">
         <div className="sermon-card-top">
-          <h3>{sermon.titre}</h3>
+          {/* Le titre mène à la prédication : auparavant, ni le titre ni
+              l'image n'étaient cliquables, seuls les boutons l'étaient. */}
+          <h3>
+            <Link to={`/sermon/${sermon.id}`} className="sermon-titre-lien">
+              {sermon.titre}
+            </Link>
+          </h3>
           <span className="sermon-type">{sermon.type_media}</span>
         </div>
-        <Link to={`/pasteurs/${sermon.pasteur.id}`} className="pastor-link">
-          <UserRound size={14} />
-          {sermon.nom_predicateur || sermon.pasteur.nom_affichage}
-        </Link>
+        {sermon.pasteur ? (
+          <Link to={`/pasteurs/${sermon.pasteur.id}`} className="pastor-link">
+            <UserRound size={14} />
+            {sermon.nom_predicateur || sermon.pasteur.nom_affichage}
+          </Link>
+        ) : sermon.nom_predicateur ? (
+          <span className="pastor-link">
+            <UserRound size={14} />
+            {sermon.nom_predicateur}
+          </span>
+        ) : null}
         <p className="sermon-description">
           {sermon.description || 'Une predication a decouvrir des maintenant.'}
         </p>
         <div className="sermon-meta">
-          <span>{sermon.duree_secondes}s</span>
-          <span>{sermon.nombre_vues} vues</span>
+          {dureeLisible && <span>{dureeLisible}</span>}
+          <span>{sermon.nombre_vues > 0 ? `${sermon.nombre_vues} vues` : 'Nouveau'}</span>
         </div>
         {sermon.categories.length ? (
           <div className="sermon-categories">
