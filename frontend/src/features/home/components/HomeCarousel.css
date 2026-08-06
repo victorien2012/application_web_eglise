@@ -70,8 +70,12 @@
   max-width: 800px;
 }
 
+/* position et z-index : les indicateurs, positionnes en absolu et rendus apres
+   les diapositives, passaient au-dessus du bouton et interceptaient le clic. */
 .carousel-cta {
   display: inline-block;
+  position: relative;
+  z-index: 12;
   background: var(--accent, #f59e0b);
   color: var(--primary-dark, #001f3f);
   border: none;

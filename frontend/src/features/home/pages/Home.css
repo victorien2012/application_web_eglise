@@ -70,18 +70,20 @@
 /* ==========================================================================
    PAGE PRINCIPALE (Section sous le héros)
    ========================================================================== */
+/* Ni marge negative ni z-index : ce decalage vers le haut faisait remonter le
+   bloc par-dessus les boutons « Explorer » et « Voir les pasteurs », qui
+   devenaient impossibles a cliquer. Il servait a chevaucher l'ancien heros,
+   supprime depuis. */
 .home-page {
   max-width: 1200px;
-  margin: -3rem auto 0 auto;
+  margin: 0 auto;
   padding: 2rem;
   display: flex;
   flex-direction: column;
   gap: 3.5rem;
-  /* Reduced space between big blocks as requested */
   width: 100%;
   box-sizing: border-box;
   position: relative;
-  z-index: 10;
   background-color: transparent;
 }
 
