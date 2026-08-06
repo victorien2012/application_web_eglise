@@ -7,6 +7,17 @@ import './CarrouselModal.css';
 const EXTENSIONS_IMAGE = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
 const TAILLE_MAX_MO = 5;
 
+// Regex identique à celle de HomeCarousel.jsx : c'est ce composant qui affiche
+// le média sur la page d'accueil. S'il extrayait un identifiant différent (ou
+// aucun), l'aperçu montré ici mentirait sur ce que verront les visiteurs — or
+// quand HomeCarousel ne trouve pas d'identifiant, la diapositive reste
+// silencieusement vide.
+function extraireIdYoutube(url) {
+  if (!url) return null;
+  const correspondance = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+  return (correspondance && correspondance[2].length === 11) ? correspondance[2] : null;
+}
+
 const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
   const { t } = useTranslation();
   const [titre, setTitre] = useState('');
@@ -20,6 +31,13 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState('');
   const apercuLocal = useRef(null);
+
+  // Libère la dernière URL objet créée si le composant se démonte pendant
+  // qu'un fichier est en cours de prévisualisation (fermeture de la modale
+  // en cours d'édition, navigation ailleurs).
+  useEffect(() => () => {
+    if (apercuLocal.current) URL.revokeObjectURL(apercuLocal.current);
+  }, []);
 
   useEffect(() => {
     if (mediaToEdit) {
@@ -71,9 +89,24 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
     setTypeMedia('IMAGE');
   };
 
+  // Un identifiant extrait ici avec succès garantit que HomeCarousel pourra
+  // afficher la diapositive : sans ce contrôle, un lien mal formé (page
+  // d'accueil YouTube, playlist, lien copié tronqué...) passait la validation
+  // du serveur — une simple URLField, sans lien avec YouTube — et produisait
+  // une diapositive vide et silencieuse sur la page d'accueil.
+  const idYoutube = typeMedia === 'VIDEO' ? extraireIdYoutube(urlVideo) : null;
+  const urlVideoInvalide = typeMedia === 'VIDEO' && urlVideo.trim() !== '' && !idYoutube;
+
+  // Une image reste valide en édition même sans nouveau fichier : celle déjà
+  // enregistrée sera conservée. Calculé à chaque rendu plutôt que figé à
+  // l'ouverture, pour rester juste si l'admin bascule le type en cours de
+  // saisie.
+  const aImageValide = Boolean(fichier) || (typeMedia === 'IMAGE' && Boolean(fichierPreview));
+  const peutEnregistrer = typeMedia === 'IMAGE' ? aImageValide : Boolean(idYoutube);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (enCours) return;
+    if (enCours || !peutEnregistrer) return;
 
     const formData = new FormData();
     if (titre) formData.append('titre', titre);
@@ -84,8 +117,8 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
 
     if (typeMedia === 'IMAGE' && fichier) {
       formData.append('fichier', fichier);
-    } else if (typeMedia === 'VIDEO' && urlVideo) {
-      formData.append('url_video', urlVideo);
+    } else if (typeMedia === 'VIDEO' && idYoutube) {
+      formData.append('url_video', urlVideo.trim());
     }
 
     setErreur('');
@@ -122,19 +155,21 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
 
         <form onSubmit={handleSubmit} className="modal-body carrousel-form">
           <div className="form-group">
-            <label>Type de média</label>
-            <div className="type-media-toggles">
-              <button 
-                type="button" 
+            <label id="label-type-media">Type de média</label>
+            <div className="type-media-toggles" role="group" aria-labelledby="label-type-media">
+              <button
+                type="button"
                 className={`type-toggle ${typeMedia === 'IMAGE' ? 'active' : ''}`}
-                onClick={() => setTypeMedia('IMAGE')}
+                aria-pressed={typeMedia === 'IMAGE'}
+                onClick={() => { setTypeMedia('IMAGE'); setErreur(''); }}
               >
                 <ImageIcon size={18} /> Image
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className={`type-toggle ${typeMedia === 'VIDEO' ? 'active' : ''}`}
-                onClick={() => setTypeMedia('VIDEO')}
+                aria-pressed={typeMedia === 'VIDEO'}
+                onClick={() => { setTypeMedia('VIDEO'); setErreur(''); }}
               >
                 <Film size={18} /> Vidéo
               </button>
@@ -144,18 +179,18 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
           <div className="form-group">
             {typeMedia === 'IMAGE' ? (
               <>
-                <label>Fichier Image {!mediaToEdit && <span className="required">*</span>}</label>
+                <label htmlFor="fichier-upload">Fichier Image {!aImageValide && <span className="required">*</span>}</label>
                 <div className="file-upload-container">
-                  <input 
-                    type="file" 
+                  <input
+                    type="file"
                     id="fichier-upload"
-                    accept="image/*"
+                    accept=".jpg,.jpeg,.png,.webp,.gif,.svg,image/*"
                     onChange={handleFileChange}
                     style={{ display: 'none' }}
                   />
                   <label htmlFor="fichier-upload" className="file-upload-btn">
                     <Upload size={20} />
-                    <span>{fichier ? fichier.name : "Choisir une image..."}</span>
+                    <span>{fichier ? fichier.name : mediaToEdit?.type_media === 'IMAGE' ? 'Changer l’image...' : 'Choisir une image...'}</span>
                   </label>
                 </div>
                 {fichierPreview && (
@@ -166,15 +201,33 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
               </>
             ) : (
               <>
-                <label htmlFor="url_video">Lien YouTube <span className="required">*</span></label>
+                <label htmlFor="url_video">Lien YouTube {!idYoutube && <span className="required">*</span>}</label>
                 <input
                   type="url"
                   id="url_video"
                   value={urlVideo}
                   onChange={(e) => setUrlVideo(e.target.value)}
                   placeholder="https://www.youtube.com/watch?v=..."
-                  required={typeMedia === 'VIDEO'}
+                  aria-invalid={urlVideoInvalide}
+                  aria-describedby={urlVideoInvalide ? 'url_video-erreur' : undefined}
                 />
+                {urlVideoInvalide && (
+                  <small id="url_video-erreur" className="champ-erreur" role="alert">
+                    Lien YouTube non reconnu. Utilisez un lien de la forme youtube.com/watch?v=… ou youtu.be/…
+                  </small>
+                )}
+                {/* Aperçu de ce que HomeCarousel affichera réellement : une
+                    diapositive silencieusement vide n'est plus decouverte
+                    qu'une fois publiee sur la page d'accueil. */}
+                {idYoutube && (
+                  <div className="media-preview-container">
+                    <img
+                      src={`https://img.youtube.com/vi/${idYoutube}/hqdefault.jpg`}
+                      alt="Aperçu de la vidéo YouTube"
+                      className="media-preview"
+                    />
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -229,7 +282,11 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
 
           <div className="modal-actions">
             <Button type="button" variant="outline" onClick={onClose} disabled={enCours}>Annuler</Button>
-            <Button type="submit" variant="primary" disabled={enCours || (!mediaToEdit && (typeMedia === 'IMAGE' ? !fichier : !urlVideo))}>
+            {/* Auparavant desactive uniquement a la creation (!mediaToEdit) :
+                en edition, basculer le type sans fournir la nouvelle source
+                laissait le bouton actif et renvoyait vers une erreur serveur
+                peu claire. Le calcul vaut maintenant dans les deux cas. */}
+            <Button type="submit" variant="primary" disabled={enCours || !peutEnregistrer}>
               <Save size={18} style={{ marginRight: '8px' }} />
               {enCours ? 'Enregistrement…' : 'Enregistrer'}
             </Button>

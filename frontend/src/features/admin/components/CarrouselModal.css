@@ -200,6 +200,12 @@
   margin-left: 0.2rem;
 }
 
+.carrousel-form .champ-erreur {
+  color: var(--danger);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
