@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { api } from '../../../services/api';
-import { X, Upload, Youtube, Link as LinkIcon, FileVideo } from 'lucide-react';
+import { X, Upload, Youtube, Link as LinkIcon, FileAudio, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { extraireIdVideoYoutube, miniatureYoutube } from '../../../utils/youtube';
 import './PublishMediaModal.css';
 
 export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
@@ -31,7 +32,12 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
   const [syncSuccess, setSyncSuccess] = useState('');
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    // Un fichier audio choisi en type "Audio" puis conserve apres passage a
+    // "Video" aurait ete envoye quand meme (body l'ajoute des que file existe),
+    // sans lien avec le format finalement choisi.
+    if (name === 'type_media' && value === 'VIDEO') setFile(null);
   };
 
   const resetForm = () => {
@@ -50,25 +56,37 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
     onClose();
   };
 
-  // Publier une vidéo (par lien YouTube ou fichier)
+  // Publier une vidéo (toujours par lien YouTube — la plateforme n'héberge
+  // plus de fichier vidéo) et/ou un fichier audio.
+  const veutAudio = form.type_media === 'AUDIO' || form.type_media === 'BOTH';
+  const veutVideo = form.type_media === 'VIDEO' || form.type_media === 'BOTH';
+  const idVideoDetecte = extraireIdVideoYoutube(form.url_video);
+  const lienVideoNonReconnu = veutVideo && Boolean(form.url_video.trim()) && !idVideoDetecte;
+
   const handleSubmitVideo = async (e) => {
     e.preventDefault();
     if (!pasteurId) return;
-    setLoading(true);
     setError('');
     setSuccess('');
 
-    const hasFile = Boolean(file);
-
-    if (!hasFile && !form.url_video) {
-      setError('Veuillez fournir un lien YouTube ou un fichier vidéo.');
-      setLoading(false);
+    if (veutAudio && !file) {
+      setError("Ajoutez le fichier audio correspondant au format choisi.");
+      return;
+    }
+    if (veutVideo && !form.url_video.trim()) {
+      setError("Collez le lien YouTube de la vidéo. Elle doit d'abord être publiée sur la chaîne YouTube du pasteur.");
+      return;
+    }
+    if (veutVideo && !idVideoDetecte) {
+      setError("Lien YouTube non reconnu. Formats acceptés : /watch?v=…, youtu.be/…, /embed/… ou /shorts/…");
       return;
     }
 
+    setLoading(true);
+
     try {
       let body;
-      if (hasFile) {
+      if (file) {
         body = new FormData();
         body.append('titre', form.titre);
         body.append('description', form.description || '');
@@ -76,7 +94,7 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
         if (form.url_video) body.append('url_video', form.url_video);
         if (form.nom_predicateur) body.append('nom_predicateur', form.nom_predicateur);
         body.append('est_publie', form.est_publie ? 'true' : 'false');
-        body.append(form.type_media === 'AUDIO' ? 'fichier_audio' : 'fichier_video', file);
+        body.append('fichier_audio', file);
         body.append('pasteur_id', pasteurId);
       } else {
         body = {
@@ -90,7 +108,7 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
         };
       }
 
-      await api.post('/predications/', body, hasFile ? {
+      await api.post('/predications/', body, file ? {
         headers: { 'Content-Type': 'multipart/form-data' },
       } : undefined);
 
@@ -195,36 +213,6 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
               <textarea id="pm-description" name="description" value={form.description} onChange={handleChange} rows={3} />
             </div>
 
-            <div className="pmmodal-field">
-              <label htmlFor="pm-url">
-                <Youtube size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-                Lien YouTube (ou autre URL vidéo)
-              </label>
-              <input
-                id="pm-url"
-                name="url_video"
-                value={form.url_video}
-                onChange={handleChange}
-                placeholder="https://www.youtube.com/watch?v=..."
-              />
-              <small className="pmmodal-help">Collez un lien YouTube ou Vimeo pour l'intégrer directement.</small>
-            </div>
-
-            <div className="pmmodal-separator">
-              <span>ou</span>
-            </div>
-
-            <div className="pmmodal-field">
-              <label>
-                <FileVideo size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-                Fichier vidéo
-              </label>
-              <input type="file" accept={form.type_media === 'AUDIO' ? 'audio/*' : 'video/*'} onChange={(e) => setFile(e.target.files[0])} />
-              <small className="pmmodal-help">
-                {form.type_media === 'AUDIO' ? 'Formats supportés : MP3, WAV, M4A, AAC, OGG, FLAC.' : 'Formats supportés : MP4, WebM, MOV, M4V, MKV.'}
-              </small>
-            </div>
-
             <div className="pmmodal-row-inline">
               <div className="pmmodal-field" style={{ flex: 1 }}>
                 <label htmlFor="pm-predicateur">Prédicateur</label>
@@ -239,6 +227,59 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
                 </select>
               </div>
             </div>
+
+            {veutVideo && (
+              <>
+                {/* La plateforme n'héberge pas de fichier vidéo : la vidéo est
+                    diffusée depuis YouTube, jamais téléversée ici. */}
+                <div className="pmmodal-youtube-info" style={{ background: 'rgba(var(--primary-rgb), 0.08)', borderColor: 'rgba(var(--primary-rgb), 0.3)', color: 'var(--primary)' }}>
+                  <Youtube size={24} />
+                  <p style={{ color: 'var(--text-muted)' }}>
+                    La vidéo doit d'abord être publiée sur la chaîne YouTube du pasteur. Collez ensuite son lien ci-dessous.
+                  </p>
+                </div>
+
+                <div className="pmmodal-field">
+                  <label htmlFor="pm-url">
+                    <Youtube size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                    Lien YouTube de la vidéo *
+                  </label>
+                  <input
+                    id="pm-url"
+                    name="url_video"
+                    value={form.url_video}
+                    onChange={handleChange}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    aria-invalid={lienVideoNonReconnu}
+                  />
+                  <small className="pmmodal-help">Formats acceptés : /watch?v=…, youtu.be/…, /embed/…, /shorts/…</small>
+                  {lienVideoNonReconnu && (
+                    <small className="pmmodal-error" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <AlertCircle size={13} /> Lien YouTube non reconnu.
+                    </small>
+                  )}
+                  {idVideoDetecte && (
+                    <img
+                      src={miniatureYoutube(idVideoDetecte)}
+                      alt=""
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      style={{ marginTop: '0.4rem', width: '160px', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+                    />
+                  )}
+                </div>
+              </>
+            )}
+
+            {veutAudio && (
+              <div className="pmmodal-field">
+                <label>
+                  <FileAudio size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                  Fichier audio {veutVideo ? '' : '*'}
+                </label>
+                <input type="file" accept="audio/*" onChange={(e) => setFile(e.target.files[0] || null)} />
+                <small className="pmmodal-help">Formats supportés : MP3, WAV, M4A, AAC, OGG, FLAC.</small>
+              </div>
+            )}
 
             {error && <div className="pmmodal-error">{error}</div>}
             {success && <div className="pmmodal-success">{success}</div>}
