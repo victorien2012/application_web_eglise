@@ -28,8 +28,11 @@ export function ModifierProfilPasteur() {
   const logoUrlRef = useRef(null);
 
   const [erreur, setErreur] = useState('');
+  const [nomAffichageErreur, setNomAffichageErreur] = useState('');
   const toast = useRef(null);
   const [soumission, setSoumission] = useState(false);
+  const avatarUploadRef = useRef(null);
+  const logoUploadRef = useRef(null);
 
   useEffect(() => () => {
     if (avatarUrlRef.current) URL.revokeObjectURL(avatarUrlRef.current);
@@ -50,6 +53,21 @@ export function ModifierProfilPasteur() {
     setLogoApercu(logoUrlRef.current);
   }
 
+  // PrimeReact rejette silencieusement un fichier trop lourd ou d'un type non
+  // autorisé (accept/maxFileSize) : sans ce retour, le bouton semblait ne
+  // rien faire et rien n'expliquait pourquoi le fichier n'apparaissait pas.
+  function gererEchecValidationFichier(fichier) {
+    const troplourd = fichier && fichier.size > 5 * 1000 * 1000;
+    toast.current?.show({
+      severity: 'error',
+      summary: t('dashboard.profile_file_rejected', 'Fichier refusé'),
+      detail: troplourd
+        ? t('dashboard.profile_file_too_large', 'Le fichier est trop volumineux (5 Mo maximum).')
+        : t('dashboard.profile_file_invalid_type', 'Format non pris en charge (JPG, PNG, WEBP ou GIF).'),
+      life: 6000,
+    });
+  }
+
   function extraireErreur(error) {
     const data = error.response?.data;
     if (!data) return t('dashboard.profile_update_error');
@@ -59,17 +77,43 @@ export function ModifierProfilPasteur() {
     return premier || t('dashboard.profile_update_error');
   }
 
+  function reinitialiserFichiers() {
+    choisirAvatar(null);
+    choisirLogo(null);
+    avatarUploadRef.current?.clear();
+    logoUploadRef.current?.clear();
+  }
+
+  // Aucun moyen jusqu'ici d'abandonner une modification en cours : revient
+  // aux dernières valeurs enregistrées et retire les fichiers en attente.
+  function gererAnnuler() {
+    setNomAffichage(pasteur?.nom_affichage || '');
+    setNomEglise(pasteur?.nom_eglise || '');
+    setContact(pasteur?.contact || '');
+    setBiographie(pasteur?.biographie || '');
+    setNomAffichageErreur('');
+    setErreur('');
+    reinitialiserFichiers();
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setErreur('');
+
+    const nomAffichageSaisi = nomAffichage.trim();
+    if (!nomAffichageSaisi) {
+      setNomAffichageErreur(t('dashboard.profile_name_required', "Le nom d'affichage est obligatoire."));
+      return;
+    }
+    setNomAffichageErreur('');
     setSoumission(true);
 
     try {
       const formData = new FormData();
-      formData.append('nom_affichage', nomAffichage);
-      formData.append('nom_eglise', nomEglise);
-      formData.append('contact', contact);
-      formData.append('biographie', biographie);
+      formData.append('nom_affichage', nomAffichageSaisi);
+      formData.append('nom_eglise', nomEglise.trim());
+      formData.append('contact', contact.trim());
+      formData.append('biographie', biographie.trim());
       if (avatar) formData.append('avatar', avatar);
       if (logoEglise) formData.append('logo_eglise', logoEglise);
 
@@ -81,8 +125,7 @@ export function ModifierProfilPasteur() {
       toast.current.show({ severity: 'success', summary: 'Succès', detail: t('dashboard.profile_update_success'), life: 5000 });
       // Réinitialiser les fichiers : l'aperçu local n'a plus lieu d'être,
       // pasteur.avatar (rafraîchi ci-dessus) reflète désormais la même image.
-      choisirAvatar(null);
-      choisirLogo(null);
+      reinitialiserFichiers();
     } catch (err) {
       setErreur(extraireErreur(err));
     } finally {
@@ -91,6 +134,18 @@ export function ModifierProfilPasteur() {
   }
 
   const restantBio = LIMITE_BIO - biographie.length;
+
+  // Pas de bouton Enregistrer actif tant que rien n'a réellement changé :
+  // évite une requête PATCH inutile et donne un signal clair de l'état du
+  // formulaire (rien à perdre / rien à sauvegarder).
+  const estModifie = (
+    nomAffichage.trim() !== (pasteur?.nom_affichage || '') ||
+    nomEglise.trim() !== (pasteur?.nom_eglise || '') ||
+    contact.trim() !== (pasteur?.contact || '') ||
+    biographie.trim() !== (pasteur?.biographie || '') ||
+    !!avatar ||
+    !!logoEglise
+  );
 
   return (
     <div className="dashboard-tab-content" style={{ padding: '0' }}>
@@ -161,14 +216,26 @@ export function ModifierProfilPasteur() {
                 <div className="dashboard-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
                   <div className="dashboard-grid-2" style={{ gap: '1.1rem' }}>
                     <label className="dashboard-field" style={{ margin: 0 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><User size={14} /> {t('dashboard.profile_name_label')}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><User size={14} /> {t('dashboard.profile_name_label')} *</span>
                       <input
                         id="nomAffichage"
                         value={nomAffichage}
-                        onChange={(e) => setNomAffichage(e.target.value)}
+                        onChange={(e) => {
+                          setNomAffichage(e.target.value);
+                          if (nomAffichageErreur) setNomAffichageErreur('');
+                        }}
                         placeholder={t('dashboard.profile_name_placeholder')}
-                        required
+                        maxLength={255}
+                        disabled={soumission}
+                        aria-invalid={!!nomAffichageErreur}
+                        aria-describedby={nomAffichageErreur ? 'nomAffichage-erreur' : undefined}
+                        style={nomAffichageErreur ? { borderColor: 'var(--danger)' } : undefined}
                       />
+                      {nomAffichageErreur && (
+                        <small id="nomAffichage-erreur" role="alert" style={{ color: 'var(--danger)', fontWeight: 600, marginTop: '0.3rem' }}>
+                          {nomAffichageErreur}
+                        </small>
+                      )}
                     </label>
 
                     <label className="dashboard-field" style={{ margin: 0 }}>
@@ -179,6 +246,8 @@ export function ModifierProfilPasteur() {
                         value={contact}
                         onChange={(e) => setContact(e.target.value)}
                         placeholder={t('dashboard.profile_contact_placeholder')}
+                        maxLength={50}
+                        disabled={soumission}
                       />
                     </label>
                   </div>
@@ -186,15 +255,18 @@ export function ModifierProfilPasteur() {
                   <div className="dashboard-field" style={{ margin: 0 }}>
                     <span>{t('dashboard.profile_avatar_label')}</span>
                     <FileUpload
+                      ref={avatarUploadRef}
                       mode="basic"
                       name="avatar"
                       accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
                       maxFileSize={5000000}
                       onSelect={(e) => choisirAvatar(e.files[0])}
                       onClear={() => choisirAvatar(null)}
+                      onValidationFail={gererEchecValidationFichier}
                       chooseLabel={avatar ? avatar.name : t('dashboard.profile_change_avatar')}
                       style={{ width: '100%', maxWidth: '340px' }}
                       className="p-button-outlined p-button-sm"
+                      disabled={soumission}
                     />
                     {/* Pas d'aperçu séparé ici : la photo en tête de page se
                         met déjà à jour en direct dès qu'un fichier est choisi. */}
@@ -213,6 +285,7 @@ export function ModifierProfilPasteur() {
                       onChange={(e) => setBiographie(e.target.value.slice(0, LIMITE_BIO))}
                       placeholder={t('dashboard.profile_bio_placeholder', 'Présentez-vous en quelques phrases : votre parcours, votre ministère, votre message...')}
                       rows={4}
+                      disabled={soumission}
                       style={{ resize: 'vertical', fontFamily: 'inherit' }}
                     />
                     <small className="champ-aide" style={{ color: 'var(--text-muted)' }}>
@@ -236,6 +309,8 @@ export function ModifierProfilPasteur() {
                       value={nomEglise}
                       onChange={(e) => setNomEglise(e.target.value)}
                       placeholder={t('dashboard.profile_church_placeholder')}
+                      maxLength={255}
+                      disabled={soumission}
                     />
                   </label>
 
@@ -243,15 +318,18 @@ export function ModifierProfilPasteur() {
                     <div className="dashboard-field" style={{ margin: 0, flex: '1 1 240px' }}>
                       <span>{t('dashboard.profile_logo_label')}</span>
                       <FileUpload
+                        ref={logoUploadRef}
                         mode="basic"
                         name="logoEglise"
                         accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
                         maxFileSize={5000000}
                         onSelect={(e) => choisirLogo(e.files[0])}
                         onClear={() => choisirLogo(null)}
+                        onValidationFail={gererEchecValidationFichier}
                         chooseLabel={logoEglise ? logoEglise.name : t('dashboard.profile_change_logo')}
                         style={{ width: '100%' }}
                         className="p-button-outlined p-button-sm"
+                        disabled={soumission}
                       />
                     </div>
                     {logoApercu && (
@@ -265,8 +343,19 @@ export function ModifierProfilPasteur() {
                 </div>
               </section>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
-                <button className="btn btn-dark" type="submit" disabled={soumission} style={{ minWidth: '160px', padding: '0.7rem 1.25rem', fontSize: '0.92rem', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
+                {estModifie && (
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={gererAnnuler}
+                    disabled={soumission}
+                    style={{ padding: '0.7rem 1.1rem', fontSize: '0.92rem' }}
+                  >
+                    {t('dashboard.cancel')}
+                  </button>
+                )}
+                <button className="btn btn-dark" type="submit" disabled={soumission || !estModifie} style={{ minWidth: '160px', padding: '0.7rem 1.25rem', fontSize: '0.92rem', justifyContent: 'center' }}>
                   {soumission ? (
                     <>
                       <Loader2 className="spinner" size={16} style={{ animation: 'spin 1s linear infinite', marginRight: '8px' }} />

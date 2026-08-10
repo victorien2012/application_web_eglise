@@ -530,6 +530,10 @@
     "profile_section_church": "Votre église",
     "profile_bio_label": "Biographie",
     "profile_bio_placeholder": "Présentez-vous en quelques phrases : votre parcours, votre ministère, votre message...",
-    "profile_bio_help": "Visible sur votre fiche publique et la liste des pasteurs."
+    "profile_bio_help": "Visible sur votre fiche publique et la liste des pasteurs.",
+    "profile_name_required": "Le nom d'affichage est obligatoire.",
+    "profile_file_rejected": "Fichier refusé",
+    "profile_file_too_large": "Le fichier est trop volumineux (5 Mo maximum).",
+    "profile_file_invalid_type": "Format non pris en charge (JPG, PNG, WEBP ou GIF)."
   }
 }

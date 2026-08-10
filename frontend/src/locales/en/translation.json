@@ -527,6 +527,10 @@
     "profile_section_church": "Your church",
     "profile_bio_label": "Biography",
     "profile_bio_placeholder": "Introduce yourself in a few sentences: your journey, your ministry, your message...",
-    "profile_bio_help": "Visible on your public profile and the pastors list."
+    "profile_bio_help": "Visible on your public profile and the pastors list.",
+    "profile_name_required": "The display name is required.",
+    "profile_file_rejected": "File rejected",
+    "profile_file_too_large": "The file is too large (5 MB maximum).",
+    "profile_file_invalid_type": "Unsupported format (JPG, PNG, WEBP or GIF)."
   }
 }
