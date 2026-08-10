@@ -10,6 +10,7 @@ import { DocumentIcon } from '../../../components/ui/DocumentIcon';
 import { Toast } from 'primereact/toast';
 import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import { verifierFichier } from '../../../utils/fichiers';
+import { extraireErreurServeur } from '../../../utils/erreurs';
 
 export function GestionDocuments() {
   const { t } = useTranslation();
@@ -106,14 +107,10 @@ export function GestionDocuments() {
     } catch (err) {
       // Les messages de validation du serveur (format refusé, fichier trop
       // lourd, abonnement expiré) étaient remplacés par un texte générique.
-      const donnees = err.response?.data;
-      const premierChamp = donnees && typeof donnees === 'object'
-        ? Object.values(donnees).flat().find((valeur) => typeof valeur === 'string')
-        : null;
       toast.current?.show({
         severity: 'error',
         summary: 'Erreur',
-        detail: donnees?.detail || premierChamp || "Erreur lors de l'enregistrement.",
+        detail: extraireErreurServeur(err, { repli: "Erreur lors de l'enregistrement." }),
         life: 6000,
       });
     } finally {

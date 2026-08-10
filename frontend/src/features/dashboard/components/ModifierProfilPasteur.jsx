@@ -6,6 +6,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
 import { Card } from '../../../components/ui/Card';
 import { verifierFichier } from '../../../utils/fichiers';
+import { extraireErreurServeur } from '../../../utils/erreurs';
 import './ModifierProfilPasteur.css';
 
 const LIMITE_BIO = 500;
@@ -91,12 +92,7 @@ export function ModifierProfilPasteur() {
   }
 
   function extraireErreur(error) {
-    const data = error.response?.data;
-    if (!data) return t('dashboard.profile_update_error');
-    if (typeof data === 'string') return data;
-    const premier = Object.values(data)[0];
-    if (Array.isArray(premier)) return premier[0];
-    return premier || t('dashboard.profile_update_error');
+    return extraireErreurServeur(error, { repli: t('dashboard.profile_update_error') });
   }
 
   function reinitialiserFichiers() {

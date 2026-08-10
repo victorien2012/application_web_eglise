@@ -31,6 +31,7 @@ import {
   miniatureYoutube,
 } from '../../../utils/youtube';
 import { verifierFichier as verifierFichierPartage } from '../../../utils/fichiers';
+import { extraireErreurServeur } from '../../../utils/erreurs';
 import './PastorDashboard.css';
 
 const FORMULAIRE_VIDE = {
@@ -500,14 +501,7 @@ export function PastorDashboard() {
   }
 
   function extraireErreurFormulaire(error) {
-    const details = error.response?.data;
-    if (!details) return t('dashboard.save_error');
-    if (typeof details === 'string') return details;
-    if (details.detail) return details.detail;
-    const premiereCle = Object.keys(details)[0];
-    const premiereValeur = details[premiereCle];
-    const message = Array.isArray(premiereValeur) ? premiereValeur[0] : premiereValeur;
-    return premiereCle ? `${premiereCle}: ${message}` : t('dashboard.save_error');
+    return extraireErreurServeur(error, { repli: t('dashboard.save_error'), avecNomChamp: true });
   }
 
   // Retourne un message d'erreur precis, ou '' si la source media convient.

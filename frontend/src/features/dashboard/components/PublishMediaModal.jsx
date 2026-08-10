@@ -4,6 +4,7 @@ import { X, Upload, Youtube, Link as LinkIcon, FileAudio, AlertCircle } from 'lu
 import { useTranslation } from 'react-i18next';
 import { extraireIdVideoYoutube, miniatureYoutube } from '../../../utils/youtube';
 import { verifierFichier } from '../../../utils/fichiers';
+import { extraireErreurServeur } from '../../../utils/erreurs';
 import './PublishMediaModal.css';
 
 // Mêmes limites que le champ audio de l'espace pasteur (PastorDashboard.jsx)
@@ -154,17 +155,7 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
         onClose();
       }, 1500);
     } catch (err) {
-      const detail = err.response?.data;
-      if (typeof detail === 'string') {
-        setError(detail);
-      } else if (detail?.detail) {
-        setError(detail.detail);
-      } else if (typeof detail === 'object') {
-        const messages = Object.entries(detail).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`);
-        setError(messages.join(' | '));
-      } else {
-        setError('Erreur lors de la publication.');
-      }
+      setError(extraireErreurServeur(err, { repli: 'Erreur lors de la publication.', tousLesChamps: true }));
     } finally {
       setLoading(false);
     }
