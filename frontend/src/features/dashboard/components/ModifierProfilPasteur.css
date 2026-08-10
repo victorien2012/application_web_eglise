@@ -1,0 +1,494 @@
+/* ==========================================================================
+   Espace pasteur — formulaire « Mon Profil »
+   --------------------------------------------------------------------------
+   Note thème sombre : --bg-alt et --bg-card ont la MÊME valeur en sombre
+   (#0f172a). Toute séparation visuelle passe donc par des bordures ou une
+   teinte translucide, jamais par un simple fond alterné qui serait invisible.
+   ========================================================================== */
+
+.profil-conteneur {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+/* Sélecteur doublé volontairement : Card applique .form-card { padding: 2rem }
+   et n'expose pas de prop style (elle est ignorée). Sans cette spécificité
+   supérieure, le bandeau ne serait pas pleine largeur et ses angles ne
+   seraient pas rognés par le rayon de la carte. */
+.form-card.profil-carte {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* --- Bandeau d'identité ------------------------------------------------- */
+
+.profil-banniere {
+  height: 112px;
+  background: var(--navbar-bg);
+  border-bottom: 3px solid var(--accent);
+  position: relative;
+  overflow: hidden;
+}
+
+.profil-banniere::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  background-image: radial-gradient(circle at 24px 24px, #fff 2px, transparent 0);
+  background-size: 48px 48px;
+}
+
+.profil-identite {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.25rem;
+  padding: 0 2rem 1.5rem;
+}
+
+.profil-identite-texte {
+  min-width: 0; /* sans quoi un nom très long élargit le conteneur */
+  padding-bottom: 0.25rem;
+}
+
+.profil-nom {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.profil-eglise-pastille {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+  padding: 0.25rem 0.8rem;
+  border: 1px solid rgba(var(--primary-rgb), 0.22);
+  border-radius: 99px;
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* --- Photo de profil cliquable ------------------------------------------
+   La photo EST le sélecteur : plus besoin d'un bouton « Changer la photo »
+   isolé plus bas dans le formulaire, sans lien visuel avec l'image qu'il
+   modifie. */
+
+.profil-avatar-bouton {
+  position: relative;
+  flex-shrink: 0;
+  width: 104px;
+  height: 104px;
+  margin-top: -52px;
+  padding: 4px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-card);
+  box-shadow: 0 8px 22px -8px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.profil-avatar-bouton:hover:not(:disabled),
+.profil-avatar-bouton:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px -8px rgba(0, 0, 0, 0.45);
+}
+
+.profil-avatar-bouton:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.profil-avatar-bouton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.profil-avatar-cadre {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--bg-alt);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profil-avatar-cadre img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.profil-avatar-surcouche {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: rgba(0, 31, 69, 0.72);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.profil-avatar-bouton:hover:not(:disabled) .profil-avatar-surcouche,
+.profil-avatar-bouton:focus-visible .profil-avatar-surcouche {
+  opacity: 1;
+}
+
+/* Pastille indiquant un fichier choisi mais pas encore enregistré. */
+.profil-pastille-attente {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+  background: var(--accent);
+  color: #001f45;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Corps du formulaire ------------------------------------------------ */
+
+.profil-corps {
+  padding: 1.75rem 2rem 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.profil-alerte {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(var(--danger-rgb), 0.35);
+  border-radius: 10px;
+  background: rgba(var(--danger-rgb), 0.1);
+  color: var(--danger);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.profil-formulaire {
+  display: flex;
+  flex-direction: column;
+}
+
+.profil-section + .profil-section {
+  margin-top: 1.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.profil-section-titre {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 1.15rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.profil-section-icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: rgba(var(--primary-rgb), 0.12);
+  color: var(--primary);
+}
+
+.profil-champs {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.profil-grille-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.15rem;
+}
+
+/* Champs : on repart des styles .dashboard-field du tableau de bord et on
+   ajoute les états manquants (focus visible, erreur, désactivé). */
+
+.profil-corps .dashboard-field input,
+.profil-corps .dashboard-field textarea {
+  width: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.profil-corps .dashboard-field input:focus,
+.profil-corps .dashboard-field textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.18);
+}
+
+.profil-corps .dashboard-field input:disabled,
+.profil-corps .dashboard-field textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.profil-corps .dashboard-field input.est-en-erreur {
+  border-color: var(--danger);
+}
+
+.profil-corps .dashboard-field input.est-en-erreur:focus {
+  box-shadow: 0 0 0 3px rgba(var(--danger-rgb), 0.18);
+}
+
+.profil-etiquette-ligne {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.profil-etiquette-ligne > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* .dashboard-field span (0-1-1) impose --pd-text-main à tous les libellés :
+   il faut une spécificité supérieure pour que l'astérisque reste rouge. */
+.profil-corps .dashboard-field span.profil-obligatoire {
+  color: var(--danger);
+}
+
+.profil-compteur {
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.profil-compteur.est-proche-limite {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.profil-erreur-champ {
+  margin-top: 0.35rem;
+  color: var(--danger);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.profil-textarea {
+  resize: vertical;
+  min-height: 104px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+/* --- Sélecteur de logo d'église ----------------------------------------- */
+
+.profil-logo-choix {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profil-logo-bouton {
+  position: relative;
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.profil-logo-bouton:hover:not(:disabled),
+.profil-logo-bouton:focus-visible {
+  border-color: var(--primary);
+  border-style: solid;
+  color: var(--primary);
+}
+
+.profil-logo-bouton:focus-visible {
+  outline: 3px solid rgba(var(--primary-rgb), 0.35);
+  outline-offset: 2px;
+}
+
+.profil-logo-bouton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.profil-logo-bouton img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.profil-logo-texte {
+  min-width: 0;
+}
+
+.profil-logo-nom {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.profil-logo-aide {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.profil-lien-retirer {
+  margin-top: 0.35rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--danger);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.profil-lien-retirer:hover {
+  opacity: 0.8;
+}
+
+/* --- Pied de formulaire -------------------------------------------------- */
+
+.profil-pied {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 1.75rem -2rem 0;
+  padding: 1.15rem 2rem;
+  border-top: 1px solid var(--border-color);
+  background: rgba(var(--primary-rgb), 0.04);
+}
+
+.profil-etat-modifie {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: auto;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.profil-point-modifie {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* --- Adaptatif ----------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .profil-identite {
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  .profil-corps {
+    padding: 1.5rem 1.25rem 0;
+  }
+
+  .profil-grille-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .profil-pied {
+    margin: 1.5rem -1.25rem 0;
+    padding: 1rem 1.25rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .profil-identite {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .profil-identite-texte {
+    padding-bottom: 0;
+  }
+
+  .profil-pied {
+    justify-content: stretch;
+  }
+
+  .profil-etat-modifie {
+    width: 100%;
+    margin-right: 0;
+    justify-content: center;
+  }
+
+  .profil-pied .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+/* Respect des préférences système : pas d'animation superflue. */
+@media (prefers-reduced-motion: reduce) {
+  .profil-avatar-bouton,
+  .profil-avatar-surcouche,
+  .profil-logo-bouton,
+  .profil-corps .dashboard-field input,
+  .profil-corps .dashboard-field textarea {
+    transition: none;
+  }
+
+  .profil-avatar-bouton:hover:not(:disabled),
+  .profil-avatar-bouton:focus-visible {
+    transform: none;
+  }
+}

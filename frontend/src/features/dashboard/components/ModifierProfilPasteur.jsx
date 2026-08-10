@@ -1,14 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { Toast } from 'primereact/toast';
-import { FileUpload } from 'primereact/fileupload';
-import { User, Church, Phone, Save, Loader2, FileText } from 'lucide-react';
+import { User, Church, Phone, Save, Loader2, FileText, Camera, Check, ImagePlus, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
 import { Card } from '../../../components/ui/Card';
-import '../../auth/pages/Auth.css'; // Pour réutiliser le composant auth-file-upload
+import './ModifierProfilPasteur.css';
 
 const LIMITE_BIO = 500;
+// Doit rester aligné sur EXTENSIONS_AVATAR / TAILLE_MAX_AVATAR_MO du serveur
+// (backend/api/serializers/utilisateurs.py) : un fichier accepté ici mais
+// refusé là-bas ne produirait qu'une erreur tardive et peu lisible.
+const EXTENSIONS_IMAGE = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+const TAILLE_MAX_OCTETS = 5 * 1000 * 1000;
 
 export function ModifierProfilPasteur() {
   const { pasteur, actualiserProfilPasteur } = useAuth();
@@ -31,8 +35,8 @@ export function ModifierProfilPasteur() {
   const [nomAffichageErreur, setNomAffichageErreur] = useState('');
   const toast = useRef(null);
   const [soumission, setSoumission] = useState(false);
-  const avatarUploadRef = useRef(null);
-  const logoUploadRef = useRef(null);
+  const avatarInputRef = useRef(null);
+  const logoInputRef = useRef(null);
 
   useEffect(() => () => {
     if (avatarUrlRef.current) URL.revokeObjectURL(avatarUrlRef.current);
@@ -53,19 +57,38 @@ export function ModifierProfilPasteur() {
     setLogoApercu(logoUrlRef.current);
   }
 
-  // PrimeReact rejette silencieusement un fichier trop lourd ou d'un type non
-  // autorisé (accept/maxFileSize) : sans ce retour, le bouton semblait ne
-  // rien faire et rien n'expliquait pourquoi le fichier n'apparaissait pas.
-  function gererEchecValidationFichier(fichier) {
-    const troplourd = fichier && fichier.size > 5 * 1000 * 1000;
-    toast.current?.show({
-      severity: 'error',
-      summary: t('dashboard.profile_file_rejected', 'Fichier refusé'),
-      detail: troplourd
-        ? t('dashboard.profile_file_too_large', 'Le fichier est trop volumineux (5 Mo maximum).')
-        : t('dashboard.profile_file_invalid_type', 'Format non pris en charge (JPG, PNG, WEBP ou GIF).'),
-      life: 6000,
-    });
+  // Un fichier trop lourd ou d'un type non autorisé doit être signalé
+  // immédiatement : sinon le bouton semble ne rien faire, ou l'erreur
+  // n'apparaît qu'après l'envoi, renvoyée par le serveur.
+  function validerImage(fichier) {
+    const extension = fichier.name.split('.').pop()?.toLowerCase();
+    if (!EXTENSIONS_IMAGE.includes(extension)) {
+      return t('dashboard.profile_file_invalid_type', 'Format non pris en charge (JPG, PNG, WEBP ou GIF).');
+    }
+    if (fichier.size > TAILLE_MAX_OCTETS) {
+      return t('dashboard.profile_file_too_large', 'Le fichier est trop volumineux (5 Mo maximum).');
+    }
+    return null;
+  }
+
+  function gererFichier(evenement, appliquer) {
+    const fichier = evenement.target.files?.[0];
+    // Réinitialiser tout de suite : sans cela, resélectionner le même fichier
+    // après l'avoir retiré ne déclencherait aucun évènement change.
+    evenement.target.value = '';
+    if (!fichier) return;
+
+    const messageErreur = validerImage(fichier);
+    if (messageErreur) {
+      toast.current?.show({
+        severity: 'error',
+        summary: t('dashboard.profile_file_rejected', 'Fichier refusé'),
+        detail: messageErreur,
+        life: 6000,
+      });
+      return;
+    }
+    appliquer(fichier);
   }
 
   function extraireErreur(error) {
@@ -80,8 +103,8 @@ export function ModifierProfilPasteur() {
   function reinitialiserFichiers() {
     choisirAvatar(null);
     choisirLogo(null);
-    avatarUploadRef.current?.clear();
-    logoUploadRef.current?.clear();
+    if (avatarInputRef.current) avatarInputRef.current.value = '';
+    if (logoInputRef.current) logoInputRef.current.value = '';
   }
 
   // Aucun moyen jusqu'ici d'abandonner une modification en cours : revient
@@ -133,8 +156,6 @@ export function ModifierProfilPasteur() {
     }
   }
 
-  const restantBio = LIMITE_BIO - biographie.length;
-
   // Pas de bouton Enregistrer actif tant que rien n'a réellement changé :
   // évite une requête PATCH inutile et donne un signal clair de l'état du
   // formulaire (rien à perdre / rien à sauvegarder).
@@ -147,76 +168,92 @@ export function ModifierProfilPasteur() {
     !!logoEglise
   );
 
+  const avatarAffiche = avatarApercu || pasteur?.avatar;
+  const logoAffiche = logoApercu || pasteur?.logo_eglise;
+
   return (
-    <div className="dashboard-tab-content" style={{ padding: '0' }}>
+    <div className="dashboard-tab-content" style={{ padding: 0 }}>
       <Toast ref={toast} />
 
-      <div style={{ maxWidth: '760px', margin: '0 auto' }}>
-        <Card style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="profil-conteneur">
+        <Card className="profil-carte">
           {/* En-tête d'identité : bande institutionnelle fixe (mêmes tons que
               la barre de navigation) plutôt qu'un dégradé arbitraire, pour
               rester cohérent avec le reste du site. */}
-          <div style={{ position: 'relative', background: 'var(--bg-card)' }}>
-            <div style={{ height: '104px', background: 'var(--navbar-bg)', borderBottom: '3px solid var(--accent)', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', inset: 0, opacity: 0.12, backgroundImage: 'radial-gradient(circle at 24px 24px, white 2px, transparent 0)', backgroundSize: '48px 48px' }} />
-            </div>
+          <div className="profil-banniere" />
 
-            <div style={{ padding: '0 2rem 1.25rem', position: 'relative', display: 'flex', alignItems: 'flex-end', gap: '1.25rem', flexWrap: 'wrap' }}>
-              {/* Photo : forme circulaire, pour la distinguer d'un coup d'œil
-                  du logo d'église (rectangulaire) plus bas dans le formulaire. */}
-              <div style={{
-                marginTop: '-44px',
-                width: '88px',
-                height: '88px',
-                borderRadius: '50%',
-                padding: '4px',
-                background: 'var(--bg-card)',
-                boxShadow: '0 6px 18px -6px rgba(0, 0, 0, 0.25)',
-                position: 'relative',
-                zIndex: 10,
-                flexShrink: 0
-              }}>
-                <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', backgroundColor: 'var(--bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {avatarApercu || pasteur?.avatar ? (
-                    <img src={avatarApercu || pasteur.avatar} alt={pasteur?.nom_affichage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <User size={38} color="var(--text-muted)" />
-                  )}
-                </div>
-              </div>
+          <div className="profil-identite">
+            {/* La photo est elle-même le sélecteur : un bouton « Changer la
+                photo » isolé plus bas n'avait aucun lien visuel avec l'image
+                qu'il modifiait. */}
+            <button
+              type="button"
+              className="profil-avatar-bouton"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={soumission}
+              aria-label={t('dashboard.profile_change_avatar')}
+              title={t('dashboard.profile_change_avatar')}
+            >
+              <span className="profil-avatar-cadre">
+                {avatarAffiche ? (
+                  <img src={avatarAffiche} alt="" />
+                ) : (
+                  <User size={42} color="var(--text-muted)" aria-hidden="true" />
+                )}
+                <span className="profil-avatar-surcouche" aria-hidden="true">
+                  <Camera size={20} />
+                  {t('dashboard.profile_change_short', 'Modifier')}
+                </span>
+              </span>
+              {avatar && (
+                <span className="profil-pastille-attente" aria-hidden="true">
+                  <Check size={14} strokeWidth={3} />
+                </span>
+              )}
+            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
+              hidden
+              onChange={(e) => gererFichier(e, choisirAvatar)}
+            />
 
-              <div style={{ paddingBottom: '0.25rem' }}>
-                <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                  {pasteur?.nom_affichage || t('profile.default_user')}
-                </h2>
-                <div style={{ marginTop: '0.4rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--primary)', fontSize: '0.82rem', fontWeight: 600, backgroundColor: 'rgba(var(--primary-rgb), 0.1)', padding: '0.25rem 0.8rem', borderRadius: '99px', border: '1px solid rgba(var(--primary-rgb), 0.2)' }}>
-                  <Church size={13} />
-                  {pasteur?.nom_eglise || 'Aucune église spécifiée'}
-                </div>
-              </div>
+            <div className="profil-identite-texte">
+              <h2 className="profil-nom">
+                {pasteur?.nom_affichage || t('profile.default_user')}
+              </h2>
+              <span className="profil-eglise-pastille">
+                <Church size={13} aria-hidden="true" />
+                {pasteur?.nom_eglise || t('dashboard.profile_no_church', 'Aucune église spécifiée')}
+              </span>
             </div>
           </div>
 
-          {/* Formulaire */}
-          <div style={{ padding: '1.75rem 2rem 2rem', borderTop: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
+          <div className="profil-corps">
             {erreur && (
-              <div role="alert" style={{ padding: '0.85rem 1rem', background: 'rgba(var(--danger-rgb), 0.1)', color: 'var(--danger)', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', fontWeight: 600 }}>
-                {erreur}
+              <div role="alert" className="profil-alerte">
+                <AlertCircle size={18} aria-hidden="true" style={{ flexShrink: 0 }} />
+                <span>{erreur}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <form className="profil-formulaire" onSubmit={handleSubmit}>
 
               {/* ---- Section : identité personnelle ---- */}
-              <section>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0 1rem', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                  <User size={14} /> {t('dashboard.profile_section_you', 'Vos informations')}
+              <section className="profil-section">
+                <h3 className="profil-section-titre">
+                  <span className="profil-section-icone" aria-hidden="true"><User size={15} /></span>
+                  {t('dashboard.profile_section_you', 'Vos informations')}
                 </h3>
 
-                <div className="dashboard-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-                  <div className="dashboard-grid-2" style={{ gap: '1.1rem' }}>
-                    <label className="dashboard-field" style={{ margin: 0 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><User size={14} /> {t('dashboard.profile_name_label')} *</span>
+                <div className="profil-champs">
+                  <div className="profil-grille-2">
+                    <label className="dashboard-field">
+                      <span>
+                        <User size={14} /> {t('dashboard.profile_name_label')}
+                        <span className="profil-obligatoire" aria-hidden="true"> *</span>
+                      </span>
                       <input
                         id="nomAffichage"
                         value={nomAffichage}
@@ -227,19 +264,20 @@ export function ModifierProfilPasteur() {
                         placeholder={t('dashboard.profile_name_placeholder')}
                         maxLength={255}
                         disabled={soumission}
+                        required
                         aria-invalid={!!nomAffichageErreur}
                         aria-describedby={nomAffichageErreur ? 'nomAffichage-erreur' : undefined}
-                        style={nomAffichageErreur ? { borderColor: 'var(--danger)' } : undefined}
+                        className={nomAffichageErreur ? 'est-en-erreur' : undefined}
                       />
                       {nomAffichageErreur && (
-                        <small id="nomAffichage-erreur" role="alert" style={{ color: 'var(--danger)', fontWeight: 600, marginTop: '0.3rem' }}>
+                        <small id="nomAffichage-erreur" role="alert" className="profil-erreur-champ">
                           {nomAffichageErreur}
                         </small>
                       )}
                     </label>
 
-                    <label className="dashboard-field" style={{ margin: 0 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Phone size={14} /> {t('dashboard.profile_contact_label')}</span>
+                    <label className="dashboard-field">
+                      <span><Phone size={14} /> {t('dashboard.profile_contact_label')}</span>
                       <input
                         id="contact"
                         type="tel"
@@ -252,43 +290,23 @@ export function ModifierProfilPasteur() {
                     </label>
                   </div>
 
-                  <div className="dashboard-field" style={{ margin: 0 }}>
-                    <span>{t('dashboard.profile_avatar_label')}</span>
-                    <FileUpload
-                      ref={avatarUploadRef}
-                      mode="basic"
-                      name="avatar"
-                      accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
-                      maxFileSize={5000000}
-                      onSelect={(e) => choisirAvatar(e.files[0])}
-                      onClear={() => choisirAvatar(null)}
-                      onValidationFail={gererEchecValidationFichier}
-                      chooseLabel={avatar ? avatar.name : t('dashboard.profile_change_avatar')}
-                      style={{ width: '100%', maxWidth: '340px' }}
-                      className="p-button-outlined p-button-sm"
-                      disabled={soumission}
-                    />
-                    {/* Pas d'aperçu séparé ici : la photo en tête de page se
-                        met déjà à jour en direct dès qu'un fichier est choisi. */}
-                  </div>
-
-                  <label className="dashboard-field" style={{ margin: 0 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><FileText size={14} /> {t('dashboard.profile_bio_label', 'Biographie')}</span>
-                      <small style={{ color: restantBio < 0 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: 500 }}>
+                  <label className="dashboard-field">
+                    <span className="profil-etiquette-ligne">
+                      <span><FileText size={14} /> {t('dashboard.profile_bio_label', 'Biographie')}</span>
+                      <small className={`profil-compteur${restantBioProche(biographie) ? ' est-proche-limite' : ''}`}>
                         {biographie.length} / {LIMITE_BIO}
                       </small>
                     </span>
                     <textarea
                       id="biographie"
+                      className="profil-textarea"
                       value={biographie}
                       onChange={(e) => setBiographie(e.target.value.slice(0, LIMITE_BIO))}
                       placeholder={t('dashboard.profile_bio_placeholder', 'Présentez-vous en quelques phrases : votre parcours, votre ministère, votre message...')}
                       rows={4}
                       disabled={soumission}
-                      style={{ resize: 'vertical', fontFamily: 'inherit' }}
                     />
-                    <small className="champ-aide" style={{ color: 'var(--text-muted)' }}>
+                    <small className="champ-aide">
                       {t('dashboard.profile_bio_help', 'Visible sur votre fiche publique et la liste des pasteurs.')}
                     </small>
                   </label>
@@ -296,14 +314,15 @@ export function ModifierProfilPasteur() {
               </section>
 
               {/* ---- Section : église ---- */}
-              <section style={{ paddingTop: '1.75rem', borderTop: '1px solid var(--border-color)' }}>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0 1rem', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                  <Church size={14} /> {t('dashboard.profile_section_church', 'Votre église')}
+              <section className="profil-section">
+                <h3 className="profil-section-titre">
+                  <span className="profil-section-icone" aria-hidden="true"><Church size={15} /></span>
+                  {t('dashboard.profile_section_church', 'Votre église')}
                 </h3>
 
-                <div className="dashboard-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-                  <label className="dashboard-field" style={{ margin: 0 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Church size={14} /> {t('dashboard.profile_church_label')}</span>
+                <div className="profil-champs">
+                  <label className="dashboard-field">
+                    <span><Church size={14} /> {t('dashboard.profile_church_label')}</span>
                     <input
                       id="nomEglise"
                       value={nomEglise}
@@ -314,48 +333,68 @@ export function ModifierProfilPasteur() {
                     />
                   </label>
 
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
-                    <div className="dashboard-field" style={{ margin: 0, flex: '1 1 240px' }}>
-                      <span>{t('dashboard.profile_logo_label')}</span>
-                      <FileUpload
-                        ref={logoUploadRef}
-                        mode="basic"
-                        name="logoEglise"
-                        accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
-                        maxFileSize={5000000}
-                        onSelect={(e) => choisirLogo(e.files[0])}
-                        onClear={() => choisirLogo(null)}
-                        onValidationFail={gererEchecValidationFichier}
-                        chooseLabel={logoEglise ? logoEglise.name : t('dashboard.profile_change_logo')}
-                        style={{ width: '100%' }}
-                        className="p-button-outlined p-button-sm"
+                  <div className="dashboard-field">
+                    <span>{t('dashboard.profile_logo_label')}</span>
+                    <div className="profil-logo-choix">
+                      {/* Affiche aussi le logo DÉJÀ enregistré : auparavant une
+                          vignette n'apparaissait que pour un nouveau fichier,
+                          impossible donc de savoir quel logo était en place. */}
+                      <button
+                        type="button"
+                        className="profil-logo-bouton"
+                        onClick={() => logoInputRef.current?.click()}
                         disabled={soumission}
+                        aria-label={t('dashboard.profile_change_logo')}
+                        title={t('dashboard.profile_change_logo')}
+                      >
+                        {logoAffiche
+                          ? <img src={logoAffiche} alt="" />
+                          : <ImagePlus size={24} aria-hidden="true" />}
+                      </button>
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
+                        hidden
+                        onChange={(e) => gererFichier(e, choisirLogo)}
                       />
+
+                      <div className="profil-logo-texte">
+                        <span className="profil-logo-nom">
+                          {logoEglise ? logoEglise.name : t('dashboard.profile_change_logo')}
+                        </span>
+                        <small className="profil-logo-aide">
+                          {t('dashboard.profile_image_help', 'JPG, PNG, WEBP ou GIF — 5 Mo maximum.')}
+                        </small>
+                        {logoEglise && (
+                          <button type="button" className="profil-lien-retirer" onClick={() => choisirLogo(null)}>
+                            {t('dashboard.profile_remove_file', 'Retirer le fichier choisi')}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    {logoApercu && (
-                      <img
-                        src={logoApercu}
-                        alt="Aperçu du nouveau logo"
-                        style={{ width: '52px', height: '52px', borderRadius: '10px', objectFit: 'cover', border: '1px solid var(--border-color)', flexShrink: 0 }}
-                      />
-                    )}
                   </div>
                 </div>
               </section>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
+              <div className="profil-pied">
+                {estModifie && (
+                  <span className="profil-etat-modifie">
+                    <span className="profil-point-modifie" aria-hidden="true" />
+                    {t('dashboard.profile_unsaved', 'Modifications non enregistrées')}
+                  </span>
+                )}
                 {estModifie && (
                   <button
                     type="button"
                     className="btn btn-outline"
                     onClick={gererAnnuler}
                     disabled={soumission}
-                    style={{ padding: '0.7rem 1.1rem', fontSize: '0.92rem' }}
                   >
                     {t('dashboard.cancel')}
                   </button>
                 )}
-                <button className="btn btn-dark" type="submit" disabled={soumission || !estModifie} style={{ minWidth: '160px', padding: '0.7rem 1.25rem', fontSize: '0.92rem', justifyContent: 'center' }}>
+                <button className="btn btn-dark" type="submit" disabled={soumission || !estModifie}>
                   {soumission ? (
                     <>
                       <Loader2 className="spinner" size={16} style={{ animation: 'spin 1s linear infinite', marginRight: '8px' }} />
@@ -375,4 +414,10 @@ export function ModifierProfilPasteur() {
       </div>
     </div>
   );
+}
+
+// Le compteur passe en alerte sur les 50 derniers caractères, pour prévenir
+// avant que la saisie ne soit tronquée.
+function restantBioProche(valeur) {
+  return LIMITE_BIO - valeur.length <= 50;
 }

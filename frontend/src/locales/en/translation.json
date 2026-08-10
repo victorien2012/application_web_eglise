@@ -531,6 +531,11 @@
     "profile_name_required": "The display name is required.",
     "profile_file_rejected": "File rejected",
     "profile_file_too_large": "The file is too large (5 MB maximum).",
-    "profile_file_invalid_type": "Unsupported format (JPG, PNG, WEBP or GIF)."
+    "profile_file_invalid_type": "Unsupported format (JPG, PNG, WEBP or GIF).",
+    "profile_change_short": "Edit",
+    "profile_no_church": "No church specified",
+    "profile_image_help": "JPG, PNG, WEBP or GIF — 5 MB maximum.",
+    "profile_remove_file": "Remove selected file",
+    "profile_unsaved": "Unsaved changes"
   }
 }
