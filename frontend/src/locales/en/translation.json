@@ -522,6 +522,11 @@
     "profile_change_avatar": "Change picture",
     "profile_optional": "Optional",
     "profile_logo_label": "Church Logo",
-    "profile_change_logo": "Change logo"
+    "profile_change_logo": "Change logo",
+    "profile_section_you": "Your information",
+    "profile_section_church": "Your church",
+    "profile_bio_label": "Biography",
+    "profile_bio_placeholder": "Introduce yourself in a few sentences: your journey, your ministry, your message...",
+    "profile_bio_help": "Visible on your public profile and the pastors list."
   }
 }

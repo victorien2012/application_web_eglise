@@ -525,6 +525,11 @@
     "profile_change_avatar": "Changer la photo",
     "profile_optional": "Optionnel",
     "profile_logo_label": "Logo de l'église",
-    "profile_change_logo": "Changer le logo"
+    "profile_change_logo": "Changer le logo",
+    "profile_section_you": "Vos informations",
+    "profile_section_church": "Votre église",
+    "profile_bio_label": "Biographie",
+    "profile_bio_placeholder": "Présentez-vous en quelques phrases : votre parcours, votre ministère, votre message...",
+    "profile_bio_help": "Visible sur votre fiche publique et la liste des pasteurs."
   }
 }
