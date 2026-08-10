@@ -38,7 +38,6 @@ const FORMULAIRE_VIDE = {
   type_media: 'AUDIO',
   url_video: '',
   nom_predicateur: '',
-  duree_secondes: 0,
   est_publie: true,
   date_publication: '',
   date_predication: '',
@@ -87,17 +86,6 @@ function verifierFichier(cle, fichier) {
     return `Fichier trop volumineux (${taille} Mo). Maximum : ${contrainte.tailleMaxMo} Mo.`;
   }
   return '';
-}
-
-function formaterDuree(secondes) {
-  const total = Number(secondes) || 0;
-  if (total <= 0) return '';
-  const heures = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  const reste = total % 60;
-  return [heures ? `${heures} h` : '', minutes ? `${minutes} min` : '', reste ? `${reste} s` : '']
-    .filter(Boolean)
-    .join(' ');
 }
 
 export function PastorDashboard() {
@@ -460,7 +448,6 @@ export function PastorDashboard() {
       type_media: predication.type_media,
       url_video: predication.url_video || '',
       nom_predicateur: predication.nom_predicateur || '',
-      duree_secondes: predication.duree_secondes,
       est_publie: predication.est_publie,
       date_publication: isoVersInputLocal(predication.date_publication),
       date_predication: predication.date_predication || '',
@@ -489,11 +476,12 @@ export function PastorDashboard() {
     if (!aDesFichiers) {
       const corpsJson = {
         ...formulaire,
-        duree_secondes: Number(formulaire.duree_secondes) || 0,
+        titre: formulaire.titre.trim(),
+        description: formulaire.description.trim(),
         serie: formulaire.serie || null,
         date_publication: formulaire.date_publication || null,
         date_predication: formulaire.date_predication || null,
-        nom_predicateur: formulaire.nom_predicateur || null,
+        nom_predicateur: formulaire.nom_predicateur.trim() || null,
       };
       // En edition, un champ vide doit effacer la valeur enregistree : en
       // l'omettant, il etait impossible de retirer un lien YouTube deja pose.
@@ -502,12 +490,11 @@ export function PastorDashboard() {
     }
 
     const corps = new FormData();
-    corps.append('titre', formulaire.titre);
-    corps.append('description', formulaire.description || '');
+    corps.append('titre', formulaire.titre.trim());
+    corps.append('description', formulaire.description.trim());
     corps.append('type_media', formulaire.type_media);
     if (formulaire.url_video || enEdition) corps.append('url_video', formulaire.url_video || '');
-    if (formulaire.nom_predicateur) corps.append('nom_predicateur', formulaire.nom_predicateur);
-    corps.append('duree_secondes', Number(formulaire.duree_secondes) || 0);
+    if (formulaire.nom_predicateur.trim()) corps.append('nom_predicateur', formulaire.nom_predicateur.trim());
     corps.append('est_publie', formulaire.est_publie ? 'true' : 'false');
     if (formulaire.date_publication) corps.append('date_publication', formulaire.date_publication);
     if (formulaire.date_predication) corps.append('date_predication', formulaire.date_predication);
@@ -567,6 +554,14 @@ export function PastorDashboard() {
     event.preventDefault();
     setErreurFormulaire('');
     setMessageFormulaire('');
+
+    // L'attribut required natif laisse passer un titre compose uniquement
+    // d'espaces (une chaine non vide a ses yeux) ; le serveur le rejette
+    // ensuite via trim_whitespace, mais seulement apres un aller-retour reseau.
+    if (!formulaire.titre.trim()) {
+      setErreurFormulaire(t('dashboard.form_title_required', 'Le titre est obligatoire.'));
+      return;
+    }
 
     const erreurMedia = erreurSourceMedia();
     if (erreurMedia) {
@@ -920,6 +915,7 @@ export function PastorDashboard() {
                       value={formulaire.titre}
                       onChange={(e) => mettreAJourChamp('titre', e.target.value)}
                       placeholder={t('dashboard.form_title_placeholder')}
+                      maxLength={255}
                       required
                     />
                   </label>
@@ -1058,6 +1054,7 @@ export function PastorDashboard() {
                       value={formulaire.nom_predicateur || ''}
                       onChange={(e) => mettreAJourChamp('nom_predicateur', e.target.value)}
                       placeholder={t('dashboard.form_preacher_placeholder')}
+                      maxLength={255}
                     />
                     <small className="champ-aide">
                       {t('dashboard.form_preacher_help')}
@@ -1089,25 +1086,6 @@ export function PastorDashboard() {
                     </small>
                   </label>
                 </div>
-
-                <div className="dashboard-field">
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={13}/> {t('dashboard.form_duration_label')}</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formulaire.duree_secondes || ''}
-                    onChange={(e) => mettreAJourChamp('duree_secondes', e.target.value)}
-                    placeholder={t('dashboard.form_duration_placeholder')}
-                    style={{ maxWidth: '300px' }}
-                  />
-                  <small className="champ-aide">
-                    {t('dashboard.form_duration_help')}
-                    {formaterDuree(formulaire.duree_secondes)
-                      ? ` — soit ${formaterDuree(formulaire.duree_secondes)}.`
-                      : ''}
-                  </small>
-                </div>
-
 
                 {(formulaire.type_media === 'VIDEO' || formulaire.type_media === 'BOTH') && formulaire.url_video ? (
                   <div className="info-banner-premium">
