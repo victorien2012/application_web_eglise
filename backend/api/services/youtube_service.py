@@ -10,18 +10,24 @@ logger = logging.getLogger(__name__)
 def resoudre_channel_id_youtube(service, lien):
     """Deduit l'identifiant de chaine YouTube (UC...) depuis un lien fourni par le pasteur.
 
-    Gere : /channel/UC..., un identifiant UC... brut, un @handle, ou /user/NOM.
+    Gere : /channel/UC..., un identifiant UC... brut, un @handle, /user/NOM et /c/NOM.
     """
-    correspondance = re.search(r'(UC[\w-]{22})', lien)
+    lien = (lien or '').strip()
+
+    # L'identifiant n'est reconnu que dans un contexte sans ambiguite : chemin
+    # /channel/ ou saisie brute. Une recherche libre sur tout le lien pouvait
+    # capturer une sous-chaine d'un handle commencant par « UC ».
+    correspondance = re.search(r'/channel/(UC[\w-]{22})', lien)
     if correspondance:
         return correspondance.group(1)
+    if re.fullmatch(r'UC[\w-]{22}', lien):
+        return lien
 
     correspondance = re.search(r'@([\w.\-]+)', lien)
     if correspondance:
-        reponse = service.channels().list(part='id', forHandle='@' + correspondance.group(1)).execute()
-        elements = reponse.get('items')
-        if elements:
-            return elements[0]['id']
+        identifiant = _chercher_par_handle(service, correspondance.group(1))
+        if identifiant:
+            return identifiant
 
     correspondance = re.search(r'/user/([\w\-]+)', lien)
     if correspondance:
@@ -30,6 +36,40 @@ def resoudre_channel_id_youtube(service, lien):
         if elements:
             return elements[0]['id']
 
+    # URL personnalisee historique /c/NOM : l'API n'expose aucune recherche
+    # directe, mais YouTube a migre la plupart de ces noms vers un handle
+    # identique. On tente donc la resolution par handle avant d'abandonner.
+    correspondance = re.search(r'/c/([\w.\-]+)', lien)
+    if correspondance:
+        identifiant = _chercher_par_handle(service, correspondance.group(1))
+        if identifiant:
+            return identifiant
+
+    return None
+
+
+def _chercher_par_handle(service, handle):
+    """Resout un handle YouTube (sans le @) en identifiant de chaine, ou None."""
+    reponse = service.channels().list(part='id', forHandle='@' + handle).execute()
+    elements = reponse.get('items')
+    return elements[0]['id'] if elements else None
+
+
+def motif_blocage_import(pasteur):
+    """Retourne le motif empechant l'import pour ce pasteur, ou None s'il est autorise.
+
+    Le meme controle existe dans la commande import_youtube_videos, mais il s'y
+    execute DANS le thread detache : la CommandError levee n'y est que
+    journalisee, alors que la vue a deja repondu « Import demarre ». Verifier
+    en amont permet de refuser franchement la demande au lieu de promettre un
+    import qui n'aura jamais lieu.
+    """
+    souscription = getattr(pasteur, 'souscription', None)
+    if souscription is not None and not souscription.est_active:
+        return (
+            "Votre abonnement a expiré : l'import de vidéos est suspendu. "
+            "Renouvelez votre forfait pour relancer la synchronisation."
+        )
     return None
 
 

@@ -25,6 +25,7 @@ from api.services.email_service import (
 )
 from api.services.youtube_service import (
     lancer_import_youtube_async,
+    motif_blocage_import,
     resoudre_channel_id_youtube,
 )
 
@@ -108,6 +109,10 @@ class PasteurViewSet(viewsets.ModelViewSet):
                 {"lien_youtube": "Le lien de la chaîne YouTube est requis."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        blocage = motif_blocage_import(pasteur)
+        if blocage:
+            return Response({"detail": blocage}, status=status.HTTP_402_PAYMENT_REQUIRED)
 
         api_key = os.environ.get('GOOGLE_API_KEY')
         if not api_key:
@@ -280,6 +285,12 @@ class PasteurViewSet(viewsets.ModelViewSet):
                 {"lien_youtube": "Le lien de la chaîne YouTube est requis."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # Avant toute promesse d'import : un abonnement expiré fait echouer la
+        # commande une fois dans le thread, sans que le pasteur en soit informe.
+        blocage = motif_blocage_import(pasteur)
+        if blocage:
+            return Response({"detail": blocage}, status=status.HTTP_402_PAYMENT_REQUIRED)
 
         api_key = os.environ.get('GOOGLE_API_KEY')
         if not api_key:

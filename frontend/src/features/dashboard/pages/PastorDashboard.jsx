@@ -25,6 +25,11 @@ import { DashboardSidebar } from '../components/DashboardSidebar';
 import { DashboardTopbar } from '../components/DashboardTopbar';
 import { DashboardOverviewTab } from '../components/DashboardOverviewTab';
 import { AbonnementPasteur } from './AbonnementPasteur';
+import {
+  estLienChaineValide,
+  extraireIdVideoYoutube,
+  miniatureYoutube,
+} from '../../../utils/youtube';
 import './PastorDashboard.css';
 
 const FORMULAIRE_VIDE = {
@@ -297,17 +302,29 @@ export function PastorDashboard() {
     if (pasteur?.lien_youtube) setLienChaine(pasteur.lien_youtube);
   }, [pasteur]);
 
-  async function handleSynchronisation() {
+  async function handleSynchronisation(event) {
+    event?.preventDefault();
     setSyncErreur('');
     setSyncMessage('');
-    if (!lienChaine.trim()) {
+    const lien = lienChaine.trim();
+    if (!lien) {
       setSyncErreur(t('dashboard.youtube_link_required'));
+      return;
+    }
+    // Verifie le format avant l'appel : un lien non reconnu revenait sinon
+    // avec un « Chaine introuvable » generique apres un aller-retour reseau,
+    // sans dire quels formats sont acceptes.
+    if (!estLienChaineValide(lien)) {
+      setSyncErreur(t(
+        'dashboard.sync_link_format_error',
+        "Ce lien n'est pas reconnu. Utilisez l'une de ces formes : youtube.com/@identifiant, youtube.com/channel/UC…, youtube.com/c/nom ou youtube.com/user/nom."
+      ));
       return;
     }
     setSyncEnCours(true);
     try {
       const { data } = await api.post('/pasteurs/synchroniser_youtube/', {
-        lien_youtube: lienChaine.trim(),
+        lien_youtube: lien,
       });
       setSyncMessage(data.detail || t('dashboard.import_started'));
     } catch (error) {
@@ -573,6 +590,12 @@ export function PastorDashboard() {
   }
 
 
+
+  // Recalculés à chaque rendu : figés à l'ouverture, l'aperçu et l'aide
+  // cesseraient de refléter la saisie en cours.
+  const lienChaineReconnue = estLienChaineValide(lienChaine);
+  const idVideoSaisie = extraireIdVideoYoutube(formulaire.url_video);
+  const lienVideoNonReconnu = Boolean(formulaire.url_video?.trim()) && !idVideoSaisie;
 
   if (erreurStats) {
     return (
@@ -928,10 +951,44 @@ export function PastorDashboard() {
                         value={formulaire.url_video || ''}
                         onChange={(e) => mettreAJourChamp('url_video', e.target.value)}
                         placeholder="https://www.youtube.com/watch?v=..."
+                        aria-invalid={lienVideoNonReconnu}
+                        aria-describedby={lienVideoNonReconnu ? 'url-video-erreur' : undefined}
                       />
                       <small className="champ-aide">
                         {t('dashboard.form_youtube_help')}
                       </small>
+
+                      {/* Le serveur n'enregistre youtube_id que si l'URL
+                          correspond à l'un de ses motifs. Sans ce retour, un
+                          lien mal formé était accepté puis stocké sans
+                          identifiant : pas de dédoublonnage, et un lecteur
+                          incapable d'afficher la vidéo. */}
+                      {lienVideoNonReconnu ? (
+                        <small id="url-video-erreur" className="dashboard-error" role="alert">
+                          {t(
+                            'dashboard.form_youtube_invalid',
+                            "Lien YouTube non reconnu. Formats acceptés : /watch?v=…, youtu.be/…, /embed/… ou /shorts/…"
+                          )}
+                        </small>
+                      ) : null}
+
+                      {idVideoSaisie ? (
+                        // Pas de loading="lazy" : l'aperçu répond à une saisie
+                        // en cours et se trouve souvent sous la ligne de
+                        // flottaison, où il resterait vide jusqu'au défilement.
+                        // onError masque la vignette si l'identifiant est bien
+                        // formé mais ne correspond à aucune vidéo.
+                        <span className="apercu-youtube">
+                          <img
+                            src={miniatureYoutube(idVideoSaisie)}
+                            alt=""
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                          <small className="champ-aide">
+                            {t('dashboard.form_youtube_preview', 'Vidéo détectée — vérifiez qu\'il s\'agit de la bonne.')}
+                          </small>
+                        </span>
+                      ) : null}
                     </label>
 
                     {/* Le televersement de fichier video etait gere par le code
@@ -1131,17 +1188,29 @@ export function PastorDashboard() {
               </Card>
             ) : (
             <Card>
-              <div className="dashboard-form">
+              {/* Un <form> et non un <div> : la touche Entrée dans le champ ne
+                  déclenchait aucune soumission. */}
+              <form className="dashboard-form" onSubmit={handleSynchronisation}>
                 <label className="dashboard-field">
                   <span>{t('dashboard.sync_youtube_label')}</span>
                   <input
                     value={lienChaine}
-                    onChange={(e) => setLienChaine(e.target.value)}
+                    onChange={(e) => {
+                      setLienChaine(e.target.value);
+                      if (syncErreur) setSyncErreur('');
+                    }}
                     placeholder="https://www.youtube.com/@votrechaine"
+                    aria-invalid={!!syncErreur}
+                    disabled={syncEnCours}
                   />
                   <small className="champ-aide">
                     {t('dashboard.sync_youtube_help')}
                   </small>
+                  {lienChaineReconnue ? (
+                    <small className="dashboard-status" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <CheckCircle2 size={13} /> {t('dashboard.sync_link_recognised', 'Format de lien reconnu.')}
+                    </small>
+                  ) : null}
                 </label>
 
                 <div className="info-banner-premium">
@@ -1151,20 +1220,19 @@ export function PastorDashboard() {
                   </span>
                 </div>
 
-                {syncErreur ? <p className="dashboard-error">{syncErreur}</p> : null}
-                {syncMessage ? <p className="dashboard-status">{syncMessage}</p> : null}
+                {syncErreur ? <p className="dashboard-error" role="alert">{syncErreur}</p> : null}
+                {syncMessage ? <p className="dashboard-status" role="status">{syncMessage}</p> : null}
 
                 <div className="dashboard-inline" style={{ marginTop: '1rem' }}>
                   <button
                     className="btn btn-primary"
-                    type="button"
-                    onClick={handleSynchronisation}
-                    disabled={syncEnCours}
+                    type="submit"
+                    disabled={syncEnCours || !lienChaine.trim()}
                   >
                     {syncEnCours ? t('dashboard.starting_import') : t('dashboard.start_sync')}
                   </button>
                 </div>
-              </div>
+              </form>
             </Card>
             )}
               </>

@@ -554,20 +554,39 @@ body {
   font-size: 0.9rem;
 }
 
+/* Couleurs en dur auparavant (#fef2f2 / #f0fdf4 …) : fonds quasi blancs et
+   texte sombre, illisibles en thème sombre. */
 .dashboard-error {
-  color: #b91c1c;
-  background-color: #fef2f2;
+  color: var(--danger);
+  background-color: rgba(var(--danger-rgb), 0.1);
   padding: 1rem;
   border-radius: 8px;
-  border: 1px solid #fecaca;
+  border: 1px solid rgba(var(--danger-rgb), 0.35);
 }
 
 .dashboard-status {
-  color: #15803d;
-  background-color: #f0fdf4;
+  color: var(--success);
+  background-color: rgba(var(--success-rgb), 0.1);
   padding: 1rem;
   border-radius: 8px;
-  border: 1px solid #bbf7d0;
+  border: 1px solid rgba(var(--success-rgb), 0.35);
+}
+
+/* Aperçu de la vidéo détectée sous le champ de lien YouTube. */
+.apercu-youtube {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.apercu-youtube img {
+  width: 120px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--pd-border);
+  flex-shrink: 0;
 }
 
 /* Vue d'ensemble (Aperçu) */
