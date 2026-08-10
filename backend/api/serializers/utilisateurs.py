@@ -10,6 +10,16 @@ from api.models import (
     ProfilUtilisateur,
 )
 
+# Utilisee par les deux points d'entree qui acceptent un avatar/logo (profil
+# pasteur en libre-service, inscription publique) : ni l'un ni l'autre ne
+# validait taille ou extension jusqu'ici, contrairement a tous les autres
+# uploads de l'application. PrimeReact annonce une limite de 5 Mo cote client
+# (ModifierProfilPasteur.jsx) mais rien ne l'appliquait cote serveur — un
+# appel direct a l'API pouvait deposer une image valide de plusieurs dizaines
+# de Mo.
+EXTENSIONS_AVATAR = {'jpg', 'jpeg', 'png', 'webp', 'gif'}
+TAILLE_MAX_AVATAR_MO = 5
+
 
 class UtilisateurSerializer(serializers.ModelSerializer):
     class Meta:
@@ -35,6 +45,17 @@ class PasteurSerializer(serializers.ModelSerializer):
             'nombre_predications', 'nombre_documents'
         )
         read_only_fields = ('est_valide', 'est_rejete', 'cree_par_admin')
+
+    def validate_avatar(self, value):
+        # Import differe : contenu.py importe PasteurMinimalSerializer depuis
+        # ce module. Un import en tete de fichier creerait une dependance
+        # circulaire entre les deux modules de serializers.
+        from .contenu import valider_fichier_uploade
+        return valider_fichier_uploade(value, EXTENSIONS_AVATAR, TAILLE_MAX_AVATAR_MO)
+
+    def validate_logo_eglise(self, value):
+        from .contenu import valider_fichier_uploade
+        return valider_fichier_uploade(value, EXTENSIONS_AVATAR, TAILLE_MAX_AVATAR_MO)
 
     def get_nombre_predications(self, obj):
         # Valeur annotee par la vue quand elle est disponible (evite le N+1 sur
@@ -80,6 +101,14 @@ class InscriptionSerializer(serializers.Serializer):
         except DjangoValidationError as erreur:
             raise serializers.ValidationError(list(erreur.messages))
         return value
+
+    def validate_avatar(self, value):
+        from .contenu import valider_fichier_uploade
+        return valider_fichier_uploade(value, EXTENSIONS_AVATAR, TAILLE_MAX_AVATAR_MO)
+
+    def validate_logo_eglise(self, value):
+        from .contenu import valider_fichier_uploade
+        return valider_fichier_uploade(value, EXTENSIONS_AVATAR, TAILLE_MAX_AVATAR_MO)
 
     def validate(self, attrs):
         if attrs.get('est_pasteur') and not attrs.get('nom_affichage'):

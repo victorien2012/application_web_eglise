@@ -1,4 +1,4 @@
-import { User, Film, Paperclip, PlusCircle, MessageSquare, PencilLine, TrendingUp } from 'lucide-react';
+import { User, Film, Paperclip, PlusCircle, MessageSquare, PencilLine, TrendingUp, BarChart3 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export function DashboardSidebar({ isSidebarOpen, setIsSidebarOpen, ongletActif, setOngletActif, enEdition }) {
@@ -81,7 +81,7 @@ export function DashboardSidebar({ isSidebarOpen, setIsSidebarOpen, ongletActif,
           className={`menu-item ${ongletActif === 'apercu' ? 'active' : ''}`}
           onClick={() => { setOngletActif('apercu'); setIsSidebarOpen(false); }}
         >
-          <TrendingUp size={18} />
+          <BarChart3 size={18} />
           <span>{t('dashboard.sidebar_overview', 'Aperçu')}</span>
         </button>
       </nav>

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Toast } from 'primereact/toast';
 import { FileUpload } from 'primereact/fileupload';
 import { User, Church, Phone, Image, Save, Loader2, CheckCircle2 } from 'lucide-react';
@@ -19,10 +19,35 @@ export function ModifierProfilPasteur() {
   const [contact, setContact] = useState(pasteur?.contact || '');
   const [avatar, setAvatar] = useState(null);
   const [logoEglise, setLogoEglise] = useState(null);
+  // Aperçus locaux : sans eux, choisir le mauvais fichier ne se remarquait
+  // qu'après l'enregistrement — seul le nom du fichier était visible avant.
+  const [avatarApercu, setAvatarApercu] = useState(null);
+  const [logoApercu, setLogoApercu] = useState(null);
+  const avatarUrlRef = useRef(null);
+  const logoUrlRef = useRef(null);
 
   const [erreur, setErreur] = useState('');
   const toast = useRef(null);
   const [soumission, setSoumission] = useState(false);
+
+  useEffect(() => () => {
+    if (avatarUrlRef.current) URL.revokeObjectURL(avatarUrlRef.current);
+    if (logoUrlRef.current) URL.revokeObjectURL(logoUrlRef.current);
+  }, []);
+
+  function choisirAvatar(fichier) {
+    setAvatar(fichier);
+    if (avatarUrlRef.current) URL.revokeObjectURL(avatarUrlRef.current);
+    avatarUrlRef.current = fichier ? URL.createObjectURL(fichier) : null;
+    setAvatarApercu(avatarUrlRef.current);
+  }
+
+  function choisirLogo(fichier) {
+    setLogoEglise(fichier);
+    if (logoUrlRef.current) URL.revokeObjectURL(logoUrlRef.current);
+    logoUrlRef.current = fichier ? URL.createObjectURL(fichier) : null;
+    setLogoApercu(logoUrlRef.current);
+  }
 
   function extraireErreur(error) {
     const data = error.response?.data;
@@ -52,9 +77,10 @@ export function ModifierProfilPasteur() {
       actualiserProfilPasteur(response.data);
 
       toast.current.show({ severity: 'success', summary: 'Succès', detail: t('dashboard.profile_update_success'), life: 5000 });
-      // Réinitialiser les fichiers
-      setAvatar(null);
-      setLogoEglise(null);
+      // Réinitialiser les fichiers : l'aperçu local n'a plus lieu d'être,
+      // pasteur.avatar (rafraîchi ci-dessus) reflète désormais la même image.
+      choisirAvatar(null);
+      choisirLogo(null);
     } catch (err) {
       setErreur(extraireErreur(err));
     } finally {
@@ -89,8 +115,8 @@ export function ModifierProfilPasteur() {
                 zIndex: 10
               }}>
                 <div style={{ width: '100%', height: '100%', borderRadius: '10px', overflow: 'hidden', backgroundColor: 'var(--bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {pasteur?.avatar ? (
-                    <img src={pasteur.avatar} alt={pasteur?.nom_affichage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {avatarApercu || pasteur?.avatar ? (
+                    <img src={avatarApercu || pasteur.avatar} alt={pasteur?.nom_affichage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <User size={30} color="var(--text-muted)" />
                   )}
@@ -113,7 +139,7 @@ export function ModifierProfilPasteur() {
           {/* Formulaire */}
           <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
             {erreur && (
-              <div style={{ padding: '0.75rem', background: '#fef2f2', color: '#991b1b', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem' }}>
+              <div role="alert" style={{ padding: '0.75rem', background: 'rgba(var(--danger-rgb), 0.1)', color: 'var(--danger)', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem', fontWeight: 600 }}>
                 {erreur}
               </div>
             )}
@@ -162,13 +188,21 @@ export function ModifierProfilPasteur() {
                   <FileUpload
                     mode="basic"
                     name="avatar"
-                    accept="image/*"
+                    accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
                     maxFileSize={5000000}
-                    onSelect={(e) => setAvatar(e.files[0])}
+                    onSelect={(e) => choisirAvatar(e.files[0])}
+                    onClear={() => choisirAvatar(null)}
                     chooseLabel={avatar ? avatar.name : t('dashboard.profile_change_avatar')}
                     style={{ width: '100%', fontSize: '0.85rem' }}
                     className="p-button-outlined p-button-sm"
                   />
+                  {avatarApercu && (
+                    <img
+                      src={avatarApercu}
+                      alt="Aperçu de la nouvelle photo"
+                      style={{ marginTop: '0.5rem', width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', border: '1px solid var(--border-color)' }}
+                    />
+                  )}
                 </div>
 
                 <div className="dashboard-field" style={{ margin: 0, marginLeft: 'auto', paddingLeft: '4rem' }}>
@@ -176,13 +210,21 @@ export function ModifierProfilPasteur() {
                   <FileUpload
                     mode="basic"
                     name="logoEglise"
-                    accept="image/*"
+                    accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
                     maxFileSize={5000000}
-                    onSelect={(e) => setLogoEglise(e.files[0])}
+                    onSelect={(e) => choisirLogo(e.files[0])}
+                    onClear={() => choisirLogo(null)}
                     chooseLabel={logoEglise ? logoEglise.name : t('dashboard.profile_change_logo')}
                     style={{ width: '100%', fontSize: '0.85rem' }}
                     className="p-button-outlined p-button-sm"
                   />
+                  {logoApercu && (
+                    <img
+                      src={logoApercu}
+                      alt="Aperçu du nouveau logo"
+                      style={{ marginTop: '0.5rem', width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', border: '1px solid var(--border-color)' }}
+                    />
+                  )}
                 </div>
               </div>
 

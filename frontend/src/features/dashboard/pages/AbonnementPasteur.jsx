@@ -3,21 +3,37 @@ import { useTranslation } from 'react-i18next';
 import { Toast } from 'primereact/toast';
 import { Loader2, CheckCircle2, AlertCircle, CreditCard, Plus, Minus, Star } from 'lucide-react';
 import { api, extraireListe } from '../../../services/api';
+import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import './AbonnementPasteur.css';
+
+// Doit correspondre au plafond du serveur (PaiementSimulationViewSet.simuler) :
+// duree_jours * quantite au-dela de 10 ans fait deborder l'arithmetique de
+// date et etait jusqu'ici refuse seulement cote serveur, sans indication ni
+// limite dans l'interface — rien n'empechait de cliquer sur "+" des dizaines
+// de fois puis de payer un montant absurde par erreur.
+const JOURS_MAX = 3650;
 
 export function AbonnementPasteur() {
   const { t } = useTranslation();
   const toast = useRef(null);
-  
+
   const [souscription, setSouscription] = useState(null);
   const [plans, setPlans] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [chargementPaiement, setChargementPaiement] = useState(false);
   const [erreur, setErreur] = useState('');
   const [quantites, setQuantites] = useState({});
+  const [paiementAConfirmer, setPaiementAConfirmer] = useState(null);
 
-  const handleIncrement = (planId) => {
-    setQuantites(prev => ({ ...prev, [planId]: (prev[planId] || 1) + 1 }));
+  function quantiteMax(plan) {
+    return Math.max(1, Math.floor(JOURS_MAX / plan.duree_jours));
+  }
+
+  const handleIncrement = (plan) => {
+    setQuantites(prev => ({
+      ...prev,
+      [plan.id]: Math.min(quantiteMax(plan), (prev[plan.id] || 1) + 1),
+    }));
   };
 
   const handleDecrement = (planId) => {
@@ -52,11 +68,22 @@ export function AbonnementPasteur() {
     return () => { active = false; };
   }, []);
 
-  const handleSimulerPaiement = async (planId, methode) => {
+  // Cliquer sur « Payer » lancait immediatement la simulation de paiement,
+  // sans aucune etape de confirmation — le seul flux d'argent de tout le site
+  // sans le filet qu'on trouve partout ailleurs pour un simple clic sur
+  // Supprimer. Un clic accidentel (le selecteur de quantite est juste
+  // au-dessus) engageait directement le paiement.
+  const demanderPaiement = (plan, methode) => {
+    setPaiementAConfirmer({ plan, methode, quantite: getQuantite(plan.id) });
+  };
+
+  const confirmerPaiement = async () => {
+    if (!paiementAConfirmer) return;
+    const { plan, methode, quantite } = paiementAConfirmer;
+    setPaiementAConfirmer(null);
     setChargementPaiement(true);
-    const quantite = getQuantite(planId);
     try {
-      const response = await api.post('/paiements/simuler/', { plan_id: planId, methode, quantite });
+      await api.post('/paiements/simuler/', { plan_id: plan.id, methode, quantite });
       toast.current.show({ severity: 'success', summary: 'Succès', detail: 'Paiement simulé avec succès via ' + methode, life: 5000 });
       const nouvelleSouscription = await api.get('/souscriptions/courante/');
       setSouscription(nouvelleSouscription.data);
@@ -78,7 +105,7 @@ export function AbonnementPasteur() {
 
   if (erreur) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444', backgroundColor: '#fef2f2', borderRadius: '12px' }}>
+      <div role="alert" style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)', backgroundColor: 'rgba(var(--danger-rgb), 0.1)', borderRadius: '12px' }}>
         <AlertCircle size={40} style={{ margin: '0 auto 1rem' }} />
         <p>{erreur}</p>
       </div>
@@ -129,9 +156,14 @@ export function AbonnementPasteur() {
           <p style={{ color: 'var(--text-muted)', textAlign: 'center', width: '100%', gridColumn: '1 / -1' }}>Aucun forfait disponible pour le moment.</p>
         ) : (
           plans.map(plan => {
-            const isAnnuel = plan.nom.toLowerCase().includes('annuel');
+            // Deduit de duree_jours plutot que du nom du plan : un simple
+            // renommage ("Formule Premium" au lieu de "Abonnement Annuel")
+            // faisait perdre silencieusement le badge et l'unite "Années"
+            // sans toucher a la duree reelle du plan.
+            const isAnnuel = plan.duree_jours >= 365;
             const planQuantite = getQuantite(plan.id);
             const labelUnite = isAnnuel ? (planQuantite > 1 ? 'Années' : 'Année') : (planQuantite > 1 ? 'Mois' : 'Mois');
+            const maxAtteint = planQuantite >= quantiteMax(plan);
 
             return (
               <div key={plan.id} className={`plan-card ${isAnnuel ? 'featured' : ''}`}>
@@ -160,16 +192,29 @@ export function AbonnementPasteur() {
                   <div className="quantity-box">
                     <span className="quantity-label">Durée souhaitée</span>
                     <div className="quantity-controls">
-                      <button className="qty-btn" onClick={() => handleDecrement(plan.id)}>
+                      <button
+                        type="button"
+                        className="qty-btn"
+                        onClick={() => handleDecrement(plan.id)}
+                        disabled={planQuantite <= 1}
+                        aria-label="Diminuer la durée"
+                      >
                         <Minus size={20} />
                       </button>
-                      
+
                       <div className="qty-display">
                         <span className="qty-value">{planQuantite}</span>
                         <span className="qty-unit">{labelUnite}</span>
                       </div>
 
-                      <button className="qty-btn" onClick={() => handleIncrement(plan.id)}>
+                      <button
+                        type="button"
+                        className="qty-btn"
+                        onClick={() => handleIncrement(plan)}
+                        disabled={maxAtteint}
+                        aria-label="Augmenter la durée"
+                        title={maxAtteint ? `Maximum : ${quantiteMax(plan)} ${labelUnite.toLowerCase()}` : undefined}
+                      >
                         <Plus size={20} />
                       </button>
                     </div>
@@ -185,17 +230,19 @@ export function AbonnementPasteur() {
                   </div>
                   
                   <div className="payment-buttons">
-                    <button 
+                    <button
+                      type="button"
                       className="pay-btn wave"
-                      onClick={() => handleSimulerPaiement(plan.id, 'WAVE')}
+                      onClick={() => demanderPaiement(plan, 'WAVE')}
                       disabled={chargementPaiement}
                     >
                       {chargementPaiement && <Loader2 size={20} className="animate-spin" />}
                       Payer avec Wave
                     </button>
-                    <button 
+                    <button
+                      type="button"
                       className="pay-btn orange"
-                      onClick={() => handleSimulerPaiement(plan.id, 'ORANGE_MONEY')}
+                      onClick={() => demanderPaiement(plan, 'ORANGE_MONEY')}
                       disabled={chargementPaiement}
                     >
                       {chargementPaiement && <Loader2 size={20} className="animate-spin" />}
@@ -208,6 +255,21 @@ export function AbonnementPasteur() {
           })
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={!!paiementAConfirmer}
+        onClose={() => setPaiementAConfirmer(null)}
+        onConfirm={confirmerPaiement}
+        title="Confirmer le paiement"
+        message={
+          paiementAConfirmer
+            ? `Payer ${(paiementAConfirmer.plan.prix * paiementAConfirmer.quantite).toLocaleString('fr-FR')} FCFA pour ${paiementAConfirmer.quantite} ${(paiementAConfirmer.plan.duree_jours >= 365 ? (paiementAConfirmer.quantite > 1 ? 'années' : 'année') : (paiementAConfirmer.quantite > 1 ? 'mois' : 'mois'))} de « ${paiementAConfirmer.plan.nom} », via ${paiementAConfirmer.methode === 'WAVE' ? 'Wave' : 'Orange Money'} ?`
+            : ''
+        }
+        confirmText="Confirmer le paiement"
+        variant="primary"
+        icon={CreditCard}
+      />
     </div>
   );
 }

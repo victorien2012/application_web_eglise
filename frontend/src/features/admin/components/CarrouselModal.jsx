@@ -254,31 +254,18 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
             />
           </div>
 
-          <div className="form-row" style={{ display: 'flex', gap: '1rem' }}>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label htmlFor="ordre">Ordre d'affichage</label>
+          <div className="form-group checkbox-group">
+            <label className="checkbox-label">
               <input
-                type="number"
-                id="ordre"
-                value={ordre}
-                onChange={(e) => setOrdre(parseInt(e.target.value, 10) || 0)}
-                min="0"
+                type="checkbox"
+                checked={estActif}
+                onChange={(e) => setEstActif(e.target.checked)}
               />
-              <small className="help-text">Les médias avec un ordre plus petit s'afficheront en premier.</small>
-            </div>
-            
-            <div className="form-group checkbox-group" style={{ flex: 1, marginTop: '2rem' }}>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={estActif}
-                  onChange={(e) => setEstActif(e.target.checked)}
-                />
-                <span className="checkmark"></span>
-                Actif (Affiché)
-              </label>
-            </div>
+              <span className="checkmark"></span>
+              Actif (Affiché)
+            </label>
           </div>
+
 
           <div className="modal-actions">
             <Button type="button" variant="outline" onClick={onClose} disabled={enCours}>Annuler</Button>

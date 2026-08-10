@@ -248,6 +248,19 @@ export function PastorDashboard() {
     return () => { active = false; };
   }, []);
 
+  // Le menu de notifications ne se refermait qu'en recliquant sur la cloche :
+  // même comportement que le menu de compte dans App.jsx.
+  useEffect(() => {
+    if (!afficherNotifications) return undefined;
+    const fermerSiExterieur = (e) => {
+      if (!e.target.closest('.topbar-actions')) {
+        setAfficherNotifications(false);
+      }
+    };
+    document.addEventListener('click', fermerSiExterieur);
+    return () => document.removeEventListener('click', fermerSiExterieur);
+  }, [afficherNotifications]);
+
   async function marquerNotificationLue(notifId) {
     try {
       await api.post(`/notifications/${notifId}/marquer_lu/`);

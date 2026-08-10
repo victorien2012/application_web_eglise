@@ -1,4 +1,4 @@
-import { Menu, Bell, AlertCircle, User } from 'lucide-react';
+import { Menu, Bell, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export function DashboardTopbar({
@@ -16,7 +16,7 @@ export function DashboardTopbar({
   return (
     <div className="dashboard-topbar">
       <div className="dashboard-title-area" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}>
+        <button type="button" className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)} aria-label={t('dashboard.open_menu', 'Ouvrir le menu')}>
           <Menu size={28} />
         </button>
         <p style={{ margin: 0, fontWeight: 600, color: 'var(--pd-text-muted)' }}>
@@ -25,9 +25,12 @@ export function DashboardTopbar({
       </div>
       <div className="topbar-actions" style={{ position: 'relative' }}>
         <button
+          type="button"
           className="btn btn-outline"
           style={{ padding: '0.4rem', borderRadius: '50%', position: 'relative' }}
           onClick={() => setAfficherNotifications(!afficherNotifications)}
+          aria-label={t('dashboard.notifications')}
+          aria-expanded={afficherNotifications}
         >
           <Bell size={18} />
           {unreadCount > 0 && (
@@ -43,7 +46,7 @@ export function DashboardTopbar({
                 <button
                   type="button"
                   onClick={marquerToutesLues}
-                  style={{ background: 'none', border: 'none', color: '#004a94', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500 }}
+                  style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500 }}
                 >
                   {t('dashboard.mark_all_read')}
                 </button>
@@ -69,10 +72,6 @@ export function DashboardTopbar({
             </div>
           </div>
         )}
-
-        <button className="btn btn-outline" style={{ padding: '0.4rem', borderRadius: '50%' }}>
-          <AlertCircle size={18} />
-        </button>
       </div>
     </div>
   );

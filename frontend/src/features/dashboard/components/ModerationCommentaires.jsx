@@ -92,7 +92,7 @@ export function ModerationCommentaires({ predicationId }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
               <strong>{commentaire.utilisateur?.username || t('dashboard.comments_user')}</strong>
               {commentaire.predication_detail?.titre && (
-                <span style={{ fontSize: '0.85rem', color: 'var(--pd-text-muted)', background: 'rgba(0,0,0,0.05)', padding: '2px 8px', borderRadius: '12px' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--pd-text-muted)', background: 'var(--bg-alt)', padding: '2px 8px', borderRadius: '12px' }}>
                   {t('dashboard.on_video', 'sur la vidéo :')} {commentaire.predication_detail.titre}
                 </span>
               )}

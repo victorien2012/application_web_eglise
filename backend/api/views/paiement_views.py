@@ -53,15 +53,34 @@ class PaiementSimulationViewSet(viewsets.ViewSet):
         
         plan_id = request.data.get('plan_id')
         methode = request.data.get('methode', 'WAVE')
-        quantite = int(request.data.get('quantite', 1))
-        
-        if quantite < 1:
-            return Response({"detail": "La quantité doit être au moins 1."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # int() sur une valeur non numerique (chaine invalide, liste, None
+        # explicite) levait une exception non interceptee -> 500 au lieu d'un
+        # refus propre. Un simple POST {"quantite": "abc"} suffisait a le
+        # declencher.
+        try:
+            quantite = int(request.data.get('quantite', 1))
+        except (TypeError, ValueError):
+            return Response({"detail": "Quantité invalide."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             plan = PlanTarifaire.objects.get(id=plan_id, est_actif=True)
-        except PlanTarifaire.DoesNotExist:
+        except (PlanTarifaire.DoesNotExist, ValueError, TypeError):
             return Response({"detail": "Plan introuvable ou inactif."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Le nombre de jours ajoute est plan.duree_jours * quantite : sans
+        # plafond, une quantite trop grande (fatidoigt ou appel direct a
+        # l'API) produit une date au-dela de l'an 9999 et fait deborder
+        # `datetime`, provoquant une erreur serveur au lieu d'un refus clair.
+        jours_max = 3650  # 10 ans, toutes formules confondues
+        if plan.duree_jours < 1:
+            return Response({"detail": "Ce plan est mal configuré (durée invalide)."}, status=status.HTTP_400_BAD_REQUEST)
+        if quantite < 1 or plan.duree_jours * quantite > jours_max:
+            max_unites = max(1, jours_max // plan.duree_jours)
+            return Response(
+                {"detail": f"Quantité invalide. Choisissez entre 1 et {max_unites} pour cette formule."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         montant_total = plan.prix * quantite
         jours_total = plan.duree_jours * quantite
