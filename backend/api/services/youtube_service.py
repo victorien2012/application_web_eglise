@@ -4,6 +4,8 @@ import threading
 
 from django.core.management import call_command
 
+from api.models.paiement import abonnement_pasteur_est_actif
+
 logger = logging.getLogger(__name__)
 
 
@@ -64,8 +66,7 @@ def motif_blocage_import(pasteur):
     en amont permet de refuser franchement la demande au lieu de promettre un
     import qui n'aura jamais lieu.
     """
-    souscription = getattr(pasteur, 'souscription', None)
-    if souscription is not None and not souscription.est_active:
+    if not abonnement_pasteur_est_actif(pasteur):
         return (
             "Votre abonnement a expiré : l'import de vidéos est suspendu. "
             "Renouvelez votre forfait pour relancer la synchronisation."

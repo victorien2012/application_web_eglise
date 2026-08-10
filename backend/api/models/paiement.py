@@ -47,6 +47,22 @@ class SouscriptionPasteur(models.Model):
 DUREE_ESSAI_JOURS = 365
 
 
+def abonnement_pasteur_est_actif(pasteur):
+    """Vrai si le pasteur peut publier : une souscription existe ET est active.
+
+    Cette regle etait reimplementee independamment a quatre endroits (import
+    YouTube, creation de predication, creation de document, commande
+    d'import), avec une divergence reelle : deux d'entre eux traitaient
+    l'ABSENCE de souscription comme un cas autorise plutot que bloque. En
+    usage normal tout pasteur en obtient une des sa creation (voir
+    creer_souscription_essai, appelee a l'inscription comme a la creation par
+    un admin) ; son absence ne peut venir que d'une donnee ancienne ou
+    corrompue, jamais d'un etat legitime a laisser passer.
+    """
+    souscription = getattr(pasteur, 'souscription', None)
+    return souscription is not None and souscription.est_active
+
+
 def creer_souscription_essai(pasteur, duree_jours=DUREE_ESSAI_JOURS):
     """Ouvre une période d'essai gratuite pour un pasteur qui n'en a pas encore.
 

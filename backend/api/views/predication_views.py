@@ -19,6 +19,7 @@ from api.models import (
     Predication,
     Serie,
 )
+from api.models.paiement import abonnement_pasteur_est_actif
 from api.pagination import PaginationOptionnelle
 from api.serializers import (
     CategorieSerializer,
@@ -150,7 +151,7 @@ class PredicationViewSet(viewsets.ModelViewSet):
             )
 
         # Vérifier la souscription
-        if not hasattr(pasteur, 'souscription') or not pasteur.souscription.est_active:
+        if not abonnement_pasteur_est_actif(pasteur):
             raise serializers.ValidationError(
                 {"detail": "Votre abonnement est expiré. Veuillez le renouveler pour publier de nouvelles vidéos."}
             )

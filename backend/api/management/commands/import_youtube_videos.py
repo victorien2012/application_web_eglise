@@ -26,6 +26,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import IntegrityError, transaction
 
 from api.models import Pasteur, Predication
+from api.models.paiement import abonnement_pasteur_est_actif
 from api.serializers import extraire_nom_predicateur
 
 
@@ -143,8 +144,12 @@ class Command(BaseCommand):
             )
 
         pasteur = self._resoudre_pasteur(options['pasteur'], channel_id)
-        
-        if hasattr(pasteur, 'souscription') and not pasteur.souscription.est_active:
+
+        # Cette commande est aussi invoquee directement par la tache planifiee
+        # (cron) pour les resynchronisations periodiques, sans passer par la vue
+        # qui verifie deja l'abonnement pour le 1er import : ce controle reste
+        # donc necessaire ici, pas seulement redondant avec celui de la vue.
+        if not abonnement_pasteur_est_actif(pasteur):
             raise CommandError(
                 f"L'abonnement du pasteur {pasteur.nom_affichage} a expiré. "
                 "L'importation est bloquée."

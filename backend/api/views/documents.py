@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from api.models import Document
+from api.models.paiement import abonnement_pasteur_est_actif
 from api.serializers import DocumentSerializer, DocumentEcritureSerializer
 
 class EstPasteurProprietaireOuLectureSeule(permissions.BasePermission):
@@ -49,7 +50,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         pasteur = self.request.user.profil_pasteur
-        if not hasattr(pasteur, 'souscription') or not pasteur.souscription.est_active:
+        if not abonnement_pasteur_est_actif(pasteur):
             from rest_framework import serializers
             raise serializers.ValidationError(
                 {"detail": "Votre abonnement est expiré. Veuillez le renouveler pour publier des documents."}

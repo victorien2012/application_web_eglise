@@ -91,19 +91,13 @@ class PasteurViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(pasteur)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser],
-            url_path='admin_synchroniser_youtube')
-    def admin_synchroniser_youtube(self, request, pk=None):
-        """Permet à un admin de synchroniser la chaîne YouTube d'un pasteur créé par l'admin."""
-        try:
-            pasteur = Pasteur.objects.get(id=pk, cree_par_admin=True)
-        except Pasteur.DoesNotExist:
-            return Response(
-                {"detail": "Pasteur introuvable ou non créé par l'admin."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        lien = (request.data.get('lien_youtube') or '').strip()
+    def _effectuer_synchronisation_youtube(self, pasteur, lien, message_succes):
+        """Enregistre le lien de chaine puis lance l'import — partagee par
+        synchroniser_youtube (un pasteur pour lui-meme) et
+        admin_synchroniser_youtube (un admin pour un pasteur qu'il a cree) :
+        seuls la resolution du pasteur cible et le libelle de succes different
+        entre les deux actions.
+        """
         if not lien:
             return Response(
                 {"lien_youtube": "Le lien de la chaîne YouTube est requis."},
@@ -125,7 +119,7 @@ class PasteurViewSet(viewsets.ModelViewSet):
             from googleapiclient.discovery import build
             service = build('youtube', 'v3', developerKey=api_key, cache_discovery=False)
             channel_id = resoudre_channel_id_youtube(service, lien)
-        except Exception as erreur:
+        except Exception as erreur:  # noqa: BLE001
             logger.exception("Echec resolution chaine YouTube : %s", erreur)
             return Response(
                 {"detail": "Impossible de joindre YouTube pour le moment. Réessayez plus tard."},
@@ -144,12 +138,27 @@ class PasteurViewSet(viewsets.ModelViewSet):
         lancer_import_youtube_async(channel_id, pasteur.id)
 
         return Response(
-            {
-                "detail": "Import démarré. Les vidéos apparaîtront dans la bibliothèque "
-                          "dans quelques instants — rafraîchissez la page.",
-                "channel_id": channel_id,
-            },
+            {"detail": message_succes, "channel_id": channel_id},
             status=status.HTTP_202_ACCEPTED,
+        )
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser],
+            url_path='admin_synchroniser_youtube')
+    def admin_synchroniser_youtube(self, request, pk=None):
+        """Permet à un admin de synchroniser la chaîne YouTube d'un pasteur créé par l'admin."""
+        try:
+            pasteur = Pasteur.objects.get(id=pk, cree_par_admin=True)
+        except Pasteur.DoesNotExist:
+            return Response(
+                {"detail": "Pasteur introuvable ou non créé par l'admin."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        lien = (request.data.get('lien_youtube') or '').strip()
+        return self._effectuer_synchronisation_youtube(
+            pasteur, lien,
+            "Import démarré. Les vidéos apparaîtront dans la bibliothèque "
+            "dans quelques instants — rafraîchissez la page.",
         )
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser],
@@ -280,56 +289,10 @@ class PasteurViewSet(viewsets.ModelViewSet):
             )
 
         lien = (request.data.get('lien_youtube') or '').strip()
-        if not lien:
-            return Response(
-                {"lien_youtube": "Le lien de la chaîne YouTube est requis."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Avant toute promesse d'import : un abonnement expiré fait echouer la
-        # commande une fois dans le thread, sans que le pasteur en soit informe.
-        blocage = motif_blocage_import(pasteur)
-        if blocage:
-            return Response({"detail": blocage}, status=status.HTTP_402_PAYMENT_REQUIRED)
-
-        api_key = os.environ.get('GOOGLE_API_KEY')
-        if not api_key:
-            return Response(
-                {"detail": "L'import YouTube n'est pas configuré sur le serveur (clé API absente)."},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-
-        # Construire le client YouTube et resoudre l'identifiant de chaine.
-        try:
-            from googleapiclient.discovery import build
-            service = build('youtube', 'v3', developerKey=api_key, cache_discovery=False)
-            channel_id = resoudre_channel_id_youtube(service, lien)
-        except Exception as erreur:  # noqa: BLE001
-            logger.exception("Echec resolution chaine YouTube : %s", erreur)
-            return Response(
-                {"detail": "Impossible de joindre YouTube pour le moment. Réessayez plus tard."},
-                status=status.HTTP_502_BAD_GATEWAY,
-            )
-
-        if not channel_id:
-            return Response(
-                {"lien_youtube": "Chaîne introuvable. Vérifiez le lien "
-                                 "(ex : https://www.youtube.com/@votrechaine)."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Enregistrer le lien sur le profil puis lancer l'import sans bloquer la reponse.
-        pasteur.lien_youtube = lien
-        pasteur.save(update_fields=['lien_youtube'])
-        lancer_import_youtube_async(channel_id, pasteur.id)
-
-        return Response(
-            {
-                "detail": "Import démarré. Vos vidéos apparaîtront dans la bibliothèque "
-                          "dans quelques instants — rafraîchissez la page.",
-                "channel_id": channel_id,
-            },
-            status=status.HTTP_202_ACCEPTED,
+        return self._effectuer_synchronisation_youtube(
+            pasteur, lien,
+            "Import démarré. Vos vidéos apparaîtront dans la bibliothèque "
+            "dans quelques instants — rafraîchissez la page.",
         )
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
