@@ -507,6 +507,12 @@ body {
   color: var(--pd-text-muted);
 }
 
+/* Sélecteur doublé : .dashboard-field span (0-1-1) impose --pd-text-main à
+   tous les libellés et masquerait la couleur de l'astérisque. */
+.dashboard-field span.champ-obligatoire {
+  color: var(--danger);
+}
+
 .checkbox-cloud {
   display: flex;
   flex-wrap: wrap;

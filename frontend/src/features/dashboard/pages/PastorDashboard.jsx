@@ -54,9 +54,11 @@ function isoVersInputLocal(iso) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+// La video n'est jamais televersee : elle doit d'abord etre publiee sur
+// YouTube, puis rattachee ici par son lien. Seuls l'audio (telechargeable) et
+// l'image de couverture transitent en fichier.
 const FICHIERS_VIDES = {
   fichier_audio: null,
-  fichier_video: null,
   image_couverture: null,
 };
 
@@ -66,10 +68,6 @@ const CONTRAINTES_FICHIERS = {
   fichier_audio: {
     extensions: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'oga', 'flac'],
     tailleMaxMo: 100,
-  },
-  fichier_video: {
-    extensions: ['mp4', 'webm', 'mov', 'm4v', 'mkv'],
-    tailleMaxMo: 1024,
   },
   image_couverture: {
     extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
@@ -486,7 +484,7 @@ export function PastorDashboard() {
   }
 
   function construireCorps() {
-    const aDesFichiers = Boolean(fichiers.fichier_audio || fichiers.fichier_video || fichiers.image_couverture);
+    const aDesFichiers = Boolean(fichiers.fichier_audio || fichiers.image_couverture);
 
     if (!aDesFichiers) {
       const corpsJson = {
@@ -517,7 +515,6 @@ export function PastorDashboard() {
     formulaire.categories_ids.forEach((id) => corps.append('categories_ids', id));
     
     if (fichiers.fichier_audio) corps.append('fichier_audio', fichiers.fichier_audio);
-    if (fichiers.fichier_video) corps.append('fichier_video', fichiers.fichier_video);
     if (fichiers.image_couverture) corps.append('image_couverture', fichiers.image_couverture);
     return corps;
   }
@@ -533,16 +530,37 @@ export function PastorDashboard() {
     return premiereCle ? `${premiereCle}: ${message}` : t('dashboard.save_error');
   }
 
-  function validerSourceMedia() {
-    // Sur une édition, un champ média non modifié conserve le fichier déjà enregistré côté serveur.
-    if (enEdition) return true;
+  // Retourne un message d'erreur precis, ou '' si la source media convient.
+  // Un booleen unique obligeait a afficher un message generique couvrant les
+  // deux cas (audio manquant / lien manquant).
+  function erreurSourceMedia() {
+    // Sur une édition, un champ média non modifié conserve la valeur déjà enregistrée côté serveur.
+    if (enEdition) return '';
 
     const veutAudio = formulaire.type_media === 'AUDIO' || formulaire.type_media === 'BOTH';
     const veutVideo = formulaire.type_media === 'VIDEO' || formulaire.type_media === 'BOTH';
 
-    if (veutAudio && !fichiers.fichier_audio) return false;
-    if (veutVideo && !fichiers.fichier_video && !formulaire.url_video.trim()) return false;
-    return true;
+    if (veutAudio && !fichiers.fichier_audio) {
+      return t(
+        'dashboard.form_audio_required',
+        "Ajoutez le fichier audio correspondant au format choisi avant d'enregistrer."
+      );
+    }
+    // La vidéo ne se téléverse plus : elle doit être publiée sur YouTube puis
+    // rattachée par son lien.
+    if (veutVideo && !formulaire.url_video.trim()) {
+      return t(
+        'dashboard.form_youtube_required',
+        "Collez le lien YouTube de votre vidéo. Publiez-la d'abord sur votre chaîne YouTube, puis revenez coller son lien ici."
+      );
+    }
+    if (veutVideo && !extraireIdVideoYoutube(formulaire.url_video)) {
+      return t(
+        'dashboard.form_youtube_invalid',
+        "Lien YouTube non reconnu. Formats acceptés : /watch?v=…, youtu.be/…, /embed/… ou /shorts/…"
+      );
+    }
+    return '';
   }
 
   async function handleSoumission(event) {
@@ -550,8 +568,9 @@ export function PastorDashboard() {
     setErreurFormulaire('');
     setMessageFormulaire('');
 
-    if (!validerSourceMedia()) {
-      setErreurFormulaire(t('dashboard.form_media_required', 'Ajoutez un fichier audio, un fichier vidéo ou un lien YouTube correspondant au format choisi avant d\'enregistrer.'));
+    const erreurMedia = erreurSourceMedia();
+    if (erreurMedia) {
+      setErreurFormulaire(erreurMedia);
       return;
     }
 
@@ -945,8 +964,24 @@ export function PastorDashboard() {
 
                 {(formulaire.type_media === 'VIDEO' || formulaire.type_media === 'BOTH') ? (
                   <>
+                    {/* Marche a suivre rappelee dans le formulaire : la video
+                        n'est pas hebergee par la plateforme, elle est diffusee
+                        depuis YouTube. */}
+                    <div className="info-banner-premium">
+                      <Youtube size={15} />
+                      <span>
+                        {t(
+                          'dashboard.form_youtube_workflow',
+                          "Les vidéos ne sont pas hébergées ici : publiez d'abord votre vidéo sur votre chaîne YouTube, puis collez son lien ci-dessous. Elle sera lue directement dans l'application."
+                        )}
+                      </span>
+                    </div>
+
                     <label className="dashboard-field">
-                      <span>{t('dashboard.form_youtube_label')}</span>
+                      <span>
+                        {t('dashboard.form_youtube_label')}
+                        <span className="champ-obligatoire" aria-hidden="true"> *</span>
+                      </span>
                       <input
                         value={formulaire.url_video || ''}
                         onChange={(e) => mettreAJourChamp('url_video', e.target.value)}
@@ -991,26 +1026,6 @@ export function PastorDashboard() {
                       ) : null}
                     </label>
 
-                    {/* Le televersement de fichier video etait gere par le code
-                        mais aucun champ ne permettait de le declencher. */}
-                    <label className="dashboard-field">
-                      <span>
-                        {t('dashboard.form_video_file_label', 'Fichier vidéo')}{' '}
-                        <small className="champ-aide">{t('dashboard.form_video_file_hint', 'à défaut de lien YouTube')}</small>
-                      </span>
-                      <input
-                        key={`video-${resetFichiersKey}`}
-                        type="file"
-                        accept=".mp4,.webm,.mov,.m4v,.mkv,video/*"
-                        onChange={(e) => mettreAJourFichier('fichier_video', e.target.files?.[0] || null)}
-                      />
-                      <small className="champ-aide">
-                        Formats : {CONTRAINTES_FICHIERS.fichier_video.extensions.join(', ')} — {CONTRAINTES_FICHIERS.fichier_video.tailleMaxMo} Mo maximum.
-                      </small>
-                      {erreursFichiers.fichier_video ? (
-                        <small className="dashboard-error" role="alert">{erreursFichiers.fichier_video}</small>
-                      ) : null}
-                    </label>
                   </>
                 ) : null}
 
