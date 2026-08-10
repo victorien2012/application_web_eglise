@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { Toast } from 'primereact/toast';
-import { FileText, Trash2, Upload } from 'lucide-react';
+import { AlertTriangle, FileText, Trash2, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { api, extraireListe } from '../../../services/api';
+import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import './ModerationCommentaires.css';
 
 export function GestionPiecesJointes({ predicationId }) {
@@ -143,126 +143,17 @@ export function GestionPiecesJointes({ predicationId }) {
         <p className="moderation-info">{t('dashboard.attachments_empty')}</p>
       )}
 
-      {pieceASupprimer && createPortal(
-        <div style={{ 
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
-          right: 0, 
-          bottom: 0, 
-          backgroundColor: 'rgba(15, 23, 42, 0.75)', 
-          backdropFilter: 'blur(6px)', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          zIndex: 99999,
-          animation: 'fadeIn 0.2s ease-out'
-        }}>
-          <div style={{
-            background: 'var(--bg-card)',
-            borderRadius: '24px',
-            padding: '2.5rem',
-            maxWidth: '440px',
-            width: '90%',
-            textAlign: 'center',
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-            border: '1px solid var(--border-color)',
-            animation: 'scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' 
-          }}>
-            <div style={{ 
-              width: '80px', 
-              height: '80px', 
-              borderRadius: '50%', 
-              backgroundColor: '#fee2e2', 
-              color: '#ef4444', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              margin: '0 auto 1.5rem auto',
-              boxShadow: '0 10px 15px -3px rgba(239, 68, 68, 0.2)'
-            }}>
-              <Trash2 size={40} />
-            </div>
-
-            <h3 style={{ 
-              marginTop: 0, 
-              fontSize: '1.5rem', 
-              fontWeight: 800,
-              color: 'var(--text-main)',
-              marginBottom: '1rem'
-            }}>
-              {t('dashboard.attachments_modal_title')}
-            </h3>
-            
-            <p style={{
-              color: 'var(--text-muted)',
-              fontSize: '0.975rem', 
-              lineHeight: 1.6, 
-              margin: '0 0 2rem 0' 
-            }}>
-              {t('dashboard.attachments_modal_desc')} <strong>{pieceASupprimer.nom}</strong> ?
-              <br />
-              <span style={{ 
-                display: 'block', 
-                marginTop: '0.75rem', 
-                fontSize: '0.85rem', 
-                color: '#ef4444', 
-                fontWeight: 600,
-                backgroundColor: '#fef2f2',
-                padding: '0.5rem 1rem',
-                borderRadius: '8px'
-              }}>
-                {t('dashboard.attachments_modal_warning')}
-              </span>
-            </p>
-
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button 
-                type="button" 
-                onClick={() => setPieceASupprimer(null)} 
-                style={{ 
-                  flex: 1,
-                  padding: '0.8rem 1.5rem', 
-                  fontSize: '0.95rem', 
-                  background: 'var(--bg-alt)',
-                  color: 'var(--text-muted)',
-                  border: '1px solid var(--pd-border)',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  transition: 'background 0.2s',
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'var(--pd-border)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'var(--bg-alt)'}
-              >
-                {t('dashboard.attachments_cancel')}
-              </button>
-              <button 
-                type="button" 
-                onClick={executerSuppression} 
-                style={{ 
-                  flex: 1,
-                  padding: '0.8rem 1.5rem', 
-                  fontSize: '0.95rem', 
-                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', 
-                  color: '#fff', 
-                  border: 'none', 
-                  borderRadius: '12px', 
-                  cursor: 'pointer', 
-                  fontWeight: '600', 
-                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.25)',
-                  transition: 'opacity 0.2s',
-                }}
-                onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-                onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-              >
-                {t('dashboard.attachments_confirm')}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      <ConfirmModal
+        isOpen={!!pieceASupprimer}
+        onClose={() => setPieceASupprimer(null)}
+        onConfirm={executerSuppression}
+        title={t('dashboard.attachments_modal_title')}
+        message={`${t('dashboard.attachments_modal_desc')} "${pieceASupprimer?.nom}" ?\n\n${t('dashboard.attachments_modal_warning')}`}
+        confirmText={t('dashboard.attachments_confirm')}
+        cancelText={t('dashboard.attachments_cancel')}
+        variant="danger"
+        icon={AlertTriangle}
+      />
     </div>
   );
 }
