@@ -548,16 +548,32 @@ body {
 }
 
 /* Messages et banners */
+/* Couleurs en dur auparavant (#eff6ff / #bfdbfe / #1e40af) : un bleu quasi
+   blanc illisible en theme sombre, alors que .dashboard-error et
+   .dashboard-status juste en dessous avaient deja recu le traitement jetons. */
 .info-banner-premium {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1e40af;
+  background-color: rgba(var(--primary-rgb), 0.08);
+  border: 1px solid rgba(var(--primary-rgb), 0.3);
+  color: var(--primary);
   border-radius: 8px;
   font-size: 0.9rem;
+}
+
+.info-banner-premium svg {
+  flex-shrink: 0;
+}
+
+/* Definie ici : utilisee dans le JSX (dashboard-inline) mais n'avait jusqu'ici
+   aucune regle correspondante — un simple <div> sans mise en forme propre. */
+.dashboard-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 /* Couleurs en dur auparavant (#fef2f2 / #f0fdf4 …) : fonds quasi blancs et
@@ -593,6 +609,109 @@ body {
   border-radius: 8px;
   border: 1px solid var(--pd-border);
   flex-shrink: 0;
+}
+
+/* ==========================================================================
+   4bis. VUE "PUBLIER" — bascule de mode et sections du formulaire
+   ========================================================================== */
+
+/* En-tête de la vue : titre + description à gauche, bascule de mode ou
+   bouton d'annulation à droite. Remplace un style inline en dur qui ne
+   repassait jamais en colonne sur mobile, où le titre et le sélecteur de
+   format se chevauchaient. */
+.publier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+/* Bascule Synchroniser / Ajouter une vidéo : remplace deux boutons
+   btn-primary/btn-outline qui ne se distinguaient pas visuellement d'une
+   simple paire d'actions, alors qu'il s'agit d'un choix exclusif entre
+   deux formulaires différents. */
+.publier-mode-toggle {
+  display: inline-flex;
+  padding: 0.25rem;
+  gap: 0.25rem;
+  background: var(--pd-main-bg);
+  border: 1px solid var(--pd-border);
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+
+.publier-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--pd-text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.publier-mode-btn:hover:not(.active) {
+  color: var(--pd-text-main);
+}
+
+.publier-mode-btn.active {
+  background: var(--bg-card);
+  color: var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Conteneur du formulaire : l'espacement entre sections vient d'ici (gap),
+   chaque section n'ajoute que le filet de séparation visuel. */
+.publier-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* Regroupe les champs par intention (identité, source du média, détails,
+   publication) au lieu d'une longue liste plate — le formulaire couvre
+   beaucoup de champs de nature différente pour rester lisible d'un bloc. */
+.publier-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.publier-section + .publier-section {
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--pd-border);
+}
+
+.publier-section-titre {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pd-text-muted);
+}
+
+.publier-section-icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  background: rgba(var(--primary-rgb), 0.12);
+  color: var(--primary);
 }
 
 /* Vue d'ensemble (Aperçu) */

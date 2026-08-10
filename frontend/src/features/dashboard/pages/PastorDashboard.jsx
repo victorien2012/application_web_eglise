@@ -412,6 +412,23 @@ export function PastorDashboard() {
     setFichiers((actuel) => ({ ...actuel, [cle]: probleme ? null : fichier }));
   }
 
+  // Changer de format masque le champ devenu hors-sujet, mais sans ceci sa
+  // valeur restait en memoire et etait quand meme envoyee au serveur : passer
+  // de "Les deux" a "Video" apres avoir choisi un fichier audio l'aurait
+  // conserve et enregistre, invisible et impossible a retirer depuis l'ecran
+  // qui suit (meme bug que PublishMediaModal.jsx, deja corrige separement).
+  function gererChangementFormat(nouveauFormat) {
+    setFormulaire((actuel) => ({
+      ...actuel,
+      type_media: nouveauFormat,
+      url_video: (nouveauFormat === 'VIDEO' || nouveauFormat === 'BOTH') ? actuel.url_video : '',
+    }));
+    if (nouveauFormat !== 'AUDIO' && nouveauFormat !== 'BOTH') {
+      setFichiers((actuel) => ({ ...actuel, fichier_audio: null }));
+      setErreursFichiers((actuelles) => ({ ...actuelles, fichier_audio: '' }));
+    }
+  }
+
   function basculerCategorie(idCategorie) {
     setFormulaire((actuel) => {
       const presente = actuel.categories_ids.includes(idCategorie);
@@ -853,298 +870,331 @@ export function PastorDashboard() {
               </div>
             ) : (
               <>
-            <div className="dashboard-title-area" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="dashboard-title-area publier-header">
               <div>
                 <h1>{ongletActif === 'editer' ? t('dashboard.edit_video_title') : t('dashboard.add_media_title')}</h1>
                 <p>
-                  {ongletActif === 'editer' 
-                    ? t('dashboard.edit_video_desc') 
+                  {ongletActif === 'editer'
+                    ? t('dashboard.edit_video_desc')
                     : t('dashboard.add_media_desc')}
                 </p>
               </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                {ongletActif === 'editer' ? (
-                  <button type="button" className="btn btn-outline" onClick={reinitialiserFormulaire}>
-                    {t('dashboard.cancel_edit')}
+              {ongletActif === 'editer' ? (
+                <button type="button" className="btn btn-outline" onClick={reinitialiserFormulaire}>
+                  {t('dashboard.cancel_edit')}
+                </button>
+              ) : (
+                <div className="publier-mode-toggle" role="group" aria-label={t('dashboard.publish_mode_label', 'Mode de publication')}>
+                  <button
+                    type="button"
+                    className={`publier-mode-btn ${modePublication === 'chaine' ? 'active' : ''}`}
+                    aria-pressed={modePublication === 'chaine'}
+                    onClick={() => {
+                      setErreurFormulaire('');
+                      setMessageFormulaire('');
+                      setModePublication('chaine');
+                    }}
+                  >
+                    <Youtube size={15} />
+                    {t('dashboard.sync_channel')}
                   </button>
-                ) : (
-                  <>
-                    <button 
-                      type="button" 
-                      className={`btn ${modePublication === 'chaine' ? 'btn-primary' : 'btn-outline'}`} 
-                      onClick={() => {
-                        setErreurFormulaire('');
-                        setMessageFormulaire('');
-                        setModePublication('chaine');
-                      }}
-                    >
-                      {t('dashboard.sync_channel')}
-                    </button>
-                    <button 
-                      type="button" 
-                      className={`btn ${modePublication === 'video' ? 'btn-primary' : 'btn-outline'}`} 
-                      onClick={ouvrirModeVideo}
-                    >
-                      {t('dashboard.add_a_video')}
-                    </button>
-                  </>
-                )}
-              </div>
+                  <button
+                    type="button"
+                    className={`publier-mode-btn ${modePublication === 'video' ? 'active' : ''}`}
+                    aria-pressed={modePublication === 'video'}
+                    onClick={ouvrirModeVideo}
+                  >
+                    <PlusCircle size={15} />
+                    {t('dashboard.add_a_video')}
+                  </button>
+                </div>
+              )}
             </div>
 
             {ongletActif === 'editer' || (ongletActif === 'publier' && modePublication === 'video') ? (
               <Card>
-              <form className="dashboard-form" onSubmit={handleSoumission}>
-                <div className="dashboard-grid-2">
-                  <label className="dashboard-field">
-                    <span>{t('dashboard.form_title_label')}</span>
-                    <input
-                      value={formulaire.titre}
-                      onChange={(e) => mettreAJourChamp('titre', e.target.value)}
-                      placeholder={t('dashboard.form_title_placeholder')}
-                      maxLength={255}
-                      required
-                    />
-                  </label>
+              <form className="publier-form" onSubmit={handleSoumission}>
 
-                  <label className="dashboard-field">
-                    <span>{t('dashboard.form_format_label')}</span>
-                    <select value={formulaire.type_media} onChange={(e) => mettreAJourChamp('type_media', e.target.value)}>
-                      <option value="AUDIO">{t('dashboard.format_audio')}</option>
-                      <option value="VIDEO">{t('dashboard.format_video')}</option>
-                      <option value="BOTH">{t('dashboard.format_mixed')}</option>
-                    </select>
-                  </label>
-                </div>
+                {/* ---- Informations ---- */}
+                <section className="publier-section">
+                  <h3 className="publier-section-titre">
+                    <span className="publier-section-icone" aria-hidden="true"><PencilLine size={14} /></span>
+                    {t('dashboard.publier_section_infos', 'Informations')}
+                  </h3>
 
-                <label className="dashboard-field">
-                  <span>{t('dashboard.form_desc_label')}</span>
-                  <textarea
-                    value={formulaire.description}
-                    onChange={(e) => mettreAJourChamp('description', e.target.value)}
-                    placeholder={t('dashboard.form_desc_placeholder')}
-                  />
-                </label>
-
-                {/* Source du média — adaptée au format choisi (audio / vidéo YouTube ou fichier) */}
-                {(formulaire.type_media === 'AUDIO' || formulaire.type_media === 'BOTH') ? (
-                  <label className="dashboard-field">
-                    <span>{t('dashboard.form_audio_label')} <small className="champ-aide">{t('dashboard.downloadable')}</small></span>
-                    <input
-                      key={`audio-${resetFichiersKey}`}
-                      type="file"
-                      accept=".mp3,.wav,.m4a,.aac,.ogg,.oga,.flac,audio/*"
-                      onChange={(e) => mettreAJourFichier('fichier_audio', e.target.files?.[0] || null)}
-                    />
-                    <small className="champ-aide">
-                      Formats : {CONTRAINTES_FICHIERS.fichier_audio.extensions.join(', ')} — {CONTRAINTES_FICHIERS.fichier_audio.tailleMaxMo} Mo maximum.
-                    </small>
-                    {erreursFichiers.fichier_audio ? (
-                      <small className="dashboard-error" role="alert">{erreursFichiers.fichier_audio}</small>
-                    ) : null}
-                  </label>
-                ) : null}
-
-                {(formulaire.type_media === 'VIDEO' || formulaire.type_media === 'BOTH') ? (
-                  <>
-                    {/* Marche a suivre rappelee dans le formulaire : la video
-                        n'est pas hebergee par la plateforme, elle est diffusee
-                        depuis YouTube. */}
-                    <div className="info-banner-premium">
-                      <Youtube size={15} />
-                      <span>
-                        {t(
-                          'dashboard.form_youtube_workflow',
-                          "Les vidéos ne sont pas hébergées ici : publiez d'abord votre vidéo sur votre chaîne YouTube, puis collez son lien ci-dessous. Elle sera lue directement dans l'application."
-                        )}
-                      </span>
-                    </div>
-
+                  <div className="dashboard-grid-2">
                     <label className="dashboard-field">
-                      <span>
-                        {t('dashboard.form_youtube_label')}
-                        <span className="champ-obligatoire" aria-hidden="true"> *</span>
-                      </span>
+                      <span>{t('dashboard.form_title_label')}</span>
                       <input
-                        value={formulaire.url_video || ''}
-                        onChange={(e) => mettreAJourChamp('url_video', e.target.value)}
-                        placeholder="https://www.youtube.com/watch?v=..."
-                        aria-invalid={lienVideoNonReconnu}
-                        aria-describedby={lienVideoNonReconnu ? 'url-video-erreur' : undefined}
+                        value={formulaire.titre}
+                        onChange={(e) => mettreAJourChamp('titre', e.target.value)}
+                        placeholder={t('dashboard.form_title_placeholder')}
+                        maxLength={255}
+                        required
                       />
-                      <small className="champ-aide">
-                        {t('dashboard.form_youtube_help')}
-                      </small>
-
-                      {/* Le serveur n'enregistre youtube_id que si l'URL
-                          correspond à l'un de ses motifs. Sans ce retour, un
-                          lien mal formé était accepté puis stocké sans
-                          identifiant : pas de dédoublonnage, et un lecteur
-                          incapable d'afficher la vidéo. */}
-                      {lienVideoNonReconnu ? (
-                        <small id="url-video-erreur" className="dashboard-error" role="alert">
-                          {t(
-                            'dashboard.form_youtube_invalid',
-                            "Lien YouTube non reconnu. Formats acceptés : /watch?v=…, youtu.be/…, /embed/… ou /shorts/…"
-                          )}
-                        </small>
-                      ) : null}
-
-                      {idVideoSaisie ? (
-                        // Pas de loading="lazy" : l'aperçu répond à une saisie
-                        // en cours et se trouve souvent sous la ligne de
-                        // flottaison, où il resterait vide jusqu'au défilement.
-                        // onError masque la vignette si l'identifiant est bien
-                        // formé mais ne correspond à aucune vidéo.
-                        <span className="apercu-youtube">
-                          <img
-                            src={miniatureYoutube(idVideoSaisie)}
-                            alt=""
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                          />
-                          <small className="champ-aide">
-                            {t('dashboard.form_youtube_preview', 'Vidéo détectée — vérifiez qu\'il s\'agit de la bonne.')}
-                          </small>
-                        </span>
-                      ) : null}
                     </label>
 
-                  </>
-                ) : null}
+                    <label className="dashboard-field">
+                      <span>{t('dashboard.form_format_label')}</span>
+                      <select value={formulaire.type_media} onChange={(e) => gererChangementFormat(e.target.value)}>
+                        <option value="AUDIO">{t('dashboard.format_audio')}</option>
+                        <option value="VIDEO">{t('dashboard.format_video')}</option>
+                        <option value="BOTH">{t('dashboard.format_mixed')}</option>
+                      </select>
+                    </label>
+                  </div>
 
-                {/* Image de couverture : egalement geree par le code, sans champ
-                    pour la choisir. Elle s'affiche sur les cartes du catalogue
-                    public et sur la page d'accueil. */}
-                <label className="dashboard-field">
-                  <span>
-                    {t('dashboard.form_cover_label', 'Image de couverture')}{' '}
-                    <small className="champ-aide">{t('dashboard.optional', 'optionnelle')}</small>
-                  </span>
-                  <input
-                    key={`couverture-${resetFichiersKey}`}
-                    type="file"
-                    accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
-                    onChange={(e) => mettreAJourFichier('image_couverture', e.target.files?.[0] || null)}
-                  />
-                  <small className="champ-aide">
-                    Affichée sur les cartes du catalogue. Formats : {CONTRAINTES_FICHIERS.image_couverture.extensions.join(', ')} — {CONTRAINTES_FICHIERS.image_couverture.tailleMaxMo} Mo maximum.
-                  </small>
-                  {erreursFichiers.image_couverture ? (
-                    <small className="dashboard-error" role="alert">{erreursFichiers.image_couverture}</small>
+                  <label className="dashboard-field">
+                    <span>{t('dashboard.form_desc_label')}</span>
+                    <textarea
+                      value={formulaire.description}
+                      onChange={(e) => mettreAJourChamp('description', e.target.value)}
+                      placeholder={t('dashboard.form_desc_placeholder')}
+                    />
+                  </label>
+                </section>
+
+                {/* ---- Source du média — adaptée au format choisi ---- */}
+                <section className="publier-section">
+                  <h3 className="publier-section-titre">
+                    <span className="publier-section-icone" aria-hidden="true"><FileAudio size={14} /></span>
+                    {t('dashboard.publier_section_source', 'Source du média')}
+                  </h3>
+
+                  {(formulaire.type_media === 'AUDIO' || formulaire.type_media === 'BOTH') ? (
+                    <label className="dashboard-field">
+                      <span>{t('dashboard.form_audio_label')} <small className="champ-aide">{t('dashboard.downloadable')}</small></span>
+                      <input
+                        key={`audio-${resetFichiersKey}`}
+                        type="file"
+                        accept=".mp3,.wav,.m4a,.aac,.ogg,.oga,.flac,audio/*"
+                        onChange={(e) => mettreAJourFichier('fichier_audio', e.target.files?.[0] || null)}
+                      />
+                      <small className="champ-aide">
+                        Formats : {CONTRAINTES_FICHIERS.fichier_audio.extensions.join(', ')} — {CONTRAINTES_FICHIERS.fichier_audio.tailleMaxMo} Mo maximum.
+                      </small>
+                      {erreursFichiers.fichier_audio ? (
+                        <small className="dashboard-error" role="alert">{erreursFichiers.fichier_audio}</small>
+                      ) : null}
+                    </label>
                   ) : null}
-                </label>
 
-                <div className="dashboard-grid-2">
-                  <label className="dashboard-field">
-                    <span>{t('dashboard.form_preacher_label')}</span>
-                    <input
-                      value={formulaire.nom_predicateur || ''}
-                      onChange={(e) => mettreAJourChamp('nom_predicateur', e.target.value)}
-                      placeholder={t('dashboard.form_preacher_placeholder')}
-                      maxLength={255}
-                    />
-                    <small className="champ-aide">
-                      {t('dashboard.form_preacher_help')}
-                    </small>
-                  </label>
+                  {(formulaire.type_media === 'VIDEO' || formulaire.type_media === 'BOTH') ? (
+                    <>
+                      {/* Marche a suivre rappelee dans le formulaire : la video
+                          n'est pas hebergee par la plateforme, elle est diffusee
+                          depuis YouTube. */}
+                      <div className="info-banner-premium">
+                        <Youtube size={15} />
+                        <span>
+                          {t(
+                            'dashboard.form_youtube_workflow',
+                            "Les vidéos ne sont pas hébergées ici : publiez d'abord votre vidéo sur votre chaîne YouTube, puis collez son lien ci-dessous. Elle sera lue directement dans l'application."
+                          )}
+                        </span>
+                      </div>
 
-                  <label className="dashboard-field">
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={13}/> {t('dashboard.form_date_label')}</span>
-                    <PRCalendar
-                      value={formulaire.date_predication ? new Date(formulaire.date_predication) : null}
-                      onChange={(e) => {
-                        if (e.value) {
-                          const d = e.value;
-                          const year = d.getFullYear();
-                          const month = String(d.getMonth() + 1).padStart(2, '0');
-                          const day = String(d.getDate()).padStart(2, '0');
-                          mettreAJourChamp('date_predication', `${year}-${month}-${day}`);
-                        } else {
-                          mettreAJourChamp('date_predication', '');
-                        }
-                      }}
-                      dateFormat="dd/mm/yy"
-                      showIcon
-                      style={{ width: '100%' }}
-                      inputStyle={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', border: '1px solid var(--pd-border)', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px' }}
-                    />
-                    <small className="champ-aide">
-                      {t('dashboard.form_date_help')}
-                    </small>
-                  </label>
-                </div>
-
-                {(formulaire.type_media === 'VIDEO' || formulaire.type_media === 'BOTH') && formulaire.url_video ? (
-                  <div className="info-banner-premium">
-                    <CheckCircle2 size={15} />
-                    <span>{t('dashboard.youtube_info')}</span>
-                  </div>
-                ) : null}
-
-                <div className="dashboard-field">
-                  <span>{t('dashboard.form_categories_label')}</span>
-                  <div className="checkbox-cloud">
-                    {categories.length ? categories.map((cat) => (
-                      <label key={cat.id} className={`cloud-checkbox-label ${formulaire.categories_ids.includes(cat.id) ? 'checked' : ''}`}>
+                      <label className="dashboard-field">
+                        <span>
+                          {t('dashboard.form_youtube_label')}
+                          <span className="champ-obligatoire" aria-hidden="true"> *</span>
+                        </span>
                         <input
-                          type="checkbox"
-                          checked={formulaire.categories_ids.includes(cat.id)}
-                          onChange={() => basculerCategorie(cat.id)}
+                          value={formulaire.url_video || ''}
+                          onChange={(e) => mettreAJourChamp('url_video', e.target.value)}
+                          placeholder="https://www.youtube.com/watch?v=..."
+                          aria-invalid={lienVideoNonReconnu}
+                          aria-describedby={lienVideoNonReconnu ? 'url-video-erreur' : undefined}
                         />
-                        {cat.nom}
+                        <small className="champ-aide">
+                          {t('dashboard.form_youtube_help')}
+                        </small>
+
+                        {/* Le serveur n'enregistre youtube_id que si l'URL
+                            correspond à l'un de ses motifs. Sans ce retour, un
+                            lien mal formé était accepté puis stocké sans
+                            identifiant : pas de dédoublonnage, et un lecteur
+                            incapable d'afficher la vidéo. */}
+                        {lienVideoNonReconnu ? (
+                          <small id="url-video-erreur" className="dashboard-error" role="alert">
+                            {t(
+                              'dashboard.form_youtube_invalid',
+                              "Lien YouTube non reconnu. Formats acceptés : /watch?v=…, youtu.be/…, /embed/… ou /shorts/…"
+                            )}
+                          </small>
+                        ) : null}
+
+                        {idVideoSaisie ? (
+                          // Pas de loading="lazy" : l'aperçu répond à une saisie
+                          // en cours et se trouve souvent sous la ligne de
+                          // flottaison, où il resterait vide jusqu'au défilement.
+                          // onError masque la vignette si l'identifiant est bien
+                          // formé mais ne correspond à aucune vidéo.
+                          <span className="apercu-youtube">
+                            <img
+                              src={miniatureYoutube(idVideoSaisie)}
+                              alt=""
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                            <small className="champ-aide">
+                              {t('dashboard.form_youtube_preview', 'Vidéo détectée — vérifiez qu\'il s\'agit de la bonne.')}
+                            </small>
+                          </span>
+                        ) : null}
                       </label>
-                    )) : <span style={{ color: 'var(--pd-text-muted)' }}>{t('dashboard.no_categories')}</span>}
-                  </div>
-                </div>
+                    </>
+                  ) : null}
 
-                <div className="dashboard-grid-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem' }}>
-                  <label className="dashboard-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={formulaire.est_publie}
-                      onChange={(e) => mettreAJourChamp('est_publie', e.target.checked)}
-                    />
-                    {formulaire.est_publie ? t('dashboard.is_published_true') : t('dashboard.is_published_false')}
-                  </label>
-
+                  {/* Image de couverture : egalement geree par le code, sans champ
+                      pour la choisir. Elle s'affiche sur les cartes du catalogue
+                      public et sur la page d'accueil. */}
                   <label className="dashboard-field">
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={13}/> {t('dashboard.form_schedule_label')}</span>
-                    <PRCalendar
-                      value={formulaire.date_publication ? new Date(formulaire.date_publication) : null}
-                      onChange={(e) => {
-                        if (e.value) {
-                          const d = e.value;
-                          const year = d.getFullYear();
-                          const month = String(d.getMonth() + 1).padStart(2, '0');
-                          const day = String(d.getDate()).padStart(2, '0');
-                          const hours = String(d.getHours()).padStart(2, '0');
-                          const minutes = String(d.getMinutes()).padStart(2, '0');
-                          mettreAJourChamp('date_publication', `${year}-${month}-${day}T${hours}:${minutes}`);
-                        } else {
-                          mettreAJourChamp('date_publication', '');
-                        }
-                      }}
-                      showTime
-                      hourFormat="24"
-                      dateFormat="dd/mm/yy"
-                      showIcon
-                      style={{ width: '100%' }}
-                      inputStyle={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', border: '1px solid var(--pd-border)', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px' }}
+                    <span>
+                      {t('dashboard.form_cover_label', 'Image de couverture')}{' '}
+                      <small className="champ-aide">{t('dashboard.optional', 'optionnelle')}</small>
+                    </span>
+                    <input
+                      key={`couverture-${resetFichiersKey}`}
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.webp,.gif,image/*"
+                      onChange={(e) => mettreAJourFichier('image_couverture', e.target.files?.[0] || null)}
                     />
+                    <small className="champ-aide">
+                      Affichée sur les cartes du catalogue. Formats : {CONTRAINTES_FICHIERS.image_couverture.extensions.join(', ')} — {CONTRAINTES_FICHIERS.image_couverture.tailleMaxMo} Mo maximum.
+                    </small>
+                    {erreursFichiers.image_couverture ? (
+                      <small className="dashboard-error" role="alert">{erreursFichiers.image_couverture}</small>
+                    ) : null}
                   </label>
-                </div>
 
-                {formulaire.est_publie && formulaire.date_publication ? (
-                  <div className="info-banner-premium">
-                    <CheckCircle2 size={15} />
-                    <span>{t('dashboard.schedule_info')}</span>
+                  {(formulaire.type_media === 'VIDEO' || formulaire.type_media === 'BOTH') && formulaire.url_video ? (
+                    <div className="info-banner-premium">
+                      <CheckCircle2 size={15} />
+                      <span>{t('dashboard.youtube_info')}</span>
+                    </div>
+                  ) : null}
+                </section>
+
+                {/* ---- Détails ---- */}
+                <section className="publier-section">
+                  <h3 className="publier-section-titre">
+                    <span className="publier-section-icone" aria-hidden="true"><User size={14} /></span>
+                    {t('dashboard.publier_section_details', 'Détails')}
+                  </h3>
+
+                  <div className="dashboard-grid-2">
+                    <label className="dashboard-field">
+                      <span>{t('dashboard.form_preacher_label')}</span>
+                      <input
+                        value={formulaire.nom_predicateur || ''}
+                        onChange={(e) => mettreAJourChamp('nom_predicateur', e.target.value)}
+                        placeholder={t('dashboard.form_preacher_placeholder')}
+                        maxLength={255}
+                      />
+                      <small className="champ-aide">
+                        {t('dashboard.form_preacher_help')}
+                      </small>
+                    </label>
+
+                    <label className="dashboard-field">
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={13}/> {t('dashboard.form_date_label')}</span>
+                      <PRCalendar
+                        value={formulaire.date_predication ? new Date(formulaire.date_predication) : null}
+                        onChange={(e) => {
+                          if (e.value) {
+                            const d = e.value;
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(2, '0');
+                            const day = String(d.getDate()).padStart(2, '0');
+                            mettreAJourChamp('date_predication', `${year}-${month}-${day}`);
+                          } else {
+                            mettreAJourChamp('date_predication', '');
+                          }
+                        }}
+                        dateFormat="dd/mm/yy"
+                        showIcon
+                        style={{ width: '100%' }}
+                        inputStyle={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', border: '1px solid var(--pd-border)', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px' }}
+                      />
+                      <small className="champ-aide">
+                        {t('dashboard.form_date_help')}
+                      </small>
+                    </label>
                   </div>
-                ) : null}
 
-                {erreurFormulaire ? <p className="dashboard-error">{erreurFormulaire}</p> : null}
-                {messageFormulaire ? <p className="dashboard-status">{messageFormulaire}</p> : null}
+                  <div className="dashboard-field">
+                    <span>{t('dashboard.form_categories_label')}</span>
+                    <div className="checkbox-cloud">
+                      {categories.length ? categories.map((cat) => (
+                        <label key={cat.id} className={`cloud-checkbox-label ${formulaire.categories_ids.includes(cat.id) ? 'checked' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={formulaire.categories_ids.includes(cat.id)}
+                            onChange={() => basculerCategorie(cat.id)}
+                          />
+                          {cat.nom}
+                        </label>
+                      )) : <span style={{ color: 'var(--pd-text-muted)' }}>{t('dashboard.no_categories')}</span>}
+                    </div>
+                  </div>
+                </section>
 
-                <div className="dashboard-inline" style={{ marginTop: '1rem' }}>
+                {/* ---- Publication ---- */}
+                <section className="publier-section">
+                  <h3 className="publier-section-titre">
+                    <span className="publier-section-icone" aria-hidden="true"><Globe2 size={14} /></span>
+                    {t('dashboard.publier_section_publication', 'Publication')}
+                  </h3>
+
+                  <div className="dashboard-grid-2">
+                    <label className="dashboard-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={formulaire.est_publie}
+                        onChange={(e) => mettreAJourChamp('est_publie', e.target.checked)}
+                      />
+                      {formulaire.est_publie ? t('dashboard.is_published_true') : t('dashboard.is_published_false')}
+                    </label>
+
+                    <label className="dashboard-field">
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={13}/> {t('dashboard.form_schedule_label')}</span>
+                      <PRCalendar
+                        value={formulaire.date_publication ? new Date(formulaire.date_publication) : null}
+                        onChange={(e) => {
+                          if (e.value) {
+                            const d = e.value;
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(2, '0');
+                            const day = String(d.getDate()).padStart(2, '0');
+                            const hours = String(d.getHours()).padStart(2, '0');
+                            const minutes = String(d.getMinutes()).padStart(2, '0');
+                            mettreAJourChamp('date_publication', `${year}-${month}-${day}T${hours}:${minutes}`);
+                          } else {
+                            mettreAJourChamp('date_publication', '');
+                          }
+                        }}
+                        showTime
+                        hourFormat="24"
+                        dateFormat="dd/mm/yy"
+                        showIcon
+                        style={{ width: '100%' }}
+                        inputStyle={{ padding: '0.5rem 0.75rem', fontSize: '0.9rem', border: '1px solid var(--pd-border)', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px' }}
+                      />
+                    </label>
+                  </div>
+
+                  {formulaire.est_publie && formulaire.date_publication ? (
+                    <div className="info-banner-premium">
+                      <CheckCircle2 size={15} />
+                      <span>{t('dashboard.schedule_info')}</span>
+                    </div>
+                  ) : null}
+                </section>
+
+                {erreurFormulaire ? <p className="dashboard-error" role="alert">{erreurFormulaire}</p> : null}
+                {messageFormulaire ? <p className="dashboard-status" role="status">{messageFormulaire}</p> : null}
+
+                <div className="dashboard-inline" style={{ paddingTop: '1.25rem', borderTop: '1px solid var(--pd-border)' }}>
                   <button className="btn btn-dark" type="submit" disabled={soumission}>
                     {soumission ? t('dashboard.saving') : t('dashboard.save_changes')}
                   </button>
@@ -1154,7 +1204,7 @@ export function PastorDashboard() {
               {ongletActif === 'editer' ? (
                 <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)', borderRadius: '0 0 16px 16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(0,74,148,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(var(--primary-rgb), 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
                       <Paperclip size={18} />
                     </div>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>{t('dashboard.pdf_attachments')}</h3>
@@ -1170,40 +1220,47 @@ export function PastorDashboard() {
             <Card>
               {/* Un <form> et non un <div> : la touche Entrée dans le champ ne
                   déclenchait aucune soumission. */}
-              <form className="dashboard-form" onSubmit={handleSynchronisation}>
-                <label className="dashboard-field">
-                  <span>{t('dashboard.sync_youtube_label')}</span>
-                  <input
-                    value={lienChaine}
-                    onChange={(e) => {
-                      setLienChaine(e.target.value);
-                      if (syncErreur) setSyncErreur('');
-                    }}
-                    placeholder="https://www.youtube.com/@votrechaine"
-                    aria-invalid={!!syncErreur}
-                    disabled={syncEnCours}
-                  />
-                  <small className="champ-aide">
-                    {t('dashboard.sync_youtube_help')}
-                  </small>
-                  {lienChaineReconnue ? (
-                    <small className="dashboard-status" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <CheckCircle2 size={13} /> {t('dashboard.sync_link_recognised', 'Format de lien reconnu.')}
-                    </small>
-                  ) : null}
-                </label>
+              <form className="publier-form" onSubmit={handleSynchronisation}>
+                <section className="publier-section">
+                  <h3 className="publier-section-titre">
+                    <span className="publier-section-icone" aria-hidden="true"><Youtube size={14} /></span>
+                    {t('dashboard.publier_section_channel', 'Chaîne YouTube')}
+                  </h3>
 
-                <div className="info-banner-premium">
-                  <CheckCircle2 size={15} />
-                  <span>
-                    {t('dashboard.sync_auto_info')}
-                  </span>
-                </div>
+                  <label className="dashboard-field">
+                    <span>{t('dashboard.sync_youtube_label')}</span>
+                    <input
+                      value={lienChaine}
+                      onChange={(e) => {
+                        setLienChaine(e.target.value);
+                        if (syncErreur) setSyncErreur('');
+                      }}
+                      placeholder="https://www.youtube.com/@votrechaine"
+                      aria-invalid={!!syncErreur}
+                      disabled={syncEnCours}
+                    />
+                    <small className="champ-aide">
+                      {t('dashboard.sync_youtube_help')}
+                    </small>
+                    {lienChaineReconnue ? (
+                      <small className="dashboard-status" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <CheckCircle2 size={13} /> {t('dashboard.sync_link_recognised', 'Format de lien reconnu.')}
+                      </small>
+                    ) : null}
+                  </label>
+
+                  <div className="info-banner-premium">
+                    <CheckCircle2 size={15} />
+                    <span>
+                      {t('dashboard.sync_auto_info')}
+                    </span>
+                  </div>
+                </section>
 
                 {syncErreur ? <p className="dashboard-error" role="alert">{syncErreur}</p> : null}
                 {syncMessage ? <p className="dashboard-status" role="status">{syncMessage}</p> : null}
 
-                <div className="dashboard-inline" style={{ marginTop: '1rem' }}>
+                <div className="dashboard-inline" style={{ paddingTop: '1.25rem', borderTop: '1px solid var(--pd-border)' }}>
                   <button
                     className="btn btn-primary"
                     type="submit"
