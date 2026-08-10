@@ -9,6 +9,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { DocumentIcon } from '../../../components/ui/DocumentIcon';
 import { Toast } from 'primereact/toast';
 import { ConfirmModal } from '../../../components/ui/ConfirmModal';
+import { verifierFichier } from '../../../utils/fichiers';
 
 export function GestionDocuments() {
   const { t } = useTranslation();
@@ -132,15 +133,9 @@ export function GestionDocuments() {
       setErreurFichier('');
       return;
     }
-    const contrainte = CONTRAINTES[cle];
-    const extension = fichierChoisi.name.split('.').pop()?.toLowerCase();
-    if (!contrainte.extensions.includes(extension)) {
-      setErreurFichier(`Format non supporté (${extension || 'inconnu'}). Acceptés : ${contrainte.extensions.join(', ')}.`);
-      appliquer(null);
-      return;
-    }
-    if (fichierChoisi.size > contrainte.tailleMaxMo * 1024 * 1024) {
-      setErreurFichier(`Fichier trop volumineux (${(fichierChoisi.size / (1024 * 1024)).toFixed(1)} Mo). Maximum : ${contrainte.tailleMaxMo} Mo.`);
+    const erreur = verifierFichier(fichierChoisi, CONTRAINTES[cle]);
+    if (erreur) {
+      setErreurFichier(erreur);
       appliquer(null);
       return;
     }

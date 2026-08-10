@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../services/api';
 import { Card } from '../../../components/ui/Card';
+import { verifierFichier } from '../../../utils/fichiers';
 import './ModifierProfilPasteur.css';
 
 const LIMITE_BIO = 500;
@@ -12,7 +13,7 @@ const LIMITE_BIO = 500;
 // (backend/api/serializers/utilisateurs.py) : un fichier accepté ici mais
 // refusé là-bas ne produirait qu'une erreur tardive et peu lisible.
 const EXTENSIONS_IMAGE = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-const TAILLE_MAX_OCTETS = 5 * 1000 * 1000;
+const TAILLE_MAX_MO = 5;
 
 export function ModifierProfilPasteur() {
   const { pasteur, actualiserProfilPasteur } = useAuth();
@@ -61,14 +62,12 @@ export function ModifierProfilPasteur() {
   // immédiatement : sinon le bouton semble ne rien faire, ou l'erreur
   // n'apparaît qu'après l'envoi, renvoyée par le serveur.
   function validerImage(fichier) {
-    const extension = fichier.name.split('.').pop()?.toLowerCase();
-    if (!EXTENSIONS_IMAGE.includes(extension)) {
-      return t('dashboard.profile_file_invalid_type', 'Format non pris en charge (JPG, PNG, WEBP ou GIF).');
-    }
-    if (fichier.size > TAILLE_MAX_OCTETS) {
-      return t('dashboard.profile_file_too_large', 'Le fichier est trop volumineux (5 Mo maximum).');
-    }
-    return null;
+    return verifierFichier(fichier, {
+      extensions: EXTENSIONS_IMAGE,
+      tailleMaxMo: TAILLE_MAX_MO,
+      messageFormatInvalide: () => t('dashboard.profile_file_invalid_type', 'Format non pris en charge (JPG, PNG, WEBP ou GIF).'),
+      messageTropVolumineux: () => t('dashboard.profile_file_too_large', 'Le fichier est trop volumineux (5 Mo maximum).'),
+    });
   }
 
   function gererFichier(evenement, appliquer) {

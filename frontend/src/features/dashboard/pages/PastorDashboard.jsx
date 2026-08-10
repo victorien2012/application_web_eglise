@@ -30,6 +30,7 @@ import {
   extraireIdVideoYoutube,
   miniatureYoutube,
 } from '../../../utils/youtube';
+import { verifierFichier as verifierFichierPartage } from '../../../utils/fichiers';
 import './PastorDashboard.css';
 
 const FORMULAIRE_VIDE = {
@@ -77,15 +78,7 @@ const CONTRAINTES_FICHIERS = {
 function verifierFichier(cle, fichier) {
   const contrainte = CONTRAINTES_FICHIERS[cle];
   if (!contrainte || !fichier) return '';
-  const extension = fichier.name.split('.').pop()?.toLowerCase();
-  if (!contrainte.extensions.includes(extension)) {
-    return `Format non supporté (${extension || 'inconnu'}). Formats acceptés : ${contrainte.extensions.join(', ')}.`;
-  }
-  if (fichier.size > contrainte.tailleMaxMo * 1024 * 1024) {
-    const taille = (fichier.size / (1024 * 1024)).toFixed(1);
-    return `Fichier trop volumineux (${taille} Mo). Maximum : ${contrainte.tailleMaxMo} Mo.`;
-  }
-  return '';
+  return verifierFichierPartage(fichier, contrainte);
 }
 
 export function PastorDashboard() {

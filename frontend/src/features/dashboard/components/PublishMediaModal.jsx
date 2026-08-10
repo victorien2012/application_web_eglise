@@ -3,7 +3,17 @@ import { api } from '../../../services/api';
 import { X, Upload, Youtube, Link as LinkIcon, FileAudio, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { extraireIdVideoYoutube, miniatureYoutube } from '../../../utils/youtube';
+import { verifierFichier } from '../../../utils/fichiers';
 import './PublishMediaModal.css';
+
+// Mêmes limites que le champ audio de l'espace pasteur (PastorDashboard.jsx)
+// et que le serializer serveur : ce formulaire n'appliquait jusqu'ici AUCUNE
+// validation de fichier, contrairement aux trois autres formulaires d'upload
+// de l'application — un fichier trop lourd n'était rejeté qu'après l'envoi.
+const CONTRAINTE_AUDIO = {
+  extensions: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'oga', 'flac'],
+  tailleMaxMo: 100,
+};
 
 export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
   const { t } = useTranslation();
@@ -21,6 +31,7 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
     est_publie: true,
   });
   const [file, setFile] = useState(null);
+  const [erreurFichier, setErreurFichier] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -37,12 +48,32 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
     // Un fichier audio choisi en type "Audio" puis conserve apres passage a
     // "Video" aurait ete envoye quand meme (body l'ajoute des que file existe),
     // sans lien avec le format finalement choisi.
-    if (name === 'type_media' && value === 'VIDEO') setFile(null);
+    if (name === 'type_media' && value === 'VIDEO') {
+      setFile(null);
+      setErreurFichier('');
+    }
+  };
+
+  const choisirAudio = (fichierChoisi) => {
+    if (!fichierChoisi) {
+      setFile(null);
+      setErreurFichier('');
+      return;
+    }
+    const erreur = verifierFichier(fichierChoisi, CONTRAINTE_AUDIO);
+    if (erreur) {
+      setErreurFichier(erreur);
+      setFile(null);
+      return;
+    }
+    setErreurFichier('');
+    setFile(fichierChoisi);
   };
 
   const resetForm = () => {
     setForm({ titre: '', description: '', type_media: 'VIDEO', url_video: '', nom_predicateur: '', est_publie: true });
     setFile(null);
+    setErreurFichier('');
     setError('');
     setSuccess('');
     setLienChaine('');
@@ -69,6 +100,10 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
     setError('');
     setSuccess('');
 
+    if (erreurFichier) {
+      setError(erreurFichier);
+      return;
+    }
     if (veutAudio && !file) {
       setError("Ajoutez le fichier audio correspondant au format choisi.");
       return;
@@ -276,8 +311,11 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
                   <FileAudio size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
                   Fichier audio {veutVideo ? '' : '*'}
                 </label>
-                <input type="file" accept="audio/*" onChange={(e) => setFile(e.target.files[0] || null)} />
-                <small className="pmmodal-help">Formats supportés : MP3, WAV, M4A, AAC, OGG, FLAC.</small>
+                <input type="file" accept="audio/*" onChange={(e) => choisirAudio(e.target.files[0] || null)} />
+                <small className="pmmodal-help">Formats supportés : MP3, WAV, M4A, AAC, OGG, FLAC — 100 Mo maximum.</small>
+                {erreurFichier && (
+                  <small className="pmmodal-error" role="alert">{erreurFichier}</small>
+                )}
               </div>
             )}
 
