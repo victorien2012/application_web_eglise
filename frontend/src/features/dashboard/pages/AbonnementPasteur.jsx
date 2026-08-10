@@ -239,15 +239,21 @@ export function AbonnementPasteur() {
                     {t('dashboard.subscription_recommended', 'Recommandé')}
                   </div>
                 )}
-                {estPlanActuel && (
-                  <div className="badge-actuel">
-                    <BadgeCheck size={13} aria-hidden="true" />
-                    {t('dashboard.subscription_current', 'Formule actuelle')}
-                  </div>
-                )}
 
                 <div className="plan-info-section">
                   <h4 className="plan-title">{plan.nom}</h4>
+
+                  {/* Dans le flux et non en badge flottant : sur une colonne
+                      etroite, deux pastilles posees sur le bord superieur se
+                      chevauchent. « Recommande » est une mention commerciale
+                      liee a la carte, « Formule actuelle » est un etat du
+                      compte — sa place est avec le contenu. */}
+                  {estPlanActuel && (
+                    <div className="badge-actuel">
+                      <BadgeCheck size={13} aria-hidden="true" />
+                      {t('dashboard.subscription_current', 'Formule actuelle')}
+                    </div>
+                  )}
 
                   <div className="plan-price-container">
                     <span className="plan-price">{formater(plan.prix)}</span>

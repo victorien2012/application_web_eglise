@@ -116,13 +116,14 @@
 
 .plans-grid {
   display: grid;
-  /* Plafond de 420px : sans lui, une formule seule sur sa ligne s'etirerait
-     sur toute la largeur et le contenu centre paraitrait perdu. Les cartes
-     s'empilent tant que la place manque, puis passent cote a cote. */
-  grid-template-columns: repeat(auto-fit, minmax(300px, 420px));
+  /* Minimum volontairement bas (250px) : l'espace utile du tableau de bord
+     avoisine 600px, il faut donc que deux colonnes + l'ecart y tiennent pour
+     que les formules restent cote a cote. En dessous, auto-fit repasse
+     naturellement a une seule colonne. */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   justify-content: center;
-  gap: 2rem;
-  align-items: start;
+  gap: 1.5rem;
+  align-items: stretch;
   padding-top: 1rem; /* laisse respirer le badge en débord négatif */
 }
 
@@ -138,7 +139,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 2.25rem 1.75rem 1.75rem;
+  padding: 2.25rem 1.25rem 1.5rem;
   border-radius: 24px;
   background: var(--bg-card);
   border: 1px solid var(--pd-border);
@@ -166,35 +167,44 @@
 }
 
 /* Badges */
-.badge-recommande,
-.badge-actuel {
+/* Seule « Recommandé » reste posée sur le bord supérieur. « Formule
+   actuelle » vit dans le flux (voir le JSX) : deux pastilles flottantes se
+   chevauchaient sur une colonne de 288px. */
+.badge-recommande {
   position: absolute;
-  top: -14px;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 1rem;
+  gap: 0.3rem;
+  padding: 0.32rem 0.8rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   z-index: 10;
   white-space: nowrap;
-}
-
-.badge-recommande {
-  left: 1.75rem;
   background: var(--primary);
   color: #fff;
   box-shadow: 0 8px 15px -4px rgba(var(--primary-rgb), 0.45);
 }
 
 .badge-actuel {
-  right: 1.75rem;
-  background: var(--success);
-  color: #fff;
-  box-shadow: 0 8px 15px -4px rgba(var(--success-rgb), 0.45);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(var(--success-rgb), 0.14);
+  color: var(--success);
+  border: 1px solid rgba(var(--success-rgb), 0.4);
 }
 
 /* --- Contenu de la carte -------------------------------------------------- */
@@ -204,10 +214,11 @@
 }
 
 .plan-title {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: var(--text-main);
   margin: 0 0 0.75rem;
+  overflow-wrap: anywhere;
 }
 
 .plan-price-container {
@@ -215,7 +226,7 @@
 }
 
 .plan-price {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 900;
   color: var(--text-main);
   line-height: 1;
@@ -252,7 +263,7 @@
 .quantity-box {
   background: rgba(var(--primary-rgb), 0.04);
   border: 1px solid var(--pd-border);
-  padding: 1.1rem;
+  padding: 0.9rem;
   border-radius: 16px;
 }
 
@@ -271,7 +282,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.25rem;
+  gap: 0.75rem;
 }
 
 .qty-btn {
@@ -314,7 +325,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 72px;
+  min-width: 58px;
 }
 
 .qty-value {
@@ -359,7 +370,7 @@
 }
 
 .total-amount {
-  font-size: 1.85rem;
+  font-size: 1.5rem;
   font-weight: 900;
   color: var(--primary);
   letter-spacing: -0.02em;
@@ -381,12 +392,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
   border: none;
-  padding: 0.9rem;
+  padding: 0.8rem 0.6rem;
   border-radius: 12px;
-  font-size: 0.98rem;
+  font-size: 0.88rem;
   font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
   cursor: pointer;
   transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
 }
