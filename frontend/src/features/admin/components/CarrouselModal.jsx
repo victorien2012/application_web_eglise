@@ -180,53 +180,68 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
             {typeMedia === 'IMAGE' ? (
               <>
                 <label htmlFor="fichier-upload">Fichier Image {!aImageValide && <span className="required">*</span>}</label>
-                <div className="file-upload-container">
-                  <input
-                    type="file"
-                    id="fichier-upload"
-                    accept=".jpg,.jpeg,.png,.webp,.gif,.svg,image/*"
-                    onChange={handleFileChange}
-                    style={{ display: 'none' }}
-                  />
-                  <label htmlFor="fichier-upload" className="file-upload-btn">
-                    <Upload size={20} />
-                    <span>{fichier ? fichier.name : mediaToEdit?.type_media === 'IMAGE' ? 'Changer l’image...' : 'Choisir une image...'}</span>
-                  </label>
-                </div>
-                {fichierPreview && (
-                  <div className="media-preview-container">
-                    <img src={fichierPreview} alt="Aperçu" className="media-preview" />
+                {/* Vignette fixe a cote du bouton plutot qu'un aperçu empile
+                    en dessous : la modale gardait la meme hauteur qu'un
+                    fichier soit choisi ou non, au lieu de s'etirer d'un coup
+                    des qu'une image apparaissait. */}
+                <div className="media-picker-row">
+                  <div className="media-picker-thumb">
+                    {fichierPreview ? (
+                      <img src={fichierPreview} alt="Aperçu" />
+                    ) : (
+                      <ImageIcon size={20} aria-hidden="true" />
+                    )}
                   </div>
-                )}
+                  <div className="file-upload-container">
+                    <input
+                      type="file"
+                      id="fichier-upload"
+                      accept=".jpg,.jpeg,.png,.webp,.gif,.svg,image/*"
+                      onChange={handleFileChange}
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="fichier-upload" className="file-upload-btn">
+                      <Upload size={18} />
+                      <span>{fichier ? fichier.name : mediaToEdit?.type_media === 'IMAGE' ? 'Changer l’image...' : 'Choisir une image...'}</span>
+                    </label>
+                  </div>
+                </div>
               </>
             ) : (
               <>
                 <label htmlFor="url_video">Lien YouTube {!idYoutube && <span className="required">*</span>}</label>
-                <input
-                  type="url"
-                  id="url_video"
-                  value={urlVideo}
-                  onChange={(e) => setUrlVideo(e.target.value)}
-                  placeholder="https://www.youtube.com/watch?v=..."
-                  aria-invalid={urlVideoInvalide}
-                  aria-describedby={urlVideoInvalide ? 'url_video-erreur' : undefined}
-                />
+                <div className="media-picker-row">
+                  <div className="media-picker-thumb">
+                    {idYoutube ? (
+                      <img
+                        src={`https://img.youtube.com/vi/${idYoutube}/hqdefault.jpg`}
+                        alt="Aperçu de la vidéo YouTube"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <Film size={20} aria-hidden="true" />
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <input
+                      type="url"
+                      id="url_video"
+                      value={urlVideo}
+                      onChange={(e) => setUrlVideo(e.target.value)}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      aria-invalid={urlVideoInvalide}
+                      aria-describedby={urlVideoInvalide ? 'url_video-erreur' : undefined}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                </div>
+                {/* Aperçu de ce que HomeCarousel affichera réellement : une
+                    diapositive silencieusement vide n'est plus decouverte
+                    qu'une fois publiee sur la page d'accueil. */}
                 {urlVideoInvalide && (
                   <small id="url_video-erreur" className="champ-erreur" role="alert">
                     Lien YouTube non reconnu. Utilisez un lien de la forme youtube.com/watch?v=… ou youtu.be/…
                   </small>
-                )}
-                {/* Aperçu de ce que HomeCarousel affichera réellement : une
-                    diapositive silencieusement vide n'est plus decouverte
-                    qu'une fois publiee sur la page d'accueil. */}
-                {idYoutube && (
-                  <div className="media-preview-container">
-                    <img
-                      src={`https://img.youtube.com/vi/${idYoutube}/hqdefault.jpg`}
-                      alt="Aperçu de la vidéo YouTube"
-                      className="media-preview"
-                    />
-                  </div>
                 )}
               </>
             )}
