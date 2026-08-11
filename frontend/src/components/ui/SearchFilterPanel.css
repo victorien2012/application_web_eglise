@@ -1,0 +1,147 @@
+/* ==========================================================================
+   SearchFilterPanel — reproduction fidèle de la maquette de référence
+   (bandeau vert sauge, boutons vert foncé). Couleurs volontairement fixes
+   (non liées aux jetons --bg-card/--text-main du thème clair/sombre) : il
+   s'agit d'une réplique délibérée d'une palette externe, pas d'une
+   déclinaison du thème du site — même logique que --navbar-bg, déjà fixe
+   pour la même raison.
+   ========================================================================== */
+
+.sfp-avertissement {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.9rem 1.25rem;
+  margin-bottom: 1rem;
+  background: #faf1dc;
+  border-left: 4px solid #e2a63c;
+  border-radius: 6px;
+  color: #8a6a1a;
+  font-size: 0.92rem;
+}
+
+.sfp-panneau {
+  background: #cfe1d7;
+  border-radius: 10px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.sfp-entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #1f4d38;
+}
+
+.sfp-entete-titre {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sfp-chevron {
+  transition: transform 0.2s ease;
+}
+
+.sfp-chevron-ouvert {
+  transform: rotate(180deg);
+}
+
+.sfp-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem 2rem;
+  margin-top: 1.5rem;
+}
+
+.sfp-champ {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: #1e2b25;
+}
+
+.sfp-champ input,
+.sfp-champ select {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #b9cec1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1e2b25;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.sfp-champ input:focus,
+.sfp-champ select:focus {
+  outline: none;
+  border-color: #1a5c3f;
+  box-shadow: 0 0 0 3px rgba(26, 92, 63, 0.15);
+}
+
+.sfp-pied {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.sfp-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sfp-btn-reset {
+  background: #ffffff;
+  border: 1px solid #b9cec1;
+  color: #1e2b25;
+}
+
+.sfp-btn-reset:hover {
+  background: #f3f8f5;
+}
+
+.sfp-btn-search {
+  background: #1a5c3f;
+  border: none;
+  color: #ffffff;
+}
+
+.sfp-btn-search:hover {
+  background: #164a33;
+}
+
+@media (max-width: 640px) {
+  .sfp-panneau {
+    padding: 1.25rem 1rem;
+  }
+
+  .sfp-grille {
+    grid-template-columns: 1fr;
+  }
+
+  .sfp-pied {
+    flex-direction: column-reverse;
+  }
+
+  .sfp-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

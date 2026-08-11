@@ -7,6 +7,7 @@ import { CreatePasteurModal } from '../components/CreatePasteurModal';
 import { PublishMediaModal } from '../../dashboard/components/PublishMediaModal';
 import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import { DataTable } from '../../../components/ui/DataTable';
+import { SearchFilterPanel, ChampFiltre } from '../../../components/ui/SearchFilterPanel';
 import { AnnonceModal } from '../components/AnnonceModal';
 import CarrouselModal from '../components/CarrouselModal';
 import { GestionConfiguration } from '../components/GestionConfiguration';
@@ -35,9 +36,15 @@ export function Administration() {
   const [messageSucces, setMessageSucces] = useState('');
   const [actionEnCours, setActionEnCours] = useState(null);
   const [pasteurExamine, setPasteurExamine] = useState(null);
+  // recherchePasteur / filtreStatutPasteur portent la valeur APPLIQUÉE (celle
+  // qui filtre effectivement la liste) ; les champs du panneau de filtres
+  // manipulent une valeur en attente distincte, appliquée seulement au clic
+  // sur « Rechercher » — même principe que rechercheVideo/rechercheVideoAppliquee
+  // déjà utilisé plus bas dans ce fichier pour l'onglet Vidéos.
   const [recherchePasteur, setRecherchePasteur] = useState('');
   const [filtreStatutPasteur, setFiltreStatutPasteur] = useState('tous');
-  const [pagePasteurs, setPagePasteurs] = useState(1);
+  const [rechercheDemandeEnAttente, setRechercheDemandeEnAttente] = useState('');
+  const [filtreStatutEnAttente, setFiltreStatutEnAttente] = useState('tous');
   const [pageSignalements, setPageSignalements] = useState(1);
   const [pageAnnonces, setPageAnnonces] = useState(1);
   const [pageCarrousel, setPageCarrousel] = useState(1);
@@ -163,10 +170,6 @@ export function Administration() {
     chargerPredications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ongletActif, pagePredications, rechercheVideoAppliquee, filtreALaUne, compteurRafraichissementVideos]);
-
-  useEffect(() => {
-    setPagePasteurs(1);
-  }, [filtreStatutPasteur, recherchePasteur, ongletActif]);
 
   useEffect(() => {
     if (messageSucces || erreur) {
@@ -342,6 +345,18 @@ export function Administration() {
     return `Êtes-vous sûr de vouloir supprimer définitivement le compte de ${pasteur.nom_affichage} ?${detailPertes} Cette action est irréversible.`;
   }
 
+  function appliquerFiltresDemandes() {
+    setRecherchePasteur(rechercheDemandeEnAttente.trim());
+    setFiltreStatutPasteur(filtreStatutEnAttente);
+  }
+
+  function reinitialiserFiltresDemandes() {
+    setRechercheDemandeEnAttente('');
+    setFiltreStatutEnAttente('tous');
+    setRecherchePasteur('');
+    setFiltreStatutPasteur('tous');
+  }
+
   const pasteursFiltres = pasteurs.filter(p => {
     const correspondRecherche = (p.nom_affichage || '').toLowerCase().includes(recherchePasteur.toLowerCase()) ||
                                 (p.nom_eglise || '').toLowerCase().includes(recherchePasteur.toLowerCase()) ||
@@ -376,7 +391,6 @@ export function Administration() {
     };
   }
 
-  const vuePasteurs = decouperPage(pasteursFiltres, pagePasteurs);
   const vueSignalements = decouperPage(signalements, pageSignalements);
   const vueAnnonces = decouperPage(annonces, pageAnnonces);
   const vueCarrousel = decouperPage(carrouselMedias, pageCarrousel);
@@ -605,145 +619,159 @@ export function Administration() {
       {/* Demandes Pasteurs */}
       {ongletActif === 'pasteurs' && (
       <section className="admin-section">
-        <div className="admin-section-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Users size={20} />
-            <h2>Demandes Pasteurs</h2>
-            <span className="admin-badge-count">{pasteursFiltres.length}</span>
-          </div>
-          
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <input 
-              type="text" 
-              aria-label="Rechercher un pasteur par nom, église ou email"
-              placeholder="Rechercher par nom, église, email..." 
-              value={recherchePasteur}
-              onChange={(e) => setRecherchePasteur(e.target.value)}
-              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.9rem', width: '250px' }}
+        <div className="admin-section-header">
+          <Users size={20} />
+          <h2>Demandes Pasteurs</h2>
+          <span className="admin-badge-count">{pasteursFiltres.length}</span>
+        </div>
+
+        <SearchFilterPanel onSearch={appliquerFiltresDemandes} onReset={reinitialiserFiltresDemandes}>
+          <ChampFiltre label="Nom, église ou email">
+            <input
+              type="text"
+              value={rechercheDemandeEnAttente}
+              onChange={(e) => setRechercheDemandeEnAttente(e.target.value)}
+              placeholder="Rechercher..."
             />
+          </ChampFiltre>
+          <ChampFiltre label="Statut de la demande">
             <select
-              aria-label="Filtrer les demandes par statut"
-              value={filtreStatutPasteur}
-              onChange={(e) => setFiltreStatutPasteur(e.target.value)}
-              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+              value={filtreStatutEnAttente}
+              onChange={(e) => setFiltreStatutEnAttente(e.target.value)}
             >
               <option value="tous">Toutes les demandes</option>
               <option value="en_attente">En attente</option>
               <option value="rejetes">Rejetés</option>
             </select>
-          </div>
-        </div>
-        {pasteursFiltres.length ? (
-          <div className="datatable-responsive">
-            <table className="premium-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '60px' }}>Avatar</th>
-                  <th>Nom complet</th>
-                  <th>Église</th>
-                  <th>Contact</th>
-                  <th>Statut</th>
-                  <th>Inscription</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vuePasteurs.elements.map((pasteur) => (
-                  <tr key={pasteur.id} className="datatable-row">
-                    <td>
-                      <div className="admin-table-avatar">
-                        {pasteur.avatar ? (
-                          <img src={pasteur.avatar} alt={pasteur.nom_affichage} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                        ) : (
-                          <span>{(pasteur.nom_affichage || '?')[0].toUpperCase()}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="cell-title">
-                      <strong>{pasteur.nom_affichage}</strong>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{pasteur.email}</div>
-                    </td>
-                    <td>{pasteur.nom_eglise || '-'}</td>
-                    <td>{pasteur.contact || '-'}</td>
-                    <td>
-                      {pasteur.est_rejete ? (
-                        <span className="status-badge archived" style={{ color: 'var(--danger)', backgroundColor: 'rgba(var(--danger-rgb), 0.14)' }}>Rejeté</span>
-                      ) : (
-                        <span className="status-badge draft" style={{ color: 'var(--primary)', backgroundColor: 'rgba(var(--primary-rgb), 0.14)' }}>En attente</span>
-                      )}
-                    </td>
-                    <td>{new Date(pasteur.cree_le).toLocaleDateString()}</td>
-                    <td>
-                      <div className="admin-table-actions">
-                        <Button
-                          variant="green"
-                          icon={UserCheck}
-                          onClick={() => demanderConfirmation(
-                            'Valider le pasteur',
-                            `Êtes-vous sûr de vouloir valider le compte de ${pasteur.nom_affichage} ? Il pourra alors publier des vidéos.`,
-                            'Valider le compte',
-                            'success',
-                            UserCheck,
-                            () => validerPasteur(pasteur)
-                          )}
-                          disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}`}
-                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                        >
-                          Valider
-                        </Button>
-                        <Button
-                          variant="red"
-                          icon={UserX}
-                          onClick={() => demanderConfirmation(
-                            'Rejeter le pasteur',
-                            `Êtes-vous sûr de vouloir rejeter le compte de ${pasteur.nom_affichage} ?`,
-                            'Rejeter le compte',
-                            'danger',
-                            UserX,
-                            () => rejeterPasteur(pasteur)
-                          )}
-                          disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}` || actionEnCours === `supprimer-${pasteur.id}`}
-                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                        >
-                          Rejeter
-                        </Button>
-                        <Button
-                          variant="red"
-                          icon={Trash2}
-                          onClick={() => demanderConfirmation(
-                            'Supprimer le compte',
-                            messageSuppressionPasteur(pasteur),
-                            'Supprimer',
-                            'danger',
-                            Trash2,
-                            () => supprimerPasteur(pasteur)
-                          )}
-                          disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}` || actionEnCours === `supprimer-${pasteur.id}`}
-                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                        >
-                          Supprimer
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
-              <Pagination current={vuePasteurs.page} total={vuePasteurs.total} onChange={setPagePasteurs} />
-            </div>
-          </div>
-        ) : (
-          <div className="admin-empty-state">
-            <CheckCircle size={32} />
-            {recherchePasteur || filtreStatutPasteur !== 'tous' ? (
-              <p>Aucune demande ne correspond à votre recherche ou à votre filtre.</p>
-            ) : (
-              <p>Aucune demande de pasteur en attente.</p>
-            )}
-          </div>
-        )}
+          </ChampFiltre>
+        </SearchFilterPanel>
+
+        <DataTable
+          data={pasteursFiltres}
+          keyExtractor={(pasteur) => pasteur.id}
+          searchPlaceholder="Recherche rapide..."
+          searchFields={['nom_affichage', 'nom_eglise', 'email']}
+          exportFilename="demandes_pasteurs"
+          emptyMessage={recherchePasteur || filtreStatutPasteur !== 'tous' ? 'Aucune demande ne correspond à votre recherche ou à votre filtre.' : 'Aucune demande de pasteur en attente.'}
+          columns={[
+            {
+              key: 'avatar',
+              header: 'Avatar',
+              style: { width: '60px' },
+              render: (pasteur) => (
+                <div className="admin-table-avatar">
+                  {pasteur.avatar ? (
+                    <img src={pasteur.avatar} alt={pasteur.nom_affichage} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <span>{(pasteur.nom_affichage || '?')[0].toUpperCase()}</span>
+                  )}
+                </div>
+              ),
+            },
+            {
+              key: 'nom',
+              header: 'Nom complet',
+              className: 'cell-title',
+              sortValue: (pasteur) => pasteur.nom_affichage,
+              exportValue: (pasteur) => pasteur.nom_affichage,
+              render: (pasteur) => (
+                <>
+                  <strong>{pasteur.nom_affichage}</strong>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{pasteur.email}</div>
+                </>
+              ),
+            },
+            {
+              key: 'eglise',
+              header: 'Église',
+              sortValue: (pasteur) => pasteur.nom_eglise,
+              render: (pasteur) => pasteur.nom_eglise || '-',
+            },
+            {
+              key: 'contact',
+              header: 'Contact',
+              sortValue: (pasteur) => pasteur.contact,
+              render: (pasteur) => pasteur.contact || '-',
+            },
+            {
+              key: 'statut',
+              header: 'Statut',
+              sortValue: (pasteur) => (pasteur.est_rejete ? 'Rejeté' : 'En attente'),
+              exportValue: (pasteur) => (pasteur.est_rejete ? 'Rejeté' : 'En attente'),
+              render: (pasteur) => (
+                pasteur.est_rejete ? (
+                  <span className="status-badge archived" style={{ color: 'var(--danger)', backgroundColor: 'rgba(var(--danger-rgb), 0.14)' }}>Rejeté</span>
+                ) : (
+                  <span className="status-badge draft" style={{ color: 'var(--primary)', backgroundColor: 'rgba(var(--primary-rgb), 0.14)' }}>En attente</span>
+                )
+              ),
+            },
+            {
+              key: 'inscription',
+              header: 'Inscription',
+              sortValue: (pasteur) => pasteur.cree_le,
+              exportValue: (pasteur) => new Date(pasteur.cree_le).toLocaleDateString(),
+              render: (pasteur) => new Date(pasteur.cree_le).toLocaleDateString(),
+            },
+            {
+              key: 'actions',
+              header: 'Actions',
+              style: { textAlign: 'right' },
+              render: (pasteur) => (
+                <div className="admin-table-actions">
+                  <Button
+                    variant="green"
+                    icon={UserCheck}
+                    onClick={() => demanderConfirmation(
+                      'Valider le pasteur',
+                      `Êtes-vous sûr de vouloir valider le compte de ${pasteur.nom_affichage} ? Il pourra alors publier des vidéos.`,
+                      'Valider le compte',
+                      'success',
+                      UserCheck,
+                      () => validerPasteur(pasteur)
+                    )}
+                    disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}`}
+                    style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                  >
+                    Valider
+                  </Button>
+                  <Button
+                    variant="red"
+                    icon={UserX}
+                    onClick={() => demanderConfirmation(
+                      'Rejeter le pasteur',
+                      `Êtes-vous sûr de vouloir rejeter le compte de ${pasteur.nom_affichage} ?`,
+                      'Rejeter le compte',
+                      'danger',
+                      UserX,
+                      () => rejeterPasteur(pasteur)
+                    )}
+                    disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}` || actionEnCours === `supprimer-${pasteur.id}`}
+                    style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                  >
+                    Rejeter
+                  </Button>
+                  <Button
+                    variant="red"
+                    icon={Trash2}
+                    onClick={() => demanderConfirmation(
+                      'Supprimer le compte',
+                      messageSuppressionPasteur(pasteur),
+                      'Supprimer',
+                      'danger',
+                      Trash2,
+                      () => supprimerPasteur(pasteur)
+                    )}
+                    disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}` || actionEnCours === `supprimer-${pasteur.id}`}
+                    style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                  >
+                    Supprimer
+                  </Button>
+                </div>
+              ),
+            },
+          ]}
+        />
       </section>
       )}
 

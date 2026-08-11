@@ -101,13 +101,33 @@
   border: 1px solid var(--pd-border);
 }
 
+/* En-tête neutre (fond clair, texte sombre) plutôt que le bandeau bleu
+   marine de Table.css — reproduction fidèle de la maquette de référence.
+   Sélecteur doublé (.datatable-triable.premium-table) pour l'emporter sur
+   les règles .premium-table de Table.css sans dépendre de l'ordre
+   d'import ; portée à .datatable-triable pour ne pas affecter les autres
+   consommateurs de Table.jsx (SermonTable, Documents, GestionDocuments). */
+/* Couleurs fixes (non liées au thème clair/sombre), pour la même raison que
+   SearchFilterPanel.css : ce fond clair reste lisible tel quel, y compris
+   sur une page en thème sombre où --text-main basculerait en clair et
+   deviendrait illisible sur ce fond. */
+.datatable-triable.premium-table thead {
+  background-color: #f4f6f5;
+  border-bottom: 2px solid #dbe2df;
+}
+
+.datatable-triable.premium-table th {
+  color: #1e2b25;
+  font-weight: 700;
+}
+
 .datatable-th-triable {
   cursor: pointer;
   user-select: none;
 }
 
 .datatable-th-triable:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(0, 0, 0, 0.04);
 }
 
 .datatable-th-contenu {
