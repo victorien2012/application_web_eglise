@@ -1222,7 +1222,7 @@ export function PastorDashboard() {
                 {erreurFormulaire ? <p className="dashboard-error" role="alert">{erreurFormulaire}</p> : null}
                 {messageFormulaire ? <p className="dashboard-status" role="status">{messageFormulaire}</p> : null}
 
-                <div className="dashboard-inline" style={{ paddingTop: '1.25rem', borderTop: '1px solid var(--pd-border)' }}>
+                <div className="dashboard-inline" style={{ paddingTop: '1.25rem', borderTop: '1px solid var(--pd-border)', justifyContent: 'flex-end' }}>
                   <button className="btn btn-dark" type="submit" disabled={soumission}>
                     {soumission
                       ? t('dashboard.saving')
@@ -1292,7 +1292,7 @@ export function PastorDashboard() {
                 {syncErreur ? <p className="dashboard-error" role="alert">{syncErreur}</p> : null}
                 {syncMessage ? <p className="dashboard-status" role="status">{syncMessage}</p> : null}
 
-                <div className="dashboard-inline" style={{ paddingTop: '1.25rem', borderTop: '1px solid var(--pd-border)' }}>
+                <div className="dashboard-inline" style={{ paddingTop: '1.25rem', borderTop: '1px solid var(--pd-border)', justifyContent: 'flex-end' }}>
                   <button
                     className="btn btn-primary btn-sans-relief"
                     type="submit"
