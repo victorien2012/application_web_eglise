@@ -6,6 +6,7 @@ import { Button } from '../../../components/Button';
 import { CreatePasteurModal } from '../components/CreatePasteurModal';
 import { PublishMediaModal } from '../../dashboard/components/PublishMediaModal';
 import { ConfirmModal } from '../../../components/ui/ConfirmModal';
+import { DataTable } from '../../../components/ui/DataTable';
 import { AnnonceModal } from '../components/AnnonceModal';
 import CarrouselModal from '../components/CarrouselModal';
 import { GestionConfiguration } from '../components/GestionConfiguration';
@@ -37,7 +38,6 @@ export function Administration() {
   const [recherchePasteur, setRecherchePasteur] = useState('');
   const [filtreStatutPasteur, setFiltreStatutPasteur] = useState('tous');
   const [pagePasteurs, setPagePasteurs] = useState(1);
-  const [pagePasteursValides, setPagePasteursValides] = useState(1);
   const [pageSignalements, setPageSignalements] = useState(1);
   const [pageAnnonces, setPageAnnonces] = useState(1);
   const [pageCarrousel, setPageCarrousel] = useState(1);
@@ -166,7 +166,6 @@ export function Administration() {
 
   useEffect(() => {
     setPagePasteurs(1);
-    setPagePasteursValides(1);
   }, [filtreStatutPasteur, recherchePasteur, ongletActif]);
 
   useEffect(() => {
@@ -358,15 +357,10 @@ export function Administration() {
     return false;
   });
 
-  const pasteursValidesFiltres = pasteurs.filter(p => {
-    const correspondRecherche = (p.nom_affichage || '').toLowerCase().includes(recherchePasteur.toLowerCase()) ||
-                                (p.nom_eglise || '').toLowerCase().includes(recherchePasteur.toLowerCase()) ||
-                                (p.email || '').toLowerCase().includes(recherchePasteur.toLowerCase());
-    if (ongletActif === 'pasteurs_valides') {
-      return correspondRecherche && p.est_valide;
-    }
-    return false;
-  });
+  // Recherche gérée en interne par DataTable (barre d'outils dédiée) : cette
+  // liste n'a plus besoin de dépendre de recherchePasteur, propre à l'onglet
+  // Demandes.
+  const pasteursValides = pasteurs.filter((p) => p.est_valide);
 
   // Supprimer le dernier element d'une page laissait l'administrateur sur une
   // page vide, sans moyen de revenir en arriere puisque la pagination n'affiche
@@ -383,7 +377,6 @@ export function Administration() {
   }
 
   const vuePasteurs = decouperPage(pasteursFiltres, pagePasteurs);
-  const vuePasteursValides = decouperPage(pasteursValidesFiltres, pagePasteursValides);
   const vueSignalements = decouperPage(signalements, pageSignalements);
   const vueAnnonces = decouperPage(annonces, pageAnnonces);
   const vueCarrousel = decouperPage(carrouselMedias, pageCarrousel);
@@ -761,127 +754,132 @@ export function Administration() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <BadgeCheck size={20} />
             <h2>Pasteurs Validés</h2>
-            <span className="admin-badge-count">{pasteursValidesFiltres.length}</span>
+            <span className="admin-badge-count">{pasteursValides.length}</span>
           </div>
-          
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <Button variant="primary" onClick={() => setShowCreatePasteur(true)} style={{ fontSize: '0.9rem' }}>
-              Créer un pasteur
-            </Button>
-            <input 
-              type="text" 
-              aria-label="Rechercher un pasteur par nom, église ou email"
-              placeholder="Rechercher par nom, église, email..." 
-              value={recherchePasteur}
-              onChange={(e) => setRecherchePasteur(e.target.value)}
-              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.9rem', width: '250px' }}
-            />
-          </div>
+
+          <Button variant="primary" onClick={() => setShowCreatePasteur(true)} style={{ fontSize: '0.9rem' }}>
+            Créer un pasteur
+          </Button>
         </div>
-        {pasteursValidesFiltres.length ? (
-          <div className="datatable-responsive">
-            <table className="premium-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '60px' }}>Avatar</th>
-                  <th>Nom complet</th>
-                  <th>Église</th>
-                  <th>Contact</th>
-                  <th>Statut</th>
-                  <th>Inscription</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vuePasteursValides.elements.map((pasteur) => (
-                  <tr key={pasteur.id} className="datatable-row">
-                    <td>
-                      <div className="admin-table-avatar">
-                        {pasteur.avatar ? (
-                          <img src={pasteur.avatar} alt={pasteur.nom_affichage} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                        ) : (
-                          <span>{(pasteur.nom_affichage || '?')[0].toUpperCase()}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="cell-title">
-                      <strong>{pasteur.nom_affichage}</strong>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{pasteur.email}</div>
-                    </td>
-                    <td>{pasteur.nom_eglise || '-'}</td>
-                    <td>{pasteur.contact || '-'}</td>
-                    <td>
-                      <span className="status-badge published">Validé</span>
-                    </td>
-                    <td>{new Date(pasteur.cree_le).toLocaleDateString()}</td>
-                    <td>
-                      <div className="admin-table-actions">
-                        {pasteur.cree_par_admin && (
-                          <Button
-                            variant="primary"
-                            icon={MonitorPlay}
-                            onClick={() => { setSelectedPasteurId(pasteur.id); setShowPublishMedia(true); }}
-                            style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                          >
-                            Publier média
-                          </Button>
-                        )}
-                        {/* Sans chaine rattachee, le bouton n'avait aucun effet. */}
-                        {pasteur.cree_par_admin && pasteur.lien_youtube && (
-                          <Button
-                            variant="secondary"
-                            icon={Video}
-                            onClick={() => demanderConfirmation(
-                              'Retirer la chaîne YouTube',
-                              `Êtes-vous sûr de vouloir retirer la chaîne YouTube de ${pasteur.nom_affichage} ? Toutes les vidéos associées seront supprimées.`,
-                              'Retirer la chaîne',
-                              'warning',
-                              Video,
-                              () => supprimerChaineYoutube(pasteur)
-                            )}
-                            disabled={actionEnCours === `supprimer-chaine-${pasteur.id}`}
-                            style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', backgroundColor: 'rgba(var(--danger-rgb), 0.14)', color: 'var(--danger)', borderColor: 'rgba(var(--danger-rgb), 0.4)' }}
-                          >
-                            Détacher YouTube
-                          </Button>
-                        )}
-                        <Button
-                          variant="red"
-                          icon={Trash2}
-                          onClick={() => demanderConfirmation(
-                            'Supprimer le compte',
-                            messageSuppressionPasteur(pasteur),
-                            'Supprimer',
-                            'danger',
-                            Trash2,
-                            () => supprimerPasteur(pasteur)
-                          )}
-                          disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}` || actionEnCours === `supprimer-${pasteur.id}`}
-                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                        >
-                          Supprimer
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
-              <Pagination current={vuePasteursValides.page} total={vuePasteursValides.total} onChange={setPagePasteursValides} />
-            </div>
-          </div>
-        ) : (
-          <div className="admin-empty-state">
-            <CheckCircle size={32} />
-            {recherchePasteur ? (
-              <p>Aucun pasteur validé ne correspond à « {recherchePasteur} ».</p>
-            ) : (
-              <p>Aucun pasteur validé.</p>
-            )}
-          </div>
-        )}
+
+        <DataTable
+          data={pasteursValides}
+          keyExtractor={(pasteur) => pasteur.id}
+          searchPlaceholder="Rechercher par nom, église, email..."
+          searchFields={['nom_affichage', 'nom_eglise', 'email']}
+          exportFilename="pasteurs_valides"
+          emptyMessage="Aucun pasteur validé."
+          columns={[
+            {
+              key: 'avatar',
+              header: 'Avatar',
+              style: { width: '60px' },
+              render: (pasteur) => (
+                <div className="admin-table-avatar">
+                  {pasteur.avatar ? (
+                    <img src={pasteur.avatar} alt={pasteur.nom_affichage} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <span>{(pasteur.nom_affichage || '?')[0].toUpperCase()}</span>
+                  )}
+                </div>
+              ),
+            },
+            {
+              key: 'nom',
+              header: 'Nom complet',
+              className: 'cell-title',
+              sortValue: (pasteur) => pasteur.nom_affichage,
+              exportValue: (pasteur) => pasteur.nom_affichage,
+              render: (pasteur) => (
+                <>
+                  <strong>{pasteur.nom_affichage}</strong>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{pasteur.email}</div>
+                </>
+              ),
+            },
+            {
+              key: 'eglise',
+              header: 'Église',
+              field: 'nom_eglise',
+              sortValue: (pasteur) => pasteur.nom_eglise,
+              render: (pasteur) => pasteur.nom_eglise || '-',
+            },
+            {
+              key: 'contact',
+              header: 'Contact',
+              field: 'contact',
+              sortValue: (pasteur) => pasteur.contact,
+              render: (pasteur) => pasteur.contact || '-',
+            },
+            {
+              key: 'statut',
+              header: 'Statut',
+              exportValue: () => 'Validé',
+              render: () => <span className="status-badge published">Validé</span>,
+            },
+            {
+              key: 'inscription',
+              header: 'Inscription',
+              sortValue: (pasteur) => pasteur.cree_le,
+              exportValue: (pasteur) => new Date(pasteur.cree_le).toLocaleDateString(),
+              render: (pasteur) => new Date(pasteur.cree_le).toLocaleDateString(),
+            },
+            {
+              key: 'actions',
+              header: 'Actions',
+              style: { textAlign: 'right' },
+              render: (pasteur) => (
+                <div className="admin-table-actions">
+                  {pasteur.cree_par_admin && (
+                    <Button
+                      variant="primary"
+                      icon={MonitorPlay}
+                      onClick={() => { setSelectedPasteurId(pasteur.id); setShowPublishMedia(true); }}
+                      style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                    >
+                      Publier média
+                    </Button>
+                  )}
+                  {/* Sans chaine rattachee, le bouton n'avait aucun effet. */}
+                  {pasteur.cree_par_admin && pasteur.lien_youtube && (
+                    <Button
+                      variant="secondary"
+                      icon={Video}
+                      onClick={() => demanderConfirmation(
+                        'Retirer la chaîne YouTube',
+                        `Êtes-vous sûr de vouloir retirer la chaîne YouTube de ${pasteur.nom_affichage} ? Toutes les vidéos associées seront supprimées.`,
+                        'Retirer la chaîne',
+                        'warning',
+                        Video,
+                        () => supprimerChaineYoutube(pasteur)
+                      )}
+                      disabled={actionEnCours === `supprimer-chaine-${pasteur.id}`}
+                      style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', backgroundColor: 'rgba(var(--danger-rgb), 0.14)', color: 'var(--danger)', borderColor: 'rgba(var(--danger-rgb), 0.4)' }}
+                    >
+                      Détacher YouTube
+                    </Button>
+                  )}
+                  <Button
+                    variant="red"
+                    icon={Trash2}
+                    onClick={() => demanderConfirmation(
+                      'Supprimer le compte',
+                      messageSuppressionPasteur(pasteur),
+                      'Supprimer',
+                      'danger',
+                      Trash2,
+                      () => supprimerPasteur(pasteur)
+                    )}
+                    disabled={actionEnCours === `valider-${pasteur.id}` || actionEnCours === `rejeter-${pasteur.id}` || actionEnCours === `supprimer-${pasteur.id}`}
+                    style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                  >
+                    Supprimer
+                  </Button>
+                </div>
+              ),
+            },
+          ]}
+        />
       </section>
       )}
 
