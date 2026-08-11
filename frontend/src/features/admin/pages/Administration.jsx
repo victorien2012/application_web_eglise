@@ -489,35 +489,35 @@ export function Administration() {
                 <span>{t('admin.users')}</span>
               </div>
             </div>
-            <div className="admin-kpi admin-kpi-primary">
+            <div className="admin-kpi admin-kpi-emerald">
               <div className="admin-kpi-icon"><BadgeCheck size={20} /></div>
               <div className="admin-kpi-data">
                 <strong>{stats.total_pasteurs}</strong>
                 <span>{t('admin.pastors', { count: stats.total_pasteurs_valides })}</span>
               </div>
             </div>
-            <div className="admin-kpi admin-kpi-teal">
+            <div className="admin-kpi admin-kpi-amber">
               <div className="admin-kpi-icon"><Video size={20} /></div>
               <div className="admin-kpi-data">
                 <strong>{stats.total_predications}</strong>
                 <span>{t('admin.sermons', { count: stats.total_predications_publiees })}</span>
               </div>
             </div>
-            <div className="admin-kpi admin-kpi-amber">
+            <div className="admin-kpi admin-kpi-teal">
               <div className="admin-kpi-icon"><Eye size={20} /></div>
               <div className="admin-kpi-data">
                 <strong>{stats.total_vues?.toLocaleString('fr-FR')}</strong>
                 <span>{t('admin.views')}</span>
               </div>
             </div>
-            <div className="admin-kpi admin-kpi-green">
+            <div className="admin-kpi admin-kpi-orange">
               <div className="admin-kpi-icon"><Download size={20} /></div>
               <div className="admin-kpi-data">
                 <strong>{stats.total_telechargements?.toLocaleString('fr-FR')}</strong>
                 <span>{t('admin.downloads')}</span>
               </div>
             </div>
-            <div className="admin-kpi admin-kpi-pink">
+            <div className="admin-kpi admin-kpi-indigo">
               <div className="admin-kpi-icon"><MessageSquare size={20} /></div>
               <div className="admin-kpi-data">
                 <strong>{stats.total_commentaires}</strong>
@@ -531,7 +531,7 @@ export function Administration() {
                 <span>{t('admin.favorites')}</span>
               </div>
             </div>
-            <div className="admin-kpi admin-kpi-indigo">
+            <div className="admin-kpi admin-kpi-navy">
               <div className="admin-kpi-icon"><Bell size={20} /></div>
               <div className="admin-kpi-data">
                 <strong>{stats.total_abonnements}</strong>

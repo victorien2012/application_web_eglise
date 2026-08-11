@@ -240,37 +240,43 @@
   text-overflow: ellipsis;
 }
 
-/* KPI Color Variants - Standardized */
+/* KPI Color Variants - une teinte distincte par carte, nom de classe aligne
+   sur la couleur reellement affichee. Avant ce correctif : fonds codes en
+   dur (rgba(0, 74, 148, ...) / rgba(245, 158, 11, ...)) qui ne suivaient
+   pas le theme sombre, deux paires de variantes partageant la meme teinte
+   que leur voisine (blue+primary toutes deux bleu marine, teal+amber
+   toutes deux ambre — indiscernables cote a cote dans la grille), et une
+   variante "pink" qui n'etait meme pas rose : un fond neutre gris. */
 .admin-kpi-blue .admin-kpi-icon {
-  background: rgba(0, 74, 148, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
   color: var(--primary);
 }
-.admin-kpi-primary .admin-kpi-icon {
-  background: rgba(0, 74, 148, 0.1);
-  color: var(--primary);
-}
-.admin-kpi-teal .admin-kpi-icon {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--accent);
-}
-.admin-kpi-amber .admin-kpi-icon {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--accent);
-}
-.admin-kpi-green .admin-kpi-icon {
-  background: rgba(var(--success-rgb), 0.16);
+.admin-kpi-emerald .admin-kpi-icon {
+  background: rgba(var(--success-rgb), 0.14);
   color: var(--success);
 }
-.admin-kpi-pink .admin-kpi-icon {
-  background: var(--bg-alt);
-  color: var(--text-muted);
+.admin-kpi-amber .admin-kpi-icon {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
 }
-.admin-kpi-rose .admin-kpi-icon {
-  background: rgba(var(--danger-rgb), 0.16);
-  color: var(--danger);
+.admin-kpi-teal .admin-kpi-icon {
+  background: rgba(var(--kpi-teal-rgb), 0.14);
+  color: var(--kpi-teal);
+}
+.admin-kpi-orange .admin-kpi-icon {
+  background: rgba(var(--warning-rgb), 0.14);
+  color: var(--warning);
 }
 .admin-kpi-indigo .admin-kpi-icon {
-  background: rgba(0, 74, 148, 0.1);
+  background: rgba(var(--kpi-indigo-rgb), 0.14);
+  color: var(--kpi-indigo);
+}
+.admin-kpi-rose .admin-kpi-icon {
+  background: rgba(var(--kpi-rose-rgb), 0.14);
+  color: var(--kpi-rose);
+}
+.admin-kpi-navy .admin-kpi-icon {
+  background: rgba(var(--primary-dark-rgb), 0.12);
   color: var(--primary-dark);
 }
 
