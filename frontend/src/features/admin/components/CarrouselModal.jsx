@@ -232,16 +232,33 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
             )}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="titre">Titre (optionnel)</label>
-            <input
-              type="text"
-              id="titre"
-              value={titre}
-              onChange={(e) => setTitre(e.target.value)}
-              placeholder="Texte affiché sur le média"
-              maxLength={LIMITE_TITRE}
-            />
+          {/* Titre et case Actif sur une meme ligne (deux controles courts,
+              meme hauteur) : la modale s'etirait inutilement en vertical
+              alors que rien ici n'a besoin de toute sa largeur. */}
+          <div className="form-row">
+            <div className="form-group" style={{ flex: 1 }}>
+              <label htmlFor="titre">Titre (optionnel)</label>
+              <input
+                type="text"
+                id="titre"
+                value={titre}
+                onChange={(e) => setTitre(e.target.value)}
+                placeholder="Texte affiché sur le média"
+                maxLength={LIMITE_TITRE}
+              />
+            </div>
+
+            <div className="form-group checkbox-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={estActif}
+                  onChange={(e) => setEstActif(e.target.checked)}
+                />
+                <span className="checkmark"></span>
+                Actif
+              </label>
+            </div>
           </div>
 
           <div className="form-group">
@@ -253,18 +270,6 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
               placeholder="Sous-texte affiché sur le média"
               rows={2}
             />
-          </div>
-
-          <div className="form-group checkbox-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={estActif}
-                onChange={(e) => setEstActif(e.target.checked)}
-              />
-              <span className="checkmark"></span>
-              Actif (Affiché)
-            </label>
           </div>
 
 

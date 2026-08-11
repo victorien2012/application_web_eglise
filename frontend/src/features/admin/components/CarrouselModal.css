@@ -6,14 +6,27 @@
 .carrousel-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  margin-top: 1rem;
+  gap: 1.1rem;
+  margin-top: 0.75rem;
 }
 
 .carrousel-form .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
+}
+
+/* Regroupe deux controles courts sur une meme ligne (titre + case Actif)
+   plutot que de laisser chacun s'etirer sur toute la largeur en occupant
+   une ligne entiere a lui seul. */
+.carrousel-form .form-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.carrousel-form .form-row .checkbox-group {
+  flex-shrink: 0;
 }
 
 .carrousel-form label {
@@ -45,7 +58,7 @@
 
 .carrousel-form textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 56px;
 }
 
 .carrousel-form .help-text {
@@ -66,7 +79,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.55rem;
   border: 2px solid var(--border-color);
   border-radius: 12px;
   background: var(--bg-card);
@@ -116,7 +129,7 @@
 }
 
 .media-preview-container {
-  margin-top: 1rem;
+  margin-top: 0.75rem;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--border-color);
@@ -124,12 +137,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  max-height: 250px;
+  max-height: 130px;
 }
 
 .media-preview {
   max-width: 100%;
-  max-height: 250px;
+  max-height: 130px;
   object-fit: contain;
 }
 
@@ -210,7 +223,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  margin-top: 1rem;
-  padding-top: 1.5rem;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
   border-top: 1px solid var(--border-color);
 }
