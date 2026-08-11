@@ -619,6 +619,19 @@ export function PastorDashboard() {
   // date_publication sur le statut affiché juste au-dessus du formulaire.
   const estPlanifieeApercu = Boolean(formulaire.date_publication) && new Date(formulaire.date_publication) > new Date();
 
+  // Le titre et la description de l'en-tête distinguaient seulement
+  // l'édition du reste : "Ajouter ou Importer des Médias" restait affiché
+  // qu'on soit sur le formulaire d'ajout d'une vidéo ou sur celui de
+  // synchronisation de chaîne, deux actions pourtant très différentes.
+  let entetePublier = { titre: t('dashboard.add_media_title'), description: t('dashboard.add_media_desc') };
+  if (ongletActif === 'editer') {
+    entetePublier = { titre: t('dashboard.edit_video_title'), description: t('dashboard.edit_video_desc') };
+  } else if (modePublication === 'video') {
+    entetePublier = { titre: t('dashboard.add_video_title', 'Ajouter une vidéo'), description: t('dashboard.add_video_desc', "Publiez une vidéo à l'unité en la reliant à son lien YouTube.") };
+  } else if (modePublication === 'chaine') {
+    entetePublier = { titre: t('dashboard.sync_channel_title', 'Synchroniser votre chaîne YouTube'), description: t('dashboard.sync_channel_desc', 'Importez automatiquement toutes les vidéos déjà publiées sur votre chaîne YouTube.') };
+  }
+
   if (erreurStats) {
     return (
       <div className="dashboard-intro" style={{ padding: '2.5rem', textAlign: 'center' }}>
@@ -877,7 +890,7 @@ export function PastorDashboard() {
             <div className="dashboard-title-area publier-header">
               <div>
                 <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                  {ongletActif === 'editer' ? t('dashboard.edit_video_title') : t('dashboard.add_media_title')}
+                  {entetePublier.titre}
                   {/* Rappelle, pendant qu'on la modifie, si la video est deja
                       publique — sans ca rien ne distinguait a l'oeil ce
                       formulaire de celui d'ajout, alors qu'ici une
@@ -892,11 +905,7 @@ export function PastorDashboard() {
                     </Badge>
                   ) : null}
                 </h1>
-                <p>
-                  {ongletActif === 'editer'
-                    ? t('dashboard.edit_video_desc')
-                    : t('dashboard.add_media_desc')}
-                </p>
+                <p>{entetePublier.description}</p>
               </div>
               {ongletActif === 'editer' ? (
                 <button type="button" className="btn btn-outline" onClick={reinitialiserFormulaire}>
@@ -1285,7 +1294,7 @@ export function PastorDashboard() {
 
                 <div className="dashboard-inline" style={{ paddingTop: '1.25rem', borderTop: '1px solid var(--pd-border)' }}>
                   <button
-                    className="btn btn-primary"
+                    className="btn btn-primary btn-sans-relief"
                     type="submit"
                     disabled={syncEnCours || !lienChaine.trim()}
                   >

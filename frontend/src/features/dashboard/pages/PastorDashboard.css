@@ -234,6 +234,16 @@ body {
   background-color: var(--btn-primary-hover);
 }
 
+/* Neutralise l'effet de survol/clic (translation + ombre) que .btn impose
+   globalement (voir index.css) — demandé spécifiquement sur le bouton de
+   synchronisation de chaîne, pas une préférence à étendre aux autres
+   boutons de l'application. */
+.btn.btn-sans-relief:hover,
+.btn.btn-sans-relief:active {
+  transform: none;
+  box-shadow: none;
+}
+
 .btn-pink {
   background-color: var(--btn-pink-bg);
   color: var(--btn-pink-text);
