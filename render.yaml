@@ -1,0 +1,104 @@
+# Blueprint Render : base PostgreSQL + service web backend (Django/gunicorn).
+# Le frontend est deploye separement sur Vercel (voir frontend/vercel.json).
+#
+# Utilisation : Render Dashboard > New > Blueprint > selectionner ce depot.
+#
+# Les variables marquees `sync: false` ne sont volontairement PAS versionnees :
+# Render les demande a la creation, ou elles se saisissent ensuite dans
+# Dashboard > Service > Environment. Aucun secret ne doit figurer ici.
+databases:
+  - name: sermon-db
+    databaseName: sermon_db
+    user: sermon_user
+    plan: free
+
+services:
+  - type: web
+    name: sermon-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile.prod
+    dockerContext: ./backend
+    # Sonde exemptee de la redirection HTTPS (voir SECURE_REDIRECT_EXEMPT).
+    healthCheckPath: /api/health/
+    envVars:
+      # --- Securite : jamais de valeur par defaut permissive en production ---
+      - key: DEBUG
+        value: "False"
+      # Generer avec : python -c "import secrets; print(secrets.token_urlsafe(64))"
+      # Minimum 32 caracteres, sinon le demarrage echoue volontairement.
+      - key: SECRET_KEY
+        sync: false
+
+      # --- Base de donnees : injectee automatiquement depuis sermon-db ---
+      - key: POSTGRES_DB
+        fromDatabase:
+          name: sermon-db
+          property: database
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: sermon-db
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: sermon-db
+          property: password
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: sermon-db
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: sermon-db
+          property: port
+
+      # --- Domaines autorises : a renseigner une fois les URLs connues ---
+      # ALLOWED_HOSTS      : le domaine Render du backend (ex. sermon-backend.onrender.com)
+      # CORS_ALLOWED_ORIGINS / CSRF_TRUSTED_ORIGINS / FRONTEND_URL : le domaine Vercel
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+
+      # --- Stockage objet (Cloudflare R2 / Backblaze B2 / S3) ---
+      # Indispensable : le disque de Render est ephemere, tout fichier televerse
+      # disparait a chaque redeploiement ou reveil du service.
+      - key: USE_S3
+        value: "True"
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_S3_ENDPOINT_URL
+        sync: false
+      - key: AWS_S3_REGION_NAME
+        value: auto
+      - key: AWS_S3_CUSTOM_DOMAIN
+        sync: false
+
+      # --- Email (liens de verification et de reinitialisation) ---
+      # Sans SMTP reel, les emails partent dans les logs et les liens sont perdus.
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+
+      # --- Synchronisation YouTube (optionnel) ---
+      - key: GOOGLE_API_KEY
+        sync: false

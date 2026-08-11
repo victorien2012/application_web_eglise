@@ -17,6 +17,10 @@ from .admin_views import (
     StatistiquesGlobalesView,
 )
 
+from .sante import (
+    SanteView,
+)
+
 from .pasteur_views import (
     PasteurViewSet,
 )

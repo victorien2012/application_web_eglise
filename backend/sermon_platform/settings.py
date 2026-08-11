@@ -180,6 +180,11 @@ if not DEBUG:
     # Derriere un proxy/load-balancer terminant le TLS.
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True') == 'True'
+    # La sonde de sante de l'hebergeur interroge l'instance en HTTP interne,
+    # sans en-tete X-Forwarded-Proto : sans cette exemption elle recevrait une
+    # redirection 301 vers HTTPS, interpretee comme un echec, et le service
+    # serait redemarre en boucle.
+    SECURE_REDIRECT_EXEMPT = [r'^api/health/$']
     SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '31536000'))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True

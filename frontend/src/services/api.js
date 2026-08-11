@@ -33,8 +33,12 @@ export function extraireListe(data) {
   return [];
 }
 
+// Repli sur '/api' : la pile Docker de production sert le front et l'API
+// derriere le meme nginx, qui proxifie ce chemin. Sans ce repli, un build ou
+// la variable manque produisait un baseURL `undefined` — axios repliait alors
+// sur l'origine du site et chaque appel partait vers le front, en 404.
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL || '/api',
 });
 
 api.interceptors.request.use((config) => {

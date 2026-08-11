@@ -1,0 +1,32 @@
+# Image de production du backend : gunicorn, contrairement au Dockerfile de
+# developpement qui lance `manage.py runserver` (serveur mono-thread, non
+# destine a etre expose publiquement).
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . /app/
+
+# Render (comme la plupart des PaaS) impose le port d'ecoute via $PORT.
+# La valeur par defaut sert aux lancements hors PaaS.
+ENV PORT=8000
+EXPOSE 8000
+
+# Migrations et collecte des statiques au demarrage plutot qu'au build : la
+# base n'est pas joignable pendant le build, et collectstatic exige la
+# SECRET_KEY que seul l'environnement d'execution fournit.
+#
+# 2 workers x 4 threads : dimensionne pour les 512 Mo de l'offre gratuite
+# Render. Au-dela, les workers se font tuer par manque de memoire.
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn sermon_platform.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60 --access-logfile - --error-logfile -"]

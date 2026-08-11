@@ -19,6 +19,7 @@ from .views import (
     PieceJointeViewSet,
     PredicationViewSet,
     RenvoyerVerificationEmailView,
+    SanteView,
     SerieViewSet,
     SignalementViewSet,
     StatistiquesGlobalesView,
@@ -57,6 +58,8 @@ router.register(r'paiements', PaiementSimulationViewSet, basename='paiement')
 
 urlpatterns = [
     path('', include(router.urls)),
+    # Sonde de l'hebergeur : doit rester en tete et sans authentification.
+    path('health/', SanteView.as_view(), name='sante'),
     path('auth/inscription/', InscriptionView.as_view(), name='inscription'),
     path('auth/connexion/', ConnexionTokenView.as_view(), name='token_obtain_pair'),
     path("auth/rafraichir/", RafraichirTokenView.as_view(), name="token_refresh"),
