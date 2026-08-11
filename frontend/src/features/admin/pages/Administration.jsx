@@ -45,7 +45,6 @@ export function Administration() {
   const [filtreStatutPasteur, setFiltreStatutPasteur] = useState('tous');
   const [rechercheDemandeEnAttente, setRechercheDemandeEnAttente] = useState('');
   const [filtreStatutEnAttente, setFiltreStatutEnAttente] = useState('tous');
-  const [pageSignalements, setPageSignalements] = useState(1);
   const [pageAnnonces, setPageAnnonces] = useState(1);
   const [pageCarrousel, setPageCarrousel] = useState(1);
   const [pagePredications, setPagePredications] = useState(1);
@@ -391,7 +390,6 @@ export function Administration() {
     };
   }
 
-  const vueSignalements = decouperPage(signalements, pageSignalements);
   const vueAnnonces = decouperPage(annonces, pageAnnonces);
   const vueCarrousel = decouperPage(carrouselMedias, pageCarrousel);
   // Les predications sont paginees par le serveur : la liste recue est deja la
@@ -921,115 +919,139 @@ export function Administration() {
             <span className="admin-badge-count admin-badge-red">{signalements.length}</span>
           )}
         </div>
-        {signalements.length ? (
-          <div className="datatable-responsive">
-            <table className="premium-table">
-              <thead>
-                <tr>
-                  <th>{t('admin.col_reason', 'Raison')}</th>
-                  <th>Contenu signalé</th>
-                  <th>{t('admin.col_details', 'Détails')}</th>
-                  <th>Signalé par</th>
-                  <th>{t('admin.col_status', 'Statut')}</th>
-                  <th style={{ textAlign: 'right' }}>{t('admin.col_actions', 'Actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vueSignalements.elements.map((signalement) => {
-                  const IconeStatut = ICONES_STATUT[signalement.statut] || AlertTriangle;
-                  return (
-                    <tr key={signalement.id} className="datatable-row">
-                      <td className="cell-title" style={{ fontWeight: 600 }}>{signalement.raison}</td>
-                      <td style={{ whiteSpace: 'normal', minWidth: '180px' }}>
-                        {signalement.predication ? (
-                          <a
-                            href={`/sermon/${signalement.predication}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ color: 'var(--primary)', fontWeight: 600 }}
-                          >
-                            {signalement.predication_titre || `Prédication #${signalement.predication}`}
-                          </a>
-                        ) : signalement.commentaire ? (
-                          <span>
-                            <em style={{ color: 'var(--text-muted)' }}>Commentaire :</em>{' '}
-                            {signalement.commentaire_contenu
-                              ? `« ${signalement.commentaire_contenu.slice(0, 60)}${signalement.commentaire_contenu.length > 60 ? '…' : ''} »`
-                              : `#${signalement.commentaire}`}
-                          </span>
-                        ) : (
-                          <span style={{ color: 'var(--text-muted)' }}>Contenu supprimé</span>
-                        )}
-                      </td>
-                      <td style={{ whiteSpace: 'normal', minWidth: '180px' }}>{signalement.details || '-'}</td>
-                      <td>
-                        <div>{signalement.utilisateur?.username || 'Anonyme'}</div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                          {signalement.cree_le ? new Date(signalement.cree_le).toLocaleDateString('fr-FR') : ''}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`admin-statut admin-statut-${signalement.statut}`}>
-                          <IconeStatut size={12} style={{ marginRight: '4px' }} />
-                          {LIBELLES_STATUT[signalement.statut] || signalement.statut}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="admin-table-actions">
-                          {signalement.statut !== 'EN_COURS' && (
-                            <button type="button" className="admin-action-btn admin-action-pending" onClick={() => demanderConfirmation(
-                              'En cours de traitement',
-                              `Voulez-vous marquer ce signalement comme "En cours de traitement" ?`,
-                              'Marquer en cours',
-                              'warning',
-                              Clock,
-                              () => changerStatut(signalement, 'EN_COURS')
-                            )}>
-                              <Clock size={14} /> {t('admin.action_progress')}
-                            </button>
-                          )}
-                          {signalement.statut !== 'TRAITE' && (
-                            <button type="button" className="admin-action-btn admin-action-resolve" onClick={() => demanderConfirmation(
-                              'Traiter le signalement',
-                              `Voulez-vous marquer ce signalement comme "Traité" ?`,
-                              'Marquer comme traité',
-                              'success',
-                              CheckCircle,
-                              () => changerStatut(signalement, 'TRAITE')
-                            )}>
-                              <CheckCircle size={14} /> {t('admin.action_resolve')}
-                            </button>
-                          )}
-                          {signalement.statut !== 'REJETE' && (
-                            <button type="button" className="admin-action-btn admin-action-reject" onClick={() => demanderConfirmation(
-                              'Rejeter le signalement',
-                              `Voulez-vous rejeter ce signalement (sans suite) ?`,
-                              'Rejeter',
-                              'danger',
-                              XCircle,
-                              () => changerStatut(signalement, 'REJETE')
-                            )}>
-                              <XCircle size={14} /> {t('admin.action_reject')}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            
-            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
-              <Pagination current={vueSignalements.page} total={vueSignalements.total} onChange={setPageSignalements} />
-            </div>
-          </div>
-        ) : (
-          <div className="admin-empty-state">
-            <CheckCircle size={32} />
-            <p>{t('admin.no_reports')}</p>
-          </div>
-        )}
+
+        <DataTable
+          data={signalements}
+          keyExtractor={(signalement) => signalement.id}
+          searchPlaceholder="Rechercher..."
+          searchFields={['raison', 'details']}
+          exportFilename="signalements"
+          emptyMessage={t('admin.no_reports')}
+          columns={[
+            {
+              key: 'raison',
+              header: t('admin.col_reason', 'Raison'),
+              className: 'cell-title',
+              style: { fontWeight: 600 },
+              sortValue: (signalement) => signalement.raison,
+              field: 'raison',
+              render: (signalement) => signalement.raison,
+            },
+            {
+              key: 'contenu',
+              header: 'Contenu signalé',
+              cellStyle: { whiteSpace: 'normal', minWidth: '180px' },
+              exportValue: (signalement) =>
+                signalement.predication
+                  ? (signalement.predication_titre || `Prédication #${signalement.predication}`)
+                  : signalement.commentaire
+                    ? (signalement.commentaire_contenu || `Commentaire #${signalement.commentaire}`)
+                    : 'Contenu supprimé',
+              render: (signalement) => (
+                signalement.predication ? (
+                  <a
+                    href={`/sermon/${signalement.predication}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: 'var(--primary)', fontWeight: 600 }}
+                  >
+                    {signalement.predication_titre || `Prédication #${signalement.predication}`}
+                  </a>
+                ) : signalement.commentaire ? (
+                  <span>
+                    <em style={{ color: 'var(--text-muted)' }}>Commentaire :</em>{' '}
+                    {signalement.commentaire_contenu
+                      ? `« ${signalement.commentaire_contenu.slice(0, 60)}${signalement.commentaire_contenu.length > 60 ? '…' : ''} »`
+                      : `#${signalement.commentaire}`}
+                  </span>
+                ) : (
+                  <span style={{ color: 'var(--text-muted)' }}>Contenu supprimé</span>
+                )
+              ),
+            },
+            {
+              key: 'details',
+              header: t('admin.col_details', 'Détails'),
+              cellStyle: { whiteSpace: 'normal', minWidth: '180px' },
+              field: 'details',
+              render: (signalement) => signalement.details || '-',
+            },
+            {
+              key: 'signale_par',
+              header: 'Signalé par',
+              sortValue: (signalement) => signalement.cree_le,
+              exportValue: (signalement) => signalement.utilisateur?.username || 'Anonyme',
+              render: (signalement) => (
+                <>
+                  <div>{signalement.utilisateur?.username || 'Anonyme'}</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                    {signalement.cree_le ? new Date(signalement.cree_le).toLocaleDateString('fr-FR') : ''}
+                  </div>
+                </>
+              ),
+            },
+            {
+              key: 'statut',
+              header: t('admin.col_status', 'Statut'),
+              sortValue: (signalement) => signalement.statut,
+              exportValue: (signalement) => LIBELLES_STATUT[signalement.statut] || signalement.statut,
+              render: (signalement) => {
+                const IconeStatut = ICONES_STATUT[signalement.statut] || AlertTriangle;
+                return (
+                  <span className={`admin-statut admin-statut-${signalement.statut}`}>
+                    <IconeStatut size={12} style={{ marginRight: '4px' }} />
+                    {LIBELLES_STATUT[signalement.statut] || signalement.statut}
+                  </span>
+                );
+              },
+            },
+            {
+              key: 'actions',
+              header: t('admin.col_actions', 'Actions'),
+              style: { textAlign: 'right' },
+              render: (signalement) => (
+                <div className="admin-table-actions">
+                  {signalement.statut !== 'EN_COURS' && (
+                    <button type="button" className="admin-action-btn admin-action-pending" onClick={() => demanderConfirmation(
+                      'En cours de traitement',
+                      `Voulez-vous marquer ce signalement comme "En cours de traitement" ?`,
+                      'Marquer en cours',
+                      'warning',
+                      Clock,
+                      () => changerStatut(signalement, 'EN_COURS')
+                    )}>
+                      <Clock size={14} /> {t('admin.action_progress')}
+                    </button>
+                  )}
+                  {signalement.statut !== 'TRAITE' && (
+                    <button type="button" className="admin-action-btn admin-action-resolve" onClick={() => demanderConfirmation(
+                      'Traiter le signalement',
+                      `Voulez-vous marquer ce signalement comme "Traité" ?`,
+                      'Marquer comme traité',
+                      'success',
+                      CheckCircle,
+                      () => changerStatut(signalement, 'TRAITE')
+                    )}>
+                      <CheckCircle size={14} /> {t('admin.action_resolve')}
+                    </button>
+                  )}
+                  {signalement.statut !== 'REJETE' && (
+                    <button type="button" className="admin-action-btn admin-action-reject" onClick={() => demanderConfirmation(
+                      'Rejeter le signalement',
+                      `Voulez-vous rejeter ce signalement (sans suite) ?`,
+                      'Rejeter',
+                      'danger',
+                      XCircle,
+                      () => changerStatut(signalement, 'REJETE')
+                    )}>
+                      <XCircle size={14} /> {t('admin.action_reject')}
+                    </button>
+                  )}
+                </div>
+              ),
+            },
+          ]}
+        />
       </section>
       )}
 
