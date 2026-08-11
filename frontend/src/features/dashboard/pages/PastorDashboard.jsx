@@ -614,6 +614,10 @@ export function PastorDashboard() {
   const lienChaineReconnue = estLienChaineValide(lienChaine);
   const idVideoSaisie = extraireIdVideoYoutube(formulaire.url_video);
   const lienVideoNonReconnu = Boolean(formulaire.url_video?.trim()) && !idVideoSaisie;
+  // Même règle que get_est_planifiee côté serveur (serializers/contenu.py) :
+  // reflète en direct, pendant l'édition, l'effet des cases est_publie et
+  // date_publication sur le statut affiché juste au-dessus du formulaire.
+  const estPlanifieeApercu = Boolean(formulaire.date_publication) && new Date(formulaire.date_publication) > new Date();
 
   if (erreurStats) {
     return (
@@ -872,7 +876,22 @@ export function PastorDashboard() {
               <>
             <div className="dashboard-title-area publier-header">
               <div>
-                <h1>{ongletActif === 'editer' ? t('dashboard.edit_video_title') : t('dashboard.add_media_title')}</h1>
+                <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                  {ongletActif === 'editer' ? t('dashboard.edit_video_title') : t('dashboard.add_media_title')}
+                  {/* Rappelle, pendant qu'on la modifie, si la video est deja
+                      publique — sans ca rien ne distinguait a l'oeil ce
+                      formulaire de celui d'ajout, alors qu'ici une
+                      modification peut affecter un contenu deja en ligne. */}
+                  {ongletActif === 'editer' ? (
+                    <Badge variant={estPlanifieeApercu ? 'scheduled' : formulaire.est_publie ? 'published' : 'draft'}>
+                      {estPlanifieeApercu
+                        ? t('dashboard.status_scheduled', 'Planifiée')
+                        : formulaire.est_publie
+                          ? t('dashboard.status_published', 'Publiée')
+                          : t('dashboard.status_draft', 'Brouillon')}
+                    </Badge>
+                  ) : null}
+                </h1>
                 <p>
                   {ongletActif === 'editer'
                     ? t('dashboard.edit_video_desc')
@@ -912,7 +931,7 @@ export function PastorDashboard() {
             </div>
 
             {ongletActif === 'editer' || (ongletActif === 'publier' && modePublication === 'video') ? (
-              <Card>
+              <Card className={ongletActif === 'editer' ? 'publier-carte-edition' : 'publier-carte-ajout'}>
               <form className="publier-form" onSubmit={handleSoumission}>
 
                 {/* ---- Informations ---- */}
@@ -1217,7 +1236,7 @@ export function PastorDashboard() {
               ) : null}
               </Card>
             ) : (
-            <Card>
+            <Card className="publier-carte-ajout">
               {/* Un <form> et non un <div> : la touche Entrée dans le champ ne
                   déclenchait aucune soumission. */}
               <form className="publier-form" onSubmit={handleSynchronisation}>

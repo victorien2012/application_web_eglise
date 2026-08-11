@@ -885,6 +885,18 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
+/* Distingue au premier coup d'œil le formulaire d'ajout de celui de
+   modification : sans repère visuel propre à la carte, les deux se
+   présentaient de façon identique et seul le texte du titre changeait —
+   facile à manquer en arrivant directement sur l'écran d'édition. */
+.form-card.publier-carte-ajout {
+  border-left: 4px solid var(--primary);
+}
+
+.form-card.publier-carte-edition {
+  border-left: 4px solid var(--warning);
+}
+
 /* ==========================================================================
    NOTIFICATIONS
    ========================================================================== */
