@@ -10,12 +10,16 @@
   font-size: 0.9rem;
 }
 
+/* Couleurs en dur auparavant (#bbb, #d6d8e6, rgba(255,255,255,...)) : pensées
+   pour un fond sombre fixe, alors que ce composant s'affiche sur la carte
+   claire (var(--bg-card)) de l'onglet Commentaires — texte quasi invisible
+   en thème clair, qui est le thème par défaut. */
 .moderation-info {
-  color: #bbb;
+  color: var(--pd-text-muted);
 }
 
 .moderation-erreur {
-  color: #ffb1b1;
+  color: var(--danger);
 }
 
 .moderation-item {
@@ -25,8 +29,8 @@
   gap: 1rem;
   padding: 0.7rem 0.9rem;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--bg-alt);
+  border: 1px solid var(--pd-border);
 }
 
 .moderation-item-masque {
@@ -35,11 +39,12 @@
 
 .moderation-contenu strong {
   font-size: 0.92rem;
+  color: var(--pd-text-main);
 }
 
 .moderation-contenu p {
   margin: 0.3rem 0 0;
-  color: #d6d8e6;
+  color: var(--pd-text-main);
   font-size: 0.92rem;
 }
 
@@ -48,8 +53,8 @@
   margin-top: 0.35rem;
   padding: 0.1rem 0.5rem;
   border-radius: 999px;
-  background: rgba(255, 150, 150, 0.18);
-  color: #ff9b9b;
+  background: rgba(var(--danger-rgb), 0.15);
+  color: var(--danger);
   font-size: 0.75rem;
 }
 

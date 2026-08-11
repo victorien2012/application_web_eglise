@@ -105,8 +105,8 @@
    marine de Table.css — reproduction fidèle de la maquette de référence.
    Sélecteur doublé (.datatable-triable.premium-table) pour l'emporter sur
    les règles .premium-table de Table.css sans dépendre de l'ordre
-   d'import ; portée à .datatable-triable pour ne pas affecter les autres
-   consommateurs de Table.jsx (SermonTable, Documents, GestionDocuments). */
+   d'import ; portée à .datatable-triable pour ne pas affecter la variante
+   'site' (voir plus bas) utilisée par les pages publiques/pastorales. */
 /* Couleurs fixes (non liées au thème clair/sombre), pour la même raison que
    SearchFilterPanel.css : ce fond clair reste lisible tel quel, y compris
    sur une page en thème sombre où --text-main basculerait en clair et
@@ -119,6 +119,29 @@
 .datatable-triable.premium-table th {
   color: #1e2b25;
   font-weight: 700;
+}
+
+/* Variante 'site' : pages publiques/pastorales (Documents, SermonTable,
+   GestionDocuments) qui gardent l'en-tête bleu marine/blanc existant de
+   Table.css plutôt que le vert sauge fixe ci-dessus — celui-ci reste
+   réservé à l'outil d'administration. Sélecteur à 3 classes pour l'emporter
+   sur la règle .datatable-triable.premium-table plus générale. */
+.datatable-triable.datatable-site.premium-table thead {
+  background-color: var(--primary);
+  border-bottom: 2px solid var(--pd-border);
+}
+
+.datatable-triable.datatable-site.premium-table th {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.datatable-triable.datatable-site .datatable-th-triable:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.datatable-triable.datatable-site .datatable-icone-tri-inactive {
+  opacity: 0.7;
 }
 
 .datatable-th-triable {

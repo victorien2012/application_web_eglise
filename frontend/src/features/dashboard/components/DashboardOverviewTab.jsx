@@ -47,7 +47,7 @@ export function DashboardOverviewTab({ stats }) {
           </div>
         </div>
         <div className="dashboard-kpi">
-          <div className="kpi-icon-wrapper blue-bg">
+          <div className="kpi-icon-wrapper teal-bg">
             <Download size={24} />
           </div>
           <div className="kpi-content">

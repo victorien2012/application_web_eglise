@@ -183,6 +183,51 @@
 }
 
 /* ==========================================================================
+   Alerte moderation (tableau de bord) : signalements_par_statut etait deja
+   calcule par /admin/statistiques/ mais jamais affiche.
+   ========================================================================== */
+.admin-moderation-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  background-color: rgba(var(--warning-rgb), 0.1);
+  border: 1px solid rgba(var(--warning-rgb), 0.35);
+  border-radius: 12px;
+  color: var(--text-main);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.admin-moderation-alert:hover {
+  background-color: rgba(var(--warning-rgb), 0.18);
+}
+
+.admin-moderation-alert svg {
+  flex-shrink: 0;
+  color: var(--warning);
+}
+
+.admin-moderation-alert-texte {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-moderation-alert-texte strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.admin-moderation-alert-texte span {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
    KPIs
    ========================================================================== */
 .admin-kpis {

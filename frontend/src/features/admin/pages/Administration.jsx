@@ -11,7 +11,6 @@ import { SearchFilterPanel, ChampFiltre } from '../../../components/ui/SearchFil
 import { AnnonceModal } from '../components/AnnonceModal';
 import CarrouselModal from '../components/CarrouselModal';
 import { GestionConfiguration } from '../components/GestionConfiguration';
-import Pagination from '../../../components/Pagination';
 import './Administration.css';
 import '../../dashboard/pages/PastorDashboard.css';
 
@@ -45,7 +44,6 @@ export function Administration() {
   const [filtreStatutPasteur, setFiltreStatutPasteur] = useState('tous');
   const [rechercheDemandeEnAttente, setRechercheDemandeEnAttente] = useState('');
   const [filtreStatutEnAttente, setFiltreStatutEnAttente] = useState('tous');
-  const [pageCarrousel, setPageCarrousel] = useState(1);
   const [pagePredications, setPagePredications] = useState(1);
   const [totalPredications, setTotalPredications] = useState(0);
   const [chargementPredications, setChargementPredications] = useState(false);
@@ -381,21 +379,6 @@ export function Administration() {
   // Demandes.
   const pasteursValides = pasteurs.filter((p) => p.est_valide);
 
-  // Supprimer le dernier element d'une page laissait l'administrateur sur une
-  // page vide, sans moyen de revenir en arriere puisque la pagination n'affiche
-  // plus ce numero. On ramene la page dans les bornes avant de decouper.
-  function decouperPage(elements, page) {
-    const total = Math.ceil(elements.length / ELEMENTS_PAR_PAGE);
-    const pageCourante = Math.min(Math.max(page, 1), Math.max(total, 1));
-    const debut = (pageCourante - 1) * ELEMENTS_PAR_PAGE;
-    return {
-      elements: elements.slice(debut, debut + ELEMENTS_PAR_PAGE),
-      page: pageCourante,
-      total,
-    };
-  }
-
-  const vueCarrousel = decouperPage(carrouselMedias, pageCarrousel);
 
   // Agregats de la serie analytique deja fournie par l'API.
   const activite30Jours = (stats?.serie_analytique || []).reduce(
@@ -481,6 +464,20 @@ export function Administration() {
             <BarChart3 size={20} />
             <h2>{t('admin.overview')}</h2>
           </div>
+          {(stats.signalements_par_statut?.NOUVEAU || 0) + (stats.signalements_par_statut?.EN_COURS || 0) > 0 && (
+            <button type="button" className="admin-moderation-alert" onClick={() => setOngletActif('signalements')}>
+              <AlertTriangle size={22} />
+              <div className="admin-moderation-alert-texte">
+                <strong>
+                  {(stats.signalements_par_statut.NOUVEAU || 0) + (stats.signalements_par_statut.EN_COURS || 0)} signalement(s) en attente de traitement
+                </strong>
+                <span>
+                  {stats.signalements_par_statut.NOUVEAU || 0} nouveau(x), {stats.signalements_par_statut.EN_COURS || 0} en cours — cliquez pour ouvrir la modération
+                </span>
+              </div>
+            </button>
+          )}
+
           <div className="admin-kpis">
             <div className="admin-kpi admin-kpi-blue">
               <div className="admin-kpi-icon"><Users size={20} /></div>
@@ -582,34 +579,47 @@ export function Administration() {
               <h3 style={{ fontSize: '1rem', margin: '0 0 1rem', color: 'var(--text-main)' }}>
                 Contenus les plus consultés
               </h3>
-              <div className="datatable-responsive">
-                <table className="premium-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '50px' }}>#</th>
-                      <th>Titre</th>
-                      <th>Pasteur</th>
-                      <th style={{ textAlign: 'right' }}>Vues</th>
-                      <th style={{ textAlign: 'right' }}>Téléchargements</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats.meilleures_predications.map((predication, index) => (
-                      <tr key={predication.id} className="datatable-row">
-                        <td style={{ fontWeight: 700, color: 'var(--text-muted)' }}>{index + 1}</td>
-                        <td className="cell-title">
-                          <a href={`/sermon/${predication.id}`} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: 600 }}>
-                            {predication.titre}
-                          </a>
-                        </td>
-                        <td>{predication.nom_predicateur || predication.pasteur?.nom_affichage || '-'}</td>
-                        <td style={{ textAlign: 'right' }}>{(predication.nombre_vues || 0).toLocaleString('fr-FR')}</td>
-                        <td style={{ textAlign: 'right' }}>{(predication.nombre_telechargements || 0).toLocaleString('fr-FR')}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable
+                searchable={false}
+                pagination={false}
+                exportFilename="contenus-plus-consultes"
+                keyExtractor={(predication) => predication.id}
+                data={stats.meilleures_predications}
+                columns={[
+                  {
+                    key: 'titre',
+                    header: 'Titre',
+                    className: 'cell-title',
+                    exportValue: (predication) => predication.titre,
+                    render: (predication) => (
+                      <a href={`/sermon/${predication.id}`} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: 600 }}>
+                        {predication.titre}
+                      </a>
+                    ),
+                  },
+                  {
+                    key: 'pasteur',
+                    header: 'Pasteur',
+                    render: (predication) => predication.nom_predicateur || predication.pasteur?.nom_affichage || '-',
+                  },
+                  {
+                    key: 'vues',
+                    header: 'Vues',
+                    style: { textAlign: 'right' },
+                    cellStyle: { textAlign: 'right' },
+                    exportValue: (predication) => predication.nombre_vues || 0,
+                    render: (predication) => (predication.nombre_vues || 0).toLocaleString('fr-FR'),
+                  },
+                  {
+                    key: 'telechargements',
+                    header: 'Téléchargements',
+                    style: { textAlign: 'right' },
+                    cellStyle: { textAlign: 'right' },
+                    exportValue: (predication) => predication.nombre_telechargements || 0,
+                    render: (predication) => (predication.nombre_telechargements || 0).toLocaleString('fr-FR'),
+                  },
+                ]}
+              />
             </div>
           ) : null}
         </section>
@@ -1173,85 +1183,101 @@ export function Administration() {
         </div>
 
         {carrouselMedias.length ? (
-          <div className="datatable-responsive">
-            <table className="premium-table">
-              <thead>
-                <tr>
-                  <th>Aperçu</th>
-                  <th>Titre / Type</th>
-                  <th>Ordre</th>
-                  <th>Statut</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vueCarrousel.elements.map((media) => (
-                  <tr key={media.id} className="datatable-row">
-                    <td style={{ width: '80px' }}>
-                      {media.type_media === 'IMAGE' ? (
-                        <div style={{ width: '60px', height: '40px', borderRadius: '4px', overflow: 'hidden', background: 'var(--bg-alt)' }}>
-                          <img src={media.fichier} alt="Aperçu" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </div>
-                      ) : (
-                        <div style={{ width: '60px', height: '40px', borderRadius: '4px', overflow: 'hidden', background: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg-card)' }}>
-                          <Video size={16} />
-                        </div>
+          <DataTable
+            data={carrouselMedias}
+            keyExtractor={(media) => media.id}
+            searchFields={['titre']}
+            exportFilename="carrousel"
+            columns={[
+              {
+                key: 'apercu',
+                header: 'Aperçu',
+                style: { width: '80px' },
+                render: (media) => (
+                  media.type_media === 'IMAGE' ? (
+                    <div style={{ width: '60px', height: '40px', borderRadius: '4px', overflow: 'hidden', background: 'var(--bg-alt)' }}>
+                      <img src={media.fichier} alt="Aperçu" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  ) : (
+                    <div style={{ width: '60px', height: '40px', borderRadius: '4px', overflow: 'hidden', background: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bg-card)' }}>
+                      <Video size={16} />
+                    </div>
+                  )
+                ),
+              },
+              {
+                key: 'titre',
+                header: 'Titre / Type',
+                className: 'cell-title',
+                sortValue: (media) => media.titre || '',
+                exportValue: (media) => media.titre || 'Sans titre',
+                render: (media) => (
+                  <>
+                    <strong>{media.titre || 'Sans titre'}</strong>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                      {media.type_media === 'IMAGE' ? 'Image' : 'Vidéo'}
+                    </div>
+                  </>
+                ),
+              },
+              {
+                key: 'ordre',
+                header: 'Ordre',
+                sortValue: (media) => media.ordre,
+                exportValue: (media) => media.ordre,
+                render: (media) => (
+                  <span className="status-badge" style={{ backgroundColor: 'var(--bg-alt)', color: 'var(--text-main)' }}>
+                    {media.ordre}
+                  </span>
+                ),
+              },
+              {
+                key: 'statut',
+                header: 'Statut',
+                sortValue: (media) => (media.est_actif ? 1 : 0),
+                exportValue: (media) => (media.est_actif ? 'Actif' : 'Inactif'),
+                render: (media) => (
+                  media.est_actif ? (
+                    <span className="status-badge published">Actif</span>
+                  ) : (
+                    <span className="status-badge archived" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-alt)' }}>Inactif</span>
+                  )
+                ),
+              },
+              {
+                key: 'actions',
+                header: 'Actions',
+                style: { textAlign: 'right' },
+                render: (media) => (
+                  <div className="admin-table-actions">
+                    <Button
+                      variant="secondary"
+                      icon={Edit}
+                      onClick={() => { setCarrouselSelectionne(media); setShowCarrouselModal(true); }}
+                      style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                    >
+                      Modifier
+                    </Button>
+                    <Button
+                      variant="red"
+                      icon={Trash2}
+                      onClick={() => demanderConfirmation(
+                        'Supprimer le média',
+                        `Êtes-vous sûr de vouloir supprimer ce média du carrousel ?`,
+                        'Supprimer',
+                        'danger',
+                        Trash2,
+                        () => supprimerCarrousel(media)
                       )}
-                    </td>
-                    <td className="cell-title">
-                      <strong>{media.titre || 'Sans titre'}</strong>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                        {media.type_media === 'IMAGE' ? 'Image' : 'Vidéo'}
-                      </div>
-                    </td>
-                    <td>
-                      <span className="status-badge" style={{ backgroundColor: 'var(--bg-alt)', color: 'var(--text-main)' }}>
-                        {media.ordre}
-                      </span>
-                    </td>
-                    <td>
-                      {media.est_actif ? (
-                        <span className="status-badge published">Actif</span>
-                      ) : (
-                        <span className="status-badge archived" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-alt)' }}>Inactif</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="admin-table-actions">
-                        <Button
-                          variant="secondary"
-                          icon={Edit}
-                          onClick={() => { setCarrouselSelectionne(media); setShowCarrouselModal(true); }}
-                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                        >
-                          Modifier
-                        </Button>
-                        <Button
-                          variant="red"
-                          icon={Trash2}
-                          onClick={() => demanderConfirmation(
-                            'Supprimer le média',
-                            `Êtes-vous sûr de vouloir supprimer ce média du carrousel ?`,
-                            'Supprimer',
-                            'danger',
-                            Trash2,
-                            () => supprimerCarrousel(media)
-                          )}
-                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                        >
-                          Supprimer
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
-              <Pagination current={vueCarrousel.page} total={vueCarrousel.total} onChange={setPageCarrousel} />
-            </div>
-          </div>
+                      style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                    >
+                      Supprimer
+                    </Button>
+                  </div>
+                ),
+              },
+            ]}
+          />
         ) : (
           <div className="admin-empty-state">
             <CheckCircle size={32} />

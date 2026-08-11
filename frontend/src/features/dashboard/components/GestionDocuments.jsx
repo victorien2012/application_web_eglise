@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, extraireListe } from '../../../services/api';
-import { FileText, PlusCircle, Trash2, PencilLine, Eye, Download, Search, AlertTriangle } from 'lucide-react';
+import { FileText, PlusCircle, Trash2, PencilLine, Download, AlertTriangle } from 'lucide-react';
 import { IconButton } from '../../../components/ui/IconButton';
 import { Button } from '../../../components/Button';
-import { Table } from '../../../components/ui/Table';
+import { DataTable } from '../../../components/ui/DataTable';
 import { Badge } from '../../../components/ui/Badge';
 import { DocumentIcon } from '../../../components/ui/DocumentIcon';
+import { DocumentModal } from './DocumentModal';
 import { Toast } from 'primereact/toast';
 import { ConfirmModal } from '../../../components/ui/ConfirmModal';
-import { verifierFichier } from '../../../utils/fichiers';
 import { extraireErreurServeur } from '../../../utils/erreurs';
 
 export function GestionDocuments() {
@@ -18,20 +18,9 @@ export function GestionDocuments() {
   const [categories, setCategories] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [documentASupprimer, setDocumentASupprimer] = useState(null);
-  const [enEdition, setEnEdition] = useState(null);
-  const [recherche, setRecherche] = useState('');
+  const [modalOuvert, setModalOuvert] = useState(false);
+  const [documentEnEdition, setDocumentEnEdition] = useState(null);
   const toast = useRef(null);
-
-  const [formulaire, setFormulaire] = useState({
-    titre: '',
-    description: '',
-    est_publie: true,
-    categories_ids: [],
-  });
-  const [fichier, setFichier] = useState(null);
-  const [imageCouverture, setImageCouverture] = useState(null);
-  const [enCours, setEnCours] = useState(false);
-  const [erreurFichier, setErreurFichier] = useState('');
 
   useEffect(() => {
     chargerDonnees();
@@ -54,90 +43,37 @@ export function GestionDocuments() {
     }
   }
 
-  function reinitialiserFormulaire() {
-    setEnEdition(null);
-    setFormulaire({ titre: '', description: '', est_publie: true, categories_ids: [] });
-    setFichier(null);
-    setImageCouverture(null);
+  function ouvrirAjout() {
+    setDocumentEnEdition(null);
+    setModalOuvert(true);
   }
 
   function commencerEdition(doc) {
-    setEnEdition(doc.id);
-    setFormulaire({
-      titre: doc.titre,
-      description: doc.description || '',
-      est_publie: doc.est_publie,
-      categories_ids: (doc.categories || []).map(c => c.id)
-    });
-    setFichier(null);
-    setImageCouverture(null);
+    setDocumentEnEdition(doc);
+    setModalOuvert(true);
   }
 
-  async function handleSoumettre(e) {
-    e.preventDefault();
-    if (enCours) return;
-    if (!enEdition && !fichier) {
-      toast.current?.show({ severity: 'error', summary: 'Erreur', detail: 'Un fichier est requis.' });
-      return;
-    }
-    if (erreurFichier) {
-      toast.current?.show({ severity: 'error', summary: 'Fichier invalide', detail: erreurFichier });
-      return;
-    }
+  function fermerModal() {
+    setModalOuvert(false);
+    setDocumentEnEdition(null);
+  }
 
-    const formData = new FormData();
-    formData.append('titre', formulaire.titre);
-    formData.append('description', formulaire.description);
-    formData.append('est_publie', formulaire.est_publie ? 'true' : 'false');
-    formulaire.categories_ids.forEach(id => formData.append('categories_ids', id));
-    if (fichier) formData.append('fichier', fichier);
-    if (imageCouverture) formData.append('image_couverture', imageCouverture);
-
-    setEnCours(true);
+  async function enregistrerDocument(formData) {
     try {
-      if (enEdition) {
-        await api.patch(`/documents/${enEdition}/`, formData);
+      if (documentEnEdition) {
+        await api.patch(`/documents/${documentEnEdition.id}/`, formData);
         toast.current?.show({ severity: 'success', summary: 'Succès', detail: 'Document mis à jour.' });
       } else {
         await api.post('/documents/', formData);
         toast.current?.show({ severity: 'success', summary: 'Succès', detail: 'Document ajouté.' });
       }
-      reinitialiserFormulaire();
+      fermerModal();
       chargerDonnees();
     } catch (err) {
       // Les messages de validation du serveur (format refusé, fichier trop
       // lourd, abonnement expiré) étaient remplacés par un texte générique.
-      toast.current?.show({
-        severity: 'error',
-        summary: 'Erreur',
-        detail: extraireErreurServeur(err, { repli: "Erreur lors de l'enregistrement." }),
-        life: 6000,
-      });
-    } finally {
-      setEnCours(false);
+      throw new Error(extraireErreurServeur(err, { repli: "Erreur lors de l'enregistrement." }));
     }
-  }
-
-  // Mêmes limites que le serializer DocumentEcritureSerializer.
-  const CONTRAINTES = {
-    fichier: { extensions: ['pdf', 'doc', 'docx', 'odt', 'txt', 'rtf', 'ppt', 'pptx', 'xls', 'xlsx'], tailleMaxMo: 50 },
-    image_couverture: { extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif'], tailleMaxMo: 5 },
-  };
-
-  function choisirFichier(cle, fichierChoisi, appliquer) {
-    if (!fichierChoisi) {
-      appliquer(null);
-      setErreurFichier('');
-      return;
-    }
-    const erreur = verifierFichier(fichierChoisi, CONTRAINTES[cle]);
-    if (erreur) {
-      setErreurFichier(erreur);
-      appliquer(null);
-      return;
-    }
-    setErreurFichier('');
-    appliquer(fichierChoisi);
   }
 
   function demanderSuppression(doc) {
@@ -157,219 +93,110 @@ export function GestionDocuments() {
     }
   }
 
-  function basculerCategorie(id) {
-    setFormulaire(prev => ({
-      ...prev,
-      categories_ids: prev.categories_ids.includes(id) 
-        ? prev.categories_ids.filter(c => c !== id) 
-        : [...prev.categories_ids, id]
-    }));
-  }
-
-  const documentsFiltres = documents.filter(d => 
-    (d.titre || '').toLowerCase().includes(recherche.toLowerCase())
-  );
-
   return (
     <div className="gestion-documents dashboard-tab-content">
       <Toast ref={toast} />
-      
+
       <div className="dashboard-title-area" style={{ marginBottom: '1.5rem' }}>
         <h1>Gestion des Documents</h1>
         <p>Ajoutez et gérez vos documents (PDF, Word, etc.)</p>
       </div>
 
-      <div className="docs-layout-grid">
-        
-        {/* Liste des documents */}
-        <div className="dashboard-section" style={{ backgroundColor: 'var(--bg-card)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--pd-border)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Vos documents publiés ({documents.length})</h3>
-            <div style={{ position: 'relative' }}>
-              <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input
-                type="text"
-                placeholder="Rechercher..."
-                value={recherche}
-                onChange={(e) => setRecherche(e.target.value)}
-                style={{ padding: '0.5rem 1rem 0.5rem 2.25rem', borderRadius: '6px', border: '1px solid var(--pd-border)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
-              />
-            </div>
+      <div className="dashboard-section" style={{ backgroundColor: 'var(--bg-card)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--pd-border)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
+          <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Vos documents publiés ({documents.length})</h3>
+          <Button variant="primary" icon={PlusCircle} onClick={ouvrirAjout}>
+            Ajouter un document
+          </Button>
+        </div>
+
+        {chargement ? (
+          <p style={{ color: 'var(--text-muted)' }}>Chargement...</p>
+        ) : documents.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', backgroundColor: 'var(--bg-alt)', borderRadius: '8px' }}>
+            <FileText size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
+            <p>Aucun document trouvé.</p>
           </div>
-
-          {chargement ? (
-            <p style={{ color: 'var(--text-muted)' }}>Chargement...</p>
-          ) : documentsFiltres.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', backgroundColor: 'var(--bg-alt)', borderRadius: '8px' }}>
-              <FileText size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
-              <p>Aucun document trouvé.</p>
-            </div>
-          ) : (
-            <Table 
-              data={documentsFiltres}
-              keyExtractor={(doc) => doc.id}
-              rowStyle={(doc) => doc.id === enEdition ? { backgroundColor: 'rgba(var(--primary-rgb), 0.08)' } : {}}
-              columns={[
-                { 
-                  header: 'Document',
-                  render: (doc) => {
-                    const logoUrl = doc.image_couverture || doc.url_image_couverture;
-                    return (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        {logoUrl ? (
-                          <img src={logoUrl} alt="logo" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} onError={(e) => { e.target.style.display = 'none'; }} />
-                        ) : (
-                          <DocumentIcon url={doc.fichier || doc.url_fichier} size={24} />
-                        )}
-                        <span style={{ fontWeight: 500, color: 'var(--text-main)' }}>{doc.titre}</span>
-                      </div>
-                    );
-                  }
-                },
-                { 
-                  header: 'Date',
-                  cellStyle: { color: 'var(--text-muted)', fontSize: '0.9rem' },
-                  render: (doc) => new Date(doc.cree_le).toLocaleDateString()
-                },
-                { 
-                  header: 'Statistiques',
-                  cellStyle: { color: 'var(--text-muted)', fontSize: '0.9rem' },
-                  render: (doc) => (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <Download size={14} /> {doc.nombre_telechargements}
+        ) : (
+          <DataTable
+            variant="site"
+            exportable={false}
+            searchFields={['titre']}
+            searchPlaceholder="Rechercher..."
+            data={documents}
+            keyExtractor={(doc) => doc.id}
+            rowStyle={(doc) => doc.id === documentEnEdition?.id ? { backgroundColor: 'rgba(var(--primary-rgb), 0.08)' } : {}}
+            columns={[
+              {
+                key: 'document',
+                header: 'Document',
+                sortValue: (doc) => doc.titre || '',
+                render: (doc) => {
+                  const logoUrl = doc.image_couverture || doc.url_image_couverture;
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      {logoUrl ? (
+                        <img src={logoUrl} alt="logo" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                      ) : (
+                        <DocumentIcon url={doc.fichier || doc.url_fichier} size={24} />
+                      )}
+                      <span style={{ fontWeight: 500, color: 'var(--text-main)' }}>{doc.titre}</span>
                     </div>
-                  )
-                },
-                { 
-                  header: 'Statut',
-                  render: (doc) => (
-                    <Badge variant={doc.est_publie ? 'success' : 'warning'}>
-                      {doc.est_publie ? 'Publié' : 'Brouillon'}
-                    </Badge>
-                  )
-                },
-                { 
-                  header: 'Actions', 
-                  style: { textAlign: 'right' },
-                  cellStyle: { textAlign: 'right' },
-                  render: (doc) => (
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                      <IconButton icon={PencilLine} onClick={() => commencerEdition(doc)} title="Modifier" colorVariant="default" />
-                      <IconButton icon={Trash2} onClick={() => demanderSuppression(doc)} title="Supprimer" colorVariant="danger" />
-                    </div>
-                  )
+                  );
                 }
-              ]}
-            />
-          )}
-        </div>
-
-        {/* Formulaire d'ajout/modification */}
-        <div className="dashboard-section form-card" style={{ backgroundColor: 'var(--bg-card)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--pd-border)', position: 'sticky', top: '2rem' }}>
-          <h3 style={{ margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)' }}>
-            {enEdition ? <PencilLine size={20} /> : <PlusCircle size={20} />}
-            {enEdition ? 'Modifier le document' : 'Nouveau document'}
-          </h3>
-
-          <form onSubmit={handleSoumettre} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem' }}>Titre *</label>
-              <input 
-                type="text" 
-                required 
-                value={formulaire.titre} 
-                onChange={(e) => setFormulaire({...formulaire, titre: e.target.value})}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--pd-border)', background: 'var(--bg-card)', color: 'var(--text-main)' }}
-              />
-            </div>
-            
-            <div>
-              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.25rem' }}>Description</label>
-              <textarea 
-                rows="2" 
-                value={formulaire.description} 
-                onChange={(e) => setFormulaire({...formulaire, description: e.target.value})}
-                style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid var(--pd-border)', resize: 'vertical', background: 'var(--bg-card)', color: 'var(--text-main)' }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-                  Fichier (PDF, DOCX...) {!enEdition && '*'}
-                </label>
-                <input 
-                  type="file" 
-                  accept=".pdf,.doc,.docx,.odt,.txt,.rtf,.ppt,.pptx,.xls,.xlsx"
-                  onChange={(e) => choisirFichier("fichier", e.target.files?.[0] || null, setFichier)}
-                  style={{ width: '100%', fontSize: '0.85rem' }}
-                />
-                {enEdition && <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem', fontSize: '0.75rem' }}>Vide = conserver l'actuel.</small>}
-              </div>
-
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-                  Logo du document
-                </label>
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={(e) => choisirFichier("image_couverture", e.target.files?.[0] || null, setImageCouverture)}
-                  style={{ width: '100%', fontSize: '0.85rem' }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem' }}>Catégories</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                {categories.map(cat => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => basculerCategorie(cat.id)}
-                    style={{
-                      padding: '0.3rem 0.6rem', borderRadius: '20px', fontSize: '0.8rem', border: '1px solid', cursor: 'pointer',
-                      backgroundColor: formulaire.categories_ids.includes(cat.id) ? 'var(--primary)' : 'transparent',
-                      color: formulaire.categories_ids.includes(cat.id) ? 'white' : 'var(--text-muted)',
-                      borderColor: formulaire.categories_ids.includes(cat.id) ? 'var(--primary)' : 'var(--pd-border)'
-                    }}
-                  >
-                    {cat.nom}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginTop: '0.5rem' }}>
-              <input 
-                type="checkbox" 
-                checked={formulaire.est_publie} 
-                onChange={(e) => setFormulaire({...formulaire, est_publie: e.target.checked})}
-                style={{ width: '16px', height: '16px' }}
-              />
-              <span style={{ fontWeight: 500 }}>Publier immédiatement</span>
-            </label>
-
-            {erreurFichier && (
-              <p role="alert" style={{ margin: 0, color: 'var(--danger)', fontSize: '0.85rem', fontWeight: 600 }}>
-                {erreurFichier}
-              </p>
-            )}
-
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-              <Button type="submit" variant="primary" style={{ flex: 1 }} disabled={enCours}>
-                {enCours ? 'Enregistrement…' : (enEdition ? 'Enregistrer' : 'Ajouter')}
-              </Button>
-              {enEdition && (
-                <Button type="button" variant="outline" onClick={reinitialiserFormulaire} disabled={enCours}>
-                  Annuler
-                </Button>
-              )}
-            </div>
-          </form>
-        </div>
+              },
+              {
+                key: 'date',
+                header: 'Date',
+                cellStyle: { color: 'var(--text-muted)', fontSize: '0.9rem' },
+                sortValue: (doc) => doc.cree_le || '',
+                render: (doc) => new Date(doc.cree_le).toLocaleDateString()
+              },
+              {
+                key: 'stats',
+                header: 'Statistiques',
+                cellStyle: { color: 'var(--text-muted)', fontSize: '0.9rem' },
+                sortValue: (doc) => doc.nombre_telechargements || 0,
+                render: (doc) => (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <Download size={14} /> {doc.nombre_telechargements}
+                  </div>
+                )
+              },
+              {
+                key: 'statut',
+                header: 'Statut',
+                sortValue: (doc) => (doc.est_publie ? 1 : 0),
+                render: (doc) => (
+                  <Badge variant={doc.est_publie ? 'success' : 'warning'}>
+                    {doc.est_publie ? 'Publié' : 'Brouillon'}
+                  </Badge>
+                )
+              },
+              {
+                key: 'actions',
+                header: 'Actions',
+                style: { textAlign: 'right' },
+                cellStyle: { textAlign: 'right' },
+                render: (doc) => (
+                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                    <IconButton icon={PencilLine} onClick={() => commencerEdition(doc)} title="Modifier" colorVariant="default" />
+                    <IconButton icon={Trash2} onClick={() => demanderSuppression(doc)} title="Supprimer" colorVariant="danger" />
+                  </div>
+                )
+              }
+            ]}
+          />
+        )}
       </div>
+
+      <DocumentModal
+        isOpen={modalOuvert}
+        onClose={fermerModal}
+        onSave={enregistrerDocument}
+        documentToEdit={documentEnEdition}
+        categories={categories}
+      />
 
       <ConfirmModal
         isOpen={!!documentASupprimer}

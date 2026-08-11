@@ -22,6 +22,11 @@ const TAILLES_PAGE_DEFAUT = [10, 25, 50, 100];
  * le tri et le découpage interne sont désactivés (le parent les pilote via
  * ses propres filtres et `onPageChange`), seuls l'affichage, l'export de la
  * page visible et la navigation restent gérés ici.
+ *
+ * variant : 'admin' (défaut) reproduit l'en-tête vert sauge fixe de
+ * l'outil d'administration ; 'site' garde l'en-tête bleu marine/blanc du
+ * reste de la plateforme (Documents, SermonTable, espace pasteur) — ces
+ * pages publiques ou pastorales gardent la charte navy/ambre existante.
  */
 export function DataTable({
   columns,
@@ -39,6 +44,8 @@ export function DataTable({
   emptyMessage = 'Aucun élément trouvé.',
   toolbarExtra,
   rowStyle,
+  pagination = true,
+  variant = 'admin',
   serverSide = false,
   totalItems,
   page: pageControlee,
@@ -204,7 +211,7 @@ export function DataTable({
         <div className="datatable-vide">{emptyMessage}</div>
       ) : (
         <div className="datatable-responsive">
-          <table className="premium-table datatable-triable">
+          <table className={`premium-table datatable-triable ${variant === 'site' ? 'datatable-site' : ''}`}>
             <thead>
               <tr>
                 {columns.map((colonne) => (
@@ -271,7 +278,7 @@ export function DataTable({
         </div>
       )}
 
-      {donneesPage.length > 0 && (
+      {pagination && donneesPage.length > 0 && (
         <div className="datatable-pied">
           <span className="datatable-info-pagination">
             Affichage de {Math.min(debut + 1, totalAffiche)} à {Math.min(debut + donneesPage.length, totalAffiche)} sur {totalAffiche} élément{totalAffiche > 1 ? 's' : ''}

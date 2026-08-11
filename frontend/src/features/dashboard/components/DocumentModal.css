@@ -1,0 +1,141 @@
+.document-modal-content {
+  max-width: 540px;
+  width: 95%;
+}
+
+/* Le <h2> du titre n'a pas de couleur propre ailleurs (CarrouselModal,
+   AnnonceModal) : il hérite normalement de body, mais body.color reste
+   bloqué sur sa valeur claire en thème sombre (regle CSS pré-existante,
+   hors perimetre ici) — d'ou une couleur fixee explicitement. */
+.document-modal-content .modal-header h2 {
+  color: var(--text-main);
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.document-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  margin-top: 0.75rem;
+  padding-left: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+.document-modal-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* min-width: 0 sur les deux colonnes : un <input type="file"> a une largeur
+   intrinseque incompressible (bouton "Choisir un fichier" + libelle) plus
+   large que la moitie de la modale. Sans ca, flexbox refuse de le retrecir
+   (min-width: auto par defaut) et la ligne — donc la modale — deborde. */
+.document-modal-form .form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.document-modal-form .form-row .form-group {
+  min-width: 0;
+}
+
+.document-modal-form label {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+
+.document-modal-form input[type="text"],
+.document-modal-form input[type="file"],
+.document-modal-form textarea {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.document-modal-form input[type="text"]:focus,
+.document-modal-form textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
+}
+
+.document-modal-form input[type="file"] {
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+.document-modal-form textarea {
+  resize: vertical;
+  min-height: 56px;
+}
+
+.document-modal-form .help-text {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+}
+
+.document-modal-form .required {
+  color: var(--danger);
+  margin-left: 0.2rem;
+}
+
+.document-modal-form .champ-erreur {
+  color: var(--danger);
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.document-modal-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.document-modal-categorie {
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.document-modal-categorie:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.document-modal-categorie.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.document-modal-form .checkbox-label-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.document-modal-form .checkbox-label-inline input {
+  width: 16px;
+  height: 16px;
+}

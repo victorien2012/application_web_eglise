@@ -758,19 +758,23 @@ body {
   flex-shrink: 0;
 }
 
+/* Couleurs en dur auparavant (#e0f2fe, #dbeafe...) : illisibles en thème
+   sombre, et primary-bg/blue-bg étaient deux bleus quasi identiques —
+   même défaut que les KPI de l'administration, corrigé de la même façon
+   avec les tokens partagés (index.css). */
 .kpi-icon-wrapper.primary-bg {
-  background-color: #e0f2fe;
-  color: #004a94;
+  background-color: rgba(var(--primary-rgb), 0.12);
+  color: var(--primary);
 }
 
 .kpi-icon-wrapper.pink-bg {
-  background-color: #fce7f3;
-  color: #be185d;
+  background-color: rgba(var(--kpi-rose-rgb), 0.12);
+  color: var(--kpi-rose);
 }
 
-.kpi-icon-wrapper.blue-bg {
-  background-color: #dbeafe;
-  color: #1d4ed8;
+.kpi-icon-wrapper.teal-bg {
+  background-color: rgba(var(--kpi-teal-rgb), 0.12);
+  color: var(--kpi-teal);
 }
 
 .kpi-content p {
@@ -895,16 +899,29 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-/* Distingue au premier coup d'œil le formulaire d'ajout de celui de
-   modification : sans repère visuel propre à la carte, les deux se
-   présentaient de façon identique et seul le texte du titre changeait —
-   facile à manquer en arrivant directement sur l'écran d'édition. */
 .form-card.publier-carte-ajout {
   border-left: 4px solid var(--primary);
 }
 
-.form-card.publier-carte-edition {
-  border-left: 4px solid var(--warning);
+/* Modale de modification d'une vidéo : au-dessus de la liste (onglet
+   Vidéos) plutôt qu'une navigation vers l'onglet Publier. Le formulaire est
+   long (identité, source, détails, publication, pièces jointes) : la
+   modale doit défiler plutôt que déborder de l'écran. */
+.video-edit-modal-content {
+  max-width: 720px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Le <h2> n'a pas de couleur propre ailleurs (CarrouselModal, AnnonceModal) :
+   il hérite normalement de body, mais body.color reste bloqué sur sa valeur
+   claire en thème sombre (règle CSS pré-existante, hors périmètre ici) —
+   d'où une couleur fixée explicitement, comme pour DocumentModal. */
+.video-edit-modal-content .modal-header h2 {
+  color: var(--text-main);
+  margin: 0;
+  font-size: 1.25rem;
 }
 
 /* ==========================================================================
@@ -914,7 +931,7 @@ body {
   position: absolute;
   top: 0;
   right: 0;
-  background: #ef4444;
+  background: var(--danger);
   color: white;
   font-size: 0.65rem;
   font-weight: 700;
@@ -985,8 +1002,8 @@ body {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(0, 74, 148, 0.1);
-  color: #004a94;
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1013,7 +1030,7 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #004a94;
+  background: var(--primary);
   margin-top: 4px;
 }
 
@@ -1057,13 +1074,6 @@ body {
   z-index: 999;
   opacity: 0;
   transition: opacity 0.3s ease;
-}
-
-.docs-layout-grid {
-  display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 2rem;
-  align-items: start;
 }
 
 .sidebar-overlay.active {
@@ -1154,10 +1164,6 @@ body {
 
   .filter-left {
     flex-wrap: wrap;
-  }
-
-  .docs-layout-grid {
-    grid-template-columns: 1fr;
   }
 }
 
