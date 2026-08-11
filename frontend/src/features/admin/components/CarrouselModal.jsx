@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Upload, Image as ImageIcon, Film, Save } from 'lucide-react';
 import { Button } from '../../../components/Button';
+import { verifierFichier } from '../../../utils/fichiers';
 import './CarrouselModal.css';
 
 const EXTENSIONS_IMAGE = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
 const TAILLE_MAX_MO = 5;
+const LIMITE_TITRE = 255;
 
 // Regex identique à celle de HomeCarousel.jsx : c'est ce composant qui affiche
 // le média sur la page d'accueil. S'il extrayait un identifiant différent (ou
@@ -69,14 +71,9 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
 
     // Le carrousel s'affiche en page d'accueil : refuser ici ce que le serveur
     // refusera de toute facon evite un envoi inutile et un message obscur.
-    const extension = file.name.split('.').pop()?.toLowerCase();
-    if (!EXTENSIONS_IMAGE.includes(extension)) {
-      setErreur(`Format non supporté. Formats acceptés : ${EXTENSIONS_IMAGE.join(', ')}.`);
-      e.target.value = '';
-      return;
-    }
-    if (file.size > TAILLE_MAX_MO * 1024 * 1024) {
-      setErreur(`Fichier trop volumineux (${(file.size / (1024 * 1024)).toFixed(1)} Mo). Maximum : ${TAILLE_MAX_MO} Mo.`);
+    const messageErreur = verifierFichier(file, { extensions: EXTENSIONS_IMAGE, tailleMaxMo: TAILLE_MAX_MO });
+    if (messageErreur) {
+      setErreur(messageErreur);
       e.target.value = '';
       return;
     }
@@ -108,9 +105,12 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
     e.preventDefault();
     if (enCours || !peutEnregistrer) return;
 
+    const titreNettoye = titre.trim();
+    const descriptionNettoyee = description.trim();
+
     const formData = new FormData();
-    if (titre) formData.append('titre', titre);
-    if (description) formData.append('description', description);
+    if (titreNettoye) formData.append('titre', titreNettoye);
+    if (descriptionNettoyee) formData.append('description', descriptionNettoyee);
     formData.append('type_media', typeMedia);
     formData.append('est_actif', estActif);
     formData.append('ordre', ordre);
@@ -240,6 +240,7 @@ const CarrouselModal = ({ isOpen, onClose, onSave, mediaToEdit = null }) => {
               value={titre}
               onChange={(e) => setTitre(e.target.value)}
               placeholder="Texte affiché sur le média"
+              maxLength={LIMITE_TITRE}
             />
           </div>
 
