@@ -1215,7 +1215,11 @@ export function PastorDashboard() {
 
                 <div className="dashboard-inline" style={{ paddingTop: '1.25rem', borderTop: '1px solid var(--pd-border)' }}>
                   <button className="btn btn-dark" type="submit" disabled={soumission}>
-                    {soumission ? t('dashboard.saving') : t('dashboard.save_changes')}
+                    {soumission
+                      ? t('dashboard.saving')
+                      : ongletActif === 'editer'
+                        ? t('dashboard.save_changes')
+                        : t('dashboard.add_video_submit', 'Ajouter')}
                   </button>
                 </div>
               </form>

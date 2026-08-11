@@ -485,6 +485,7 @@
     "publier_section_details": "Details",
     "publier_section_publication": "Publication",
     "publier_section_channel": "YouTube channel",
+    "add_video_submit": "Add",
     "sync_auto_info": "After the initial import, automatic synchronization regularly retrieves your new videos — no manual action required.",
     "starting_import": "Starting import...",
     "start_sync": "Import / synchronize my channel",
