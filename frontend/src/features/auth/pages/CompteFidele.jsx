@@ -6,6 +6,8 @@ import { useAuth } from '../../../context/AuthContext';
 import { useSite } from '../../../context/SiteContext';
 import { Button } from '../../../components/Button';
 import { Password } from 'primereact/password';
+import { Stepper } from 'primereact/stepper';
+import { StepperPanel } from 'primereact/stepperpanel';
 import './Auth.css';
 
 export function CompteFidele() {
@@ -17,6 +19,7 @@ export function CompteFidele() {
   
   // mode: 'login' | 'register'
   const [mode, setMode] = useState('login');
+  const [step, setStep] = useState(1);
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -111,14 +114,14 @@ export function CompteFidele() {
             <button 
               type="button" 
               className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
-              onClick={() => { setMode('login'); setErreur(''); }}
+              onClick={() => { setMode('login'); setStep(1); setErreur(''); }}
             >
               {t('auth.btn_login')}
             </button>
             <button 
               type="button" 
               className={`auth-tab ${mode === 'register' ? 'active' : ''}`}
-              onClick={() => { setMode('register'); setErreur(''); }}
+              onClick={() => { setMode('register'); setStep(1); setErreur(''); }}
             >
               {t('auth.btn_register')}
             </button>
@@ -129,79 +132,151 @@ export function CompteFidele() {
           ) : null}
 
           <form className="auth-form" onSubmit={handleSubmit}>
-            <div className="auth-field-floating">
-              <div className="auth-input-wrapper">
-                <UserRound className="field-icon" size={18} />
-                <input
-                  id="username"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  placeholder=" "
-                  autoComplete="username"
-                  required
-                />
-                <label htmlFor="username">{t('auth.username')}</label>
-              </div>
-            </div>
-
-            {mode === 'register' && (
+            {/* ETAPE 1 (ou mode login) : Identifiants */}
+            {mode === 'login' ? (
               <>
                 <div className="auth-field-floating">
                   <div className="auth-input-wrapper">
-                    <AtSign className="field-icon" size={18} />
+                    <UserRound className="field-icon" size={18} />
                     <input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
+                      id="username"
+                      value={username}
+                      onChange={(event) => setUsername(event.target.value)}
                       placeholder=" "
-                      autoComplete="email"
+                      autoComplete="username"
                       required
                     />
-                    <label htmlFor="email">{t('auth.email')}</label>
+                    <label htmlFor="username">{t('auth.username')}</label>
                   </div>
                 </div>
 
                 <div className="auth-field-floating">
                   <div className="auth-input-wrapper">
-                    <Phone className="field-icon" size={18} />
-                    <input
-                      id="contact"
-                      type="tel"
-                      value={contact}
-                      onChange={(event) => setContact(event.target.value)}
+                    <LockKeyhole className="field-icon" size={18} />
+                    <Password
+                      id="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      toggleMask
+                      feedback={false}
                       placeholder=" "
+                      autoComplete="current-password"
+                      required
                     />
-                    <label htmlFor="contact">{t('auth.contact')}</label>
+                    <label htmlFor="password">{t('auth.password')}</label>
                   </div>
                 </div>
+                
+                {erreur ? <p className="auth-error">{erreur}</p> : null}
+                
+                <Button variant="primary" icon={LogIn} type="submit" disabled={soumission} className="auth-submit-btn">
+                  {soumission ? t('auth.btn_login_loading') : t('auth.btn_login')}
+                </Button>
               </>
+            ) : (
+              <Stepper activeStep={step - 1} onChangeStep={(e) => { setErreur(''); setStep(e.index + 1); }} linear>
+                <StepperPanel header="Identifiants">
+                  <div className="auth-form" style={{ padding: '1rem 0' }}>
+                    <div className="auth-field-floating">
+                      <div className="auth-input-wrapper">
+                        <UserRound className="field-icon" size={18} />
+                        <input
+                          id="username"
+                          value={username}
+                          onChange={(event) => setUsername(event.target.value)}
+                          placeholder=" "
+                          autoComplete="username"
+                          required
+                        />
+                        <label htmlFor="username">{t('auth.username')}</label>
+                      </div>
+                    </div>
+
+                    <div className="auth-field-floating">
+                      <div className="auth-input-wrapper">
+                        <LockKeyhole className="field-icon" size={18} />
+                        <Password
+                          id="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          toggleMask
+                          feedback={false}
+                          placeholder=" "
+                          autoComplete="new-password"
+                          required
+                        />
+                        <label htmlFor="password">{t('auth.password')}</label>
+                      </div>
+                    </div>
+
+                    {erreur ? <p className="auth-error">{erreur}</p> : null}
+
+                    <div className="workflow-actions">
+                      <Button 
+                        variant="primary" 
+                        type="button" 
+                        onClick={() => {
+                          if (!username || !password) {
+                            setErreur("Veuillez remplir les champs obligatoires.");
+                            return;
+                          }
+                          setErreur('');
+                          setStep(2);
+                        }} 
+                        className="auth-submit-btn"
+                      >
+                        Suivant
+                      </Button>
+                    </div>
+                  </div>
+                </StepperPanel>
+                
+                <StepperPanel header="Contact">
+                  <div className="auth-form" style={{ padding: '1rem 0' }}>
+                    <div className="auth-field-floating">
+                      <div className="auth-input-wrapper">
+                        <AtSign className="field-icon" size={18} />
+                        <input
+                          id="email"
+                          type="email"
+                          value={email}
+                          onChange={(event) => setEmail(event.target.value)}
+                          placeholder=" "
+                          autoComplete="email"
+                          required
+                        />
+                        <label htmlFor="email">{t('auth.email')}</label>
+                      </div>
+                    </div>
+
+                    <div className="auth-field-floating">
+                      <div className="auth-input-wrapper">
+                        <Phone className="field-icon" size={18} />
+                        <input
+                          id="contact"
+                          type="tel"
+                          value={contact}
+                          onChange={(event) => setContact(event.target.value)}
+                          placeholder=" "
+                        />
+                        <label htmlFor="contact">{t('auth.contact')}</label>
+                      </div>
+                    </div>
+
+                    {erreur ? <p className="auth-error">{erreur}</p> : null}
+
+                    <div className="workflow-actions">
+                      <Button variant="outline-dark" type="button" onClick={() => setStep(1)} className="auth-submit-btn">
+                        Précédent
+                      </Button>
+                      <Button variant="primary" icon={UserPlus} type="submit" disabled={soumission} className="auth-submit-btn">
+                        {soumission ? t('auth.btn_register_loading') : t('auth.btn_register')}
+                      </Button>
+                    </div>
+                  </div>
+                </StepperPanel>
+              </Stepper>
             )}
-
-            <div className="auth-field-floating">
-              <div className="auth-input-wrapper">
-                <LockKeyhole className="field-icon" size={18} />
-                <Password
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  toggleMask
-                  feedback={false}
-                  placeholder=" "
-                  autoComplete={mode === 'login' ? "current-password" : "new-password"}
-                  required
-                />
-                <label htmlFor="password">{t('auth.password')}</label>
-              </div>
-            </div>
-
-            {erreur ? <p className="auth-error">{erreur}</p> : null}
-
-            <Button variant="primary" icon={mode === 'login' ? LogIn : UserPlus} type="submit" disabled={soumission} className="auth-submit-btn">
-              {soumission 
-                ? (mode === 'login' ? t('auth.btn_login_loading') : t('auth.btn_register_loading')) 
-                : (mode === 'login' ? t('auth.btn_login') : t('auth.btn_register'))}
-            </Button>
           </form>
 
           <div className="auth-footer">

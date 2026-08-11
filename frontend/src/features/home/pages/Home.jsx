@@ -122,15 +122,15 @@ export function Home() {
   ========================= */
   // Le heros met en avant une seule predication : celle choisie par
   // l'administration, a defaut la plus recente.
-  // Les listes sont des multiples de 4 pour remplir exactement les lignes de
+  // Les listes sont des multiples de 3 pour remplir exactement les lignes de
   // la grille, sans dernière ligne incomplète.
-  const tendances = predications.slice(1, 5);
-  const dernieres = predications.slice(0, 8);
+  const tendances = predications.slice(1, 4);
+  const dernieres = predications.slice(0, 6);
   const topPasteurs = pasteurs.slice(0, 4);
   // Le fil reprend la suite du catalogue : il affichait auparavant les mêmes
   // prédications que « Dernières publications », qui apparaissaient donc deux
   // fois sur la page.
-  const filVideos = predications.slice(8, 20);
+  const filVideos = predications.slice(6, 20);
 
   function imageDe(item) {
     if (!item) return null;
@@ -239,7 +239,7 @@ export function Home() {
 
               {isLoading ? (
                 <div className="grid sermon-grid">
-                  {Array.from({ length: 4 }).map((_, i) => <SermonCardSkeleton key={i} />)}
+                  {Array.from({ length: 3 }).map((_, i) => <SermonCardSkeleton key={i} />)}
                 </div>
               ) : hasError ? (
                 <p className="page-state error">{t('home.error_loading')}</p>
@@ -311,7 +311,7 @@ export function Home() {
 
               {isLoading ? (
                 <div className="grid sermon-grid">
-                  {Array.from({ length: 8 }).map((_, i) => <SermonCardSkeleton key={i} />)}
+                  {Array.from({ length: 6 }).map((_, i) => <SermonCardSkeleton key={i} />)}
                 </div>
               ) : !hasError && dernieres.length ? (
                 <div className="grid sermon-grid">
