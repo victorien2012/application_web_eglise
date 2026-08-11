@@ -45,7 +45,6 @@ export function Administration() {
   const [filtreStatutPasteur, setFiltreStatutPasteur] = useState('tous');
   const [rechercheDemandeEnAttente, setRechercheDemandeEnAttente] = useState('');
   const [filtreStatutEnAttente, setFiltreStatutEnAttente] = useState('tous');
-  const [pageAnnonces, setPageAnnonces] = useState(1);
   const [pageCarrousel, setPageCarrousel] = useState(1);
   const [pagePredications, setPagePredications] = useState(1);
   const [totalPredications, setTotalPredications] = useState(0);
@@ -390,7 +389,6 @@ export function Administration() {
     };
   }
 
-  const vueAnnonces = decouperPage(annonces, pageAnnonces);
   const vueCarrousel = decouperPage(carrouselMedias, pageCarrousel);
   // Les predications sont paginees par le serveur : la liste recue est deja la
   // page a afficher, il n'y a rien a decouper.
@@ -1075,78 +1073,83 @@ export function Administration() {
           </Button>
         </div>
 
-        {annonces.length ? (
-          <div className="datatable-responsive">
-            <table className="premium-table">
-              <thead>
-                <tr>
-                  <th>Titre</th>
-                  <th>Statut</th>
-                  <th>Date d'expiration</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vueAnnonces.elements.map((annonce) => (
-                  <tr key={annonce.id} className="datatable-row">
-                    <td className="cell-title">
-                      <strong>{annonce.titre}</strong>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                        {annonce.message ? (annonce.message.length > 50 ? annonce.message.substring(0, 50) + '...' : annonce.message) : '-'}
-                      </div>
-                    </td>
-                    <td>
-                      {annonce.est_actif ? (
-                        <span className="status-badge published">Actif</span>
-                      ) : (
-                        <span className="status-badge archived" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-alt)' }}>Inactif</span>
-                      )}
-                    </td>
-                    <td>
-                      {annonce.date_expiration ? new Date(annonce.date_expiration).toLocaleString() : 'Jamais'}
-                    </td>
-                    <td>
-                      <div className="admin-table-actions">
-                        <Button
-                          variant="secondary"
-                          icon={Edit}
-                          onClick={() => { setAnnonceSelectionnee(annonce); setShowAnnonceModal(true); }}
-                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                        >
-                          Modifier
-                        </Button>
-                        <Button
-                          variant="red"
-                          icon={Trash2}
-                          onClick={() => demanderConfirmation(
-                            'Supprimer l\'annonce',
-                            `Êtes-vous sûr de vouloir supprimer l'annonce "${annonce.titre}" ?`,
-                            'Supprimer',
-                            'danger',
-                            Trash2,
-                            () => supprimerAnnonce(annonce)
-                          )}
-                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                        >
-                          Supprimer
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
-              <Pagination current={vueAnnonces.page} total={vueAnnonces.total} onChange={setPageAnnonces} />
-            </div>
-          </div>
-        ) : (
-          <div className="admin-empty-state">
-            <CheckCircle size={32} />
-            <p>Aucune annonce pour le moment.</p>
-          </div>
-        )}
+        <DataTable
+          data={annonces}
+          keyExtractor={(annonce) => annonce.id}
+          searchPlaceholder="Rechercher..."
+          searchFields={['titre', 'message']}
+          exportFilename="annonces"
+          emptyMessage="Aucune annonce pour le moment."
+          columns={[
+            {
+              key: 'titre',
+              header: 'Titre',
+              className: 'cell-title',
+              sortValue: (annonce) => annonce.titre,
+              exportValue: (annonce) => annonce.titre,
+              render: (annonce) => (
+                <>
+                  <strong>{annonce.titre}</strong>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                    {annonce.message ? (annonce.message.length > 50 ? annonce.message.substring(0, 50) + '...' : annonce.message) : '-'}
+                  </div>
+                </>
+              ),
+            },
+            {
+              key: 'statut',
+              header: 'Statut',
+              sortValue: (annonce) => (annonce.est_actif ? 1 : 0),
+              exportValue: (annonce) => (annonce.est_actif ? 'Actif' : 'Inactif'),
+              render: (annonce) => (
+                annonce.est_actif ? (
+                  <span className="status-badge published">Actif</span>
+                ) : (
+                  <span className="status-badge archived" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-alt)' }}>Inactif</span>
+                )
+              ),
+            },
+            {
+              key: 'expiration',
+              header: "Date d'expiration",
+              sortValue: (annonce) => annonce.date_expiration || '',
+              exportValue: (annonce) => (annonce.date_expiration ? new Date(annonce.date_expiration).toLocaleString() : 'Jamais'),
+              render: (annonce) => (annonce.date_expiration ? new Date(annonce.date_expiration).toLocaleString() : 'Jamais'),
+            },
+            {
+              key: 'actions',
+              header: 'Actions',
+              style: { textAlign: 'right' },
+              render: (annonce) => (
+                <div className="admin-table-actions">
+                  <Button
+                    variant="secondary"
+                    icon={Edit}
+                    onClick={() => { setAnnonceSelectionnee(annonce); setShowAnnonceModal(true); }}
+                    style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                  >
+                    Modifier
+                  </Button>
+                  <Button
+                    variant="red"
+                    icon={Trash2}
+                    onClick={() => demanderConfirmation(
+                      'Supprimer l\'annonce',
+                      `Êtes-vous sûr de vouloir supprimer l'annonce "${annonce.titre}" ?`,
+                      'Supprimer',
+                      'danger',
+                      Trash2,
+                      () => supprimerAnnonce(annonce)
+                    )}
+                    style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                  >
+                    Supprimer
+                  </Button>
+                </div>
+              ),
+            },
+          ]}
+        />
     </section>
     )}
 
