@@ -15,6 +15,13 @@ const TAILLES_PAGE_DEFAUT = [10, 25, 50, 100];
  * triable, exportValue(row) contrôle ce qui part dans l'export (par défaut,
  * la valeur brute de `field` — nécessaire dès qu'une colonne affiche du JSX
  * via `render` plutôt qu'un champ simple).
+ *
+ * Mode serverSide : pour les listes trop volumineuses pour être chargées
+ * d'un coup (predications admin : 1500+ lignes). `data` ne contient alors
+ * que la page courante déjà filtrée/paginée par le serveur — la recherche,
+ * le tri et le découpage interne sont désactivés (le parent les pilote via
+ * ses propres filtres et `onPageChange`), seuls l'affichage, l'export de la
+ * page visible et la navigation restent gérés ici.
  */
 export function DataTable({
   columns,
@@ -32,12 +39,19 @@ export function DataTable({
   emptyMessage = 'Aucun élément trouvé.',
   toolbarExtra,
   rowStyle,
+  serverSide = false,
+  totalItems,
+  page: pageControlee,
+  onPageChange,
+  pageSize: taillePageServeur,
 }) {
   const [recherche, setRecherche] = useState('');
-  const [page, setPage] = useState(1);
+  const [pageInterne, setPageInterne] = useState(1);
   const [taillePage, setTaillePage] = useState(defaultPageSize);
   const [tri, setTri] = useState(null); // { cle, direction: 'asc' | 'desc' }
   const [selection, setSelection] = useState(() => new Set());
+
+  const rechercheActive = searchable && !serverSide;
 
   const extraireCle = (ligne, index) => (keyExtractor ? keyExtractor(ligne) : index);
 
@@ -46,6 +60,7 @@ export function DataTable({
   // d'exiger une config pour le cas courant où toutes les colonnes visibles
   // viennent directement des champs de la ligne.
   const donneesFiltrees = useMemo(() => {
+    if (serverSide) return data;
     const q = recherche.trim().toLowerCase();
     if (!q) return data;
     return data.filter((ligne) => {
@@ -58,10 +73,10 @@ export function DataTable({
           String(valeur).toLowerCase().includes(q)
       );
     });
-  }, [data, recherche, searchFields]);
+  }, [data, recherche, searchFields, serverSide]);
 
   const donneesTriees = useMemo(() => {
-    if (!tri) return donneesFiltrees;
+    if (serverSide || !tri) return donneesFiltrees;
     const colonne = columns.find((c) => c.key === tri.cle);
     if (!colonne?.sortValue) return donneesFiltrees;
     const copie = [...donneesFiltrees];
@@ -76,21 +91,31 @@ export function DataTable({
     });
     if (tri.direction === 'desc') copie.reverse();
     return copie;
-  }, [donneesFiltrees, tri, columns]);
+  }, [donneesFiltrees, tri, columns, serverSide]);
 
-  const totalPages = Math.max(1, Math.ceil(donneesTriees.length / taillePage));
-  const pageCourante = Math.min(page, totalPages);
-  const debut = (pageCourante - 1) * taillePage;
-  const donneesPage = donneesTriees.slice(debut, debut + taillePage);
+  // En mode serveur, `data` EST la page courante : ni tri ni découpage
+  // supplémentaires, page/total viennent des props pilotées par le parent.
+  const totalPages = serverSide
+    ? Math.max(1, Math.ceil((totalItems ?? data.length) / (taillePageServeur || data.length || 1)))
+    : Math.max(1, Math.ceil(donneesTriees.length / taillePage));
+  const pageCourante = serverSide ? (pageControlee || 1) : Math.min(pageInterne, totalPages);
+  const debut = serverSide ? (pageCourante - 1) * (taillePageServeur || data.length || 0) : (pageCourante - 1) * taillePage;
+  const donneesPage = serverSide ? data : donneesTriees.slice(debut, debut + taillePage);
+  const totalAffiche = serverSide ? (totalItems ?? data.length) : donneesTriees.length;
+
+  function changerPage(nouvellePage) {
+    if (serverSide) onPageChange?.(nouvellePage);
+    else setPageInterne(nouvellePage);
+  }
 
   function changerRecherche(valeur) {
     setRecherche(valeur);
-    setPage(1);
+    setPageInterne(1);
   }
 
   function changerTaillePage(valeur) {
     setTaillePage(Number(valeur));
-    setPage(1);
+    setPageInterne(1);
   }
 
   function basculerTri(cle) {
@@ -122,6 +147,8 @@ export function DataTable({
   }
 
   function exporter() {
+    // En mode serveur, seule la page chargée est exportable — pas de second
+    // appel réseau dédié à l'export ici.
     exporterCsv(exportFilename, columns.filter((c) => c.key !== '__selection__'), donneesTriees);
   }
 
@@ -131,15 +158,17 @@ export function DataTable({
     <div className="datatable-conteneur">
       <div className="datatable-barre-outils">
         <div className="datatable-barre-gauche">
-          <label className="datatable-taille-page">
-            Afficher
-            <select value={taillePage} onChange={(e) => changerTaillePage(e.target.value)}>
-              {pageSizeOptions.map((taille) => (
-                <option key={taille} value={taille}>{taille}</option>
-              ))}
-            </select>
-            éléments
-          </label>
+          {!serverSide && (
+            <label className="datatable-taille-page">
+              Afficher
+              <select value={taillePage} onChange={(e) => changerTaillePage(e.target.value)}>
+                {pageSizeOptions.map((taille) => (
+                  <option key={taille} value={taille}>{taille}</option>
+                ))}
+              </select>
+              éléments
+            </label>
+          )}
 
           {exportable && (
             <button
@@ -147,7 +176,7 @@ export function DataTable({
               className="datatable-btn-export"
               onClick={exporter}
               disabled={donneesTriees.length === 0}
-              title="Exporter au format Excel (CSV)"
+              title={serverSide ? 'Exporter la page affichée au format Excel (CSV)' : 'Exporter au format Excel (CSV)'}
             >
               <FileSpreadsheet size={16} />
               Excel
@@ -157,7 +186,7 @@ export function DataTable({
           {toolbarExtra}
         </div>
 
-        {searchable && (
+        {rechercheActive && (
           <div className="datatable-recherche">
             <Search size={16} aria-hidden="true" />
             <input
@@ -171,7 +200,7 @@ export function DataTable({
         )}
       </div>
 
-      {donneesTriees.length === 0 ? (
+      {donneesPage.length === 0 ? (
         <div className="datatable-vide">{emptyMessage}</div>
       ) : (
         <div className="datatable-responsive">
@@ -242,12 +271,12 @@ export function DataTable({
         </div>
       )}
 
-      {donneesTriees.length > 0 && (
+      {donneesPage.length > 0 && (
         <div className="datatable-pied">
           <span className="datatable-info-pagination">
-            Affichage de {Math.min(debut + 1, donneesTriees.length)} à {Math.min(debut + taillePage, donneesTriees.length)} sur {donneesTriees.length} élément{donneesTriees.length > 1 ? 's' : ''}
+            Affichage de {Math.min(debut + 1, totalAffiche)} à {Math.min(debut + donneesPage.length, totalAffiche)} sur {totalAffiche} élément{totalAffiche > 1 ? 's' : ''}
           </span>
-          <Pagination current={pageCourante} total={totalPages} onChange={setPage} />
+          <Pagination current={pageCourante} total={totalPages} onChange={changerPage} />
         </div>
       )}
     </div>

@@ -49,8 +49,9 @@ export function Administration() {
   const [pagePredications, setPagePredications] = useState(1);
   const [totalPredications, setTotalPredications] = useState(0);
   const [chargementPredications, setChargementPredications] = useState(false);
-  const [rechercheVideo, setRechercheVideo] = useState('');
+  const [rechercheVideoEnAttente, setRechercheVideoEnAttente] = useState('');
   const [rechercheVideoAppliquee, setRechercheVideoAppliquee] = useState('');
+  const [filtreALaUneEnAttente, setFiltreALaUneEnAttente] = useState('toutes');
   const [filtreALaUne, setFiltreALaUne] = useState('toutes');
   // Incremente pour forcer un rechargement de la liste apres une publication.
   const [compteurRafraichissementVideos, setCompteurRafraichissementVideos] = useState(0);
@@ -149,19 +150,6 @@ export function Administration() {
     charger();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Anti-rebond de la recherche vidéo : sans cela chaque frappe partirait au serveur.
-  useEffect(() => {
-    const minuteur = setTimeout(() => {
-      setRechercheVideoAppliquee(rechercheVideo.trim());
-      setPagePredications(1);
-    }, 350);
-    return () => clearTimeout(minuteur);
-  }, [rechercheVideo]);
-
-  useEffect(() => {
-    setPagePredications(1);
-  }, [filtreALaUne]);
 
   useEffect(() => {
     if (ongletActif !== 'videos') return;
@@ -355,6 +343,24 @@ export function Administration() {
     setFiltreStatutPasteur('tous');
   }
 
+  // La recherche vidéo était auto-appliquée 350ms après la frappe (anti-rebond) :
+  // remplacée par le même principe "en attente / appliqué au clic sur Rechercher"
+  // que les autres tableaux, pour une expérience cohérente partout — cela évite
+  // aussi de solliciter le serveur à chaque frappe sur un catalogue de 1500+ vidéos.
+  function appliquerFiltresVideos() {
+    setRechercheVideoAppliquee(rechercheVideoEnAttente.trim());
+    setFiltreALaUne(filtreALaUneEnAttente);
+    setPagePredications(1);
+  }
+
+  function reinitialiserFiltresVideos() {
+    setRechercheVideoEnAttente('');
+    setFiltreALaUneEnAttente('toutes');
+    setRechercheVideoAppliquee('');
+    setFiltreALaUne('toutes');
+    setPagePredications(1);
+  }
+
   const pasteursFiltres = pasteurs.filter(p => {
     const correspondRecherche = (p.nom_affichage || '').toLowerCase().includes(recherchePasteur.toLowerCase()) ||
                                 (p.nom_eglise || '').toLowerCase().includes(recherchePasteur.toLowerCase()) ||
@@ -390,9 +396,6 @@ export function Administration() {
   }
 
   const vueCarrousel = decouperPage(carrouselMedias, pageCarrousel);
-  // Les predications sont paginees par le serveur : la liste recue est deja la
-  // page a afficher, il n'y a rien a decouper.
-  const totalPagesPredications = Math.max(1, Math.ceil(totalPredications / ELEMENTS_PAR_PAGE));
 
   // Agregats de la serie analytique deja fournie par l'API.
   const activite30Jours = (stats?.serie_analytique || []).reduce(
@@ -1261,111 +1264,115 @@ export function Administration() {
       {/* Vidéos */}
       {ongletActif === 'videos' && (
       <section className="admin-section">
-        <div className="admin-section-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Video size={20} />
-            <h2>Gestion des Vidéos et Actualités</h2>
-            <span className="admin-badge-count">{totalPredications}</span>
+        <div className="admin-section-header">
+          <Video size={20} />
+          <h2>Gestion des Vidéos et Actualités</h2>
+          <span className="admin-badge-count">{totalPredications}</span>
+          {/* Compteur global : la page affichée ne contient que 5 vidéos. */}
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+            <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{stats?.total_predications_a_la_une ?? 0}</span> à la une
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* Compteur global : la page affichée ne contient que 5 vidéos. */}
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginRight: '0.5rem' }}>
-              <span style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{stats?.total_predications_a_la_une ?? 0}</span> à la une
-            </div>
+        </div>
+
+        <SearchFilterPanel onSearch={appliquerFiltresVideos} onReset={reinitialiserFiltresVideos}>
+          <ChampFiltre label="Titre, description ou pasteur">
             <input
               type="text"
-              aria-label="Rechercher une vidéo par titre, description ou pasteur"
-              placeholder="Rechercher une vidéo..."
-              value={rechercheVideo}
-              onChange={(e) => setRechercheVideo(e.target.value)}
-              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.9rem', width: '230px' }}
+              value={rechercheVideoEnAttente}
+              onChange={(e) => setRechercheVideoEnAttente(e.target.value)}
+              placeholder="Rechercher..."
             />
+          </ChampFiltre>
+          <ChampFiltre label="Mise en avant">
             <select
-              aria-label="Filtrer les vidéos par mise en avant"
-              value={filtreALaUne}
-              onChange={(e) => setFiltreALaUne(e.target.value)}
-              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontSize: '0.9rem' }}
+              value={filtreALaUneEnAttente}
+              onChange={(e) => setFiltreALaUneEnAttente(e.target.value)}
             >
               <option value="toutes">Toutes les vidéos</option>
               <option value="a_la_une">À la une</option>
               <option value="standard">Standard</option>
             </select>
-          </div>
-        </div>
+          </ChampFiltre>
+        </SearchFilterPanel>
 
         {chargementPredications ? (
           <div className="admin-loading" style={{ minHeight: '200px' }}>
             <div className="admin-loading-spinner" />
             <p>Chargement des vidéos…</p>
           </div>
-        ) : predications.length ? (
-          <div className="datatable-responsive">
-            <table className="premium-table">
-              <thead>
-                <tr>
-                  <th>Titre</th>
-                  <th>Pasteur</th>
-                  <th>Média</th>
-                  <th>Statut</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {predications.map((predication) => (
-                  <tr key={predication.id} className="datatable-row">
-                    <td className="cell-title">
-                      <strong>{predication.titre}</strong>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                        {new Date(predication.cree_le).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td>{predication.nom_predicateur || predication.pasteur?.nom_affichage || '-'}</td>
-                    <td>
-                      {predication.type_media === 'AUDIO' ? 'Audio' : predication.type_media === 'VIDEO' ? 'Vidéo' : 'Audio & Vidéo'}
-                    </td>
-                    <td>
-                      {predication.est_a_la_une ? (
-                        <span className="status-badge published" style={{ backgroundColor: 'rgba(var(--warning-rgb), 0.16)', color: 'var(--warning)' }}>À la une</span>
-                      ) : (
-                        <span className="status-badge archived" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-alt)' }}>Standard</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="admin-table-actions">
-                        <Button
-                          variant={predication.est_a_la_une ? "secondary" : "primary"}
-                          onClick={() => demanderConfirmation(
-                            predication.est_a_la_une ? 'Retirer de la une' : 'Mettre à la une',
-                            `Êtes-vous sûr de vouloir ${predication.est_a_la_une ? 'retirer' : 'ajouter'} la vidéo "${predication.titre}" ${predication.est_a_la_une ? 'de' : 'à'} la une ?`,
-                            predication.est_a_la_une ? 'Retirer' : 'Ajouter',
-                            predication.est_a_la_une ? 'warning' : 'primary',
-                            Video,
-                            () => basculerALaUne(predication)
-                          )}
-                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                        >
-                          {predication.est_a_la_une ? 'Retirer de la une' : 'Mettre à la une'}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'center' }}>
-              <Pagination current={pagePredications} total={totalPagesPredications} onChange={setPagePredications} />
-            </div>
-          </div>
         ) : (
-          <div className="admin-empty-state">
-            <CheckCircle size={32} />
-            {rechercheVideoAppliquee || filtreALaUne !== 'toutes' ? (
-              <p>Aucune vidéo ne correspond à votre recherche ou à votre filtre.</p>
-            ) : (
-              <p>Aucune vidéo disponible.</p>
-            )}
-          </div>
+          <DataTable
+            serverSide
+            data={predications}
+            totalItems={totalPredications}
+            page={pagePredications}
+            onPageChange={setPagePredications}
+            pageSize={ELEMENTS_PAR_PAGE}
+            keyExtractor={(predication) => predication.id}
+            exportable={false}
+            emptyMessage={rechercheVideoAppliquee || filtreALaUne !== 'toutes' ? 'Aucune vidéo ne correspond à votre recherche ou à votre filtre.' : 'Aucune vidéo disponible.'}
+            columns={[
+              {
+                key: 'titre',
+                header: 'Titre',
+                className: 'cell-title',
+                render: (predication) => (
+                  <>
+                    <strong>{predication.titre}</strong>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                      {new Date(predication.cree_le).toLocaleDateString()}
+                    </div>
+                  </>
+                ),
+              },
+              {
+                key: 'pasteur',
+                header: 'Pasteur',
+                render: (predication) => predication.nom_predicateur || predication.pasteur?.nom_affichage || '-',
+              },
+              {
+                key: 'media',
+                header: 'Média',
+                render: (predication) => (
+                  predication.type_media === 'AUDIO' ? 'Audio' : predication.type_media === 'VIDEO' ? 'Vidéo' : 'Audio & Vidéo'
+                ),
+              },
+              {
+                key: 'statut',
+                header: 'Statut',
+                render: (predication) => (
+                  predication.est_a_la_une ? (
+                    <span className="status-badge published" style={{ backgroundColor: 'rgba(var(--warning-rgb), 0.16)', color: 'var(--warning)' }}>À la une</span>
+                  ) : (
+                    <span className="status-badge archived" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--bg-alt)' }}>Standard</span>
+                  )
+                ),
+              },
+              {
+                key: 'actions',
+                header: 'Actions',
+                style: { textAlign: 'right' },
+                render: (predication) => (
+                  <div className="admin-table-actions">
+                    <Button
+                      variant={predication.est_a_la_une ? "secondary" : "primary"}
+                      onClick={() => demanderConfirmation(
+                        predication.est_a_la_une ? 'Retirer de la une' : 'Mettre à la une',
+                        `Êtes-vous sûr de vouloir ${predication.est_a_la_une ? 'retirer' : 'ajouter'} la vidéo "${predication.titre}" ${predication.est_a_la_une ? 'de' : 'à'} la une ?`,
+                        predication.est_a_la_une ? 'Retirer' : 'Ajouter',
+                        predication.est_a_la_une ? 'warning' : 'primary',
+                        Video,
+                        () => basculerALaUne(predication)
+                      )}
+                      style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                    >
+                      {predication.est_a_la_une ? 'Retirer de la une' : 'Mettre à la une'}
+                    </Button>
+                  </div>
+                ),
+              },
+            ]}
+          />
         )}
       </section>
       )}
