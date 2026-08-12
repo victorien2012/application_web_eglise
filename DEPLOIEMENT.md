@@ -160,42 +160,40 @@ Le démarrage échoue volontairement si elle fait moins de 32 caractères.
 
 ## 4. Procédure de déploiement
 
-### Étape 1 — Cloudflare R2
+> **Ordre conseillé :** mettre d'abord le site en ligne avec Render + Vercel
+> (étapes 1 à 4), puis ajouter le stockage objet (étape 6). Deux services à
+> créer au lieu de trois, et un site visible plus vite.
+>
+> `render.yaml` livre donc `USE_S3=False` : les fichiers téléversés
+> fonctionnent, mais ne survivent pas à un redéploiement tant que l'étape 6
+> n'est pas faite.
 
-1. Créer un bucket (ex. `eglise-medias`)
-2. Générer un token API avec les droits **Object Read & Write**
-3. Activer un domaine public sur le bucket
-4. Relever : `account_id`, clé d'accès, clé secrète, nom du bucket, domaine public
-
-> **Indispensable :** le disque de Render est éphémère. Sans stockage objet,
-> tout fichier téléversé disparaît à chaque redéploiement ou réveil du service.
-
-### Étape 2 — Render
+### Étape 1 — Render
 
 1. Dashboard > **New** > **Blueprint** > sélectionner le dépôt
 2. Render lit `render.yaml` et crée la base + le service web
 3. Renseigner les variables marquées `sync: false` :
 
+**Obligatoire dès le premier déploiement :**
+
 | Variable | Valeur |
 |---|---|
 | `SECRET_KEY` | Clé générée (≥ 32 caractères) |
-| `ALLOWED_HOSTS` | Domaine Render du backend |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Token R2 |
-| `AWS_STORAGE_BUCKET_NAME` | Nom du bucket |
-| `AWS_S3_ENDPOINT_URL` | `https://<account_id>.r2.cloudflarestorage.com` |
-| `AWS_S3_CUSTOM_DOMAIN` | Domaine public du bucket |
-| `EMAIL_*` | Paramètres SMTP (voir §6) |
+| `ALLOWED_HOSTS` | Domaine Render du backend, sans `https://` |
+
+**Facultatif au premier déploiement** (peut rester vide) : `AWS_*` (étape 6),
+`EMAIL_*` (§6), `GOOGLE_API_KEY`, et les trois variables de l'étape 3.
 
 > Si Render refuse `runtime: docker`, remplacer par `env: docker` — la clé
 > diffère selon la version du schéma.
 
-### Étape 3 — Vercel
+### Étape 2 — Vercel
 
 1. Importer le dépôt
 2. **Root Directory = `frontend`**
 3. Variable `VITE_API_URL` = `https://<backend>.onrender.com/api`
 
-### Étape 4 — Boucler la configuration croisée
+### Étape 3 — Boucler la configuration croisée
 
 Une fois l'URL Vercel connue, compléter côté Render :
 
@@ -205,13 +203,40 @@ Une fois l'URL Vercel connue, compléter côté Render :
 | `CSRF_TRUSTED_ORIGINS` | `https://<projet>.vercel.app` |
 | `FRONTEND_URL` | `https://<projet>.vercel.app` |
 
-### Étape 5 — Compte administrateur
+### Étape 4 — Compte administrateur
 
 Via le Shell Render :
 
 ```bash
 python manage.py createsuperuser
 ```
+
+À ce stade le site est en ligne et utilisable.
+
+### Étape 5 — Vérification
+
+Voir la liste de contrôle du §7.
+
+### Étape 6 — Stockage objet (à faire ensuite)
+
+Sans cette étape, les fichiers téléversés disparaissent à chaque
+redéploiement ou réveil du service : le disque de Render est éphémère.
+
+1. Créer un bucket Cloudflare R2 (ex. `eglise-medias`)
+2. Générer un token API avec les droits **Object Read & Write**
+3. Activer un domaine public sur le bucket
+4. Renseigner dans Render, puis redéployer :
+
+| Variable | Valeur |
+|---|---|
+| `USE_S3` | `True` |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Token R2 |
+| `AWS_STORAGE_BUCKET_NAME` | Nom du bucket |
+| `AWS_S3_ENDPOINT_URL` | `https://<account_id>.r2.cloudflarestorage.com` |
+| `AWS_S3_CUSTOM_DOMAIN` | Domaine public du bucket |
+
+> Les fichiers téléversés avant cette étape ne sont pas repris
+> automatiquement : les remettre en ligne après la bascule.
 
 ---
 

@@ -65,10 +65,15 @@ services:
         sync: false
 
       # --- Stockage objet (Cloudflare R2 / Backblaze B2 / S3) ---
-      # Indispensable : le disque de Render est ephemere, tout fichier televerse
-      # disparait a chaque redeploiement ou reveil du service.
+      # Laisse a False pour le tout premier deploiement : le site fonctionne
+      # immediatement, sans compte de stockage a creer. Les fichiers televerses
+      # sont alors servis par Django mais NE SURVIVENT PAS a un redeploiement
+      # ni a un reveil du service (le disque de Render est ephemere).
+      #
+      # Des que le bucket est pret : passer cette valeur a True et renseigner
+      # les cinq variables ci-dessous. Rien d'autre a modifier.
       - key: USE_S3
-        value: "True"
+        value: "False"
       - key: AWS_ACCESS_KEY_ID
         sync: false
       - key: AWS_SECRET_ACCESS_KEY
