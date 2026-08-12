@@ -10,6 +10,9 @@ import 'primereact/resources/themes/lara-light-cyan/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import './index.css';
+// Chargee en dernier : ses regles transversales de confort tactile doivent
+// l'emporter sur les feuilles de composants.
+import './mobile.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

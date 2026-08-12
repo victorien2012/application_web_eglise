@@ -40,7 +40,7 @@
    HERO HEADER
    ========================================================================== */
 .admin-hero {
-  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  background: var(--primary);
   border-radius: 20px;
   padding: 2.25rem 2.5rem;
   color: #ffffff;
@@ -611,9 +611,24 @@
     gap: 0.65rem;
   }
 
+  /* Une colonne « 1fr » ne descend pas sous la largeur minimale de son
+     contenu. Le libellé le plus long (« Pasteurs (5 validés) ») étant en
+     nowrap, il imposait une colonne de 224 px : les deux cartes totalisaient
+     404 px et débordaient d'un écran de 375 px. min-width: 0 autorise la
+     colonne à se réduire, et le libellé passe à la ligne plutôt que de
+     pousser la grille. */
   .admin-kpi {
     padding: 0.85rem;
     gap: 0.65rem;
+    min-width: 0;
+  }
+
+  .admin-kpi-data {
+    min-width: 0;
+  }
+
+  .admin-kpi-data span {
+    white-space: normal;
   }
 
   .admin-kpi-icon {

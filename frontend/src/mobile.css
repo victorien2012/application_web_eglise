@@ -1,0 +1,107 @@
+/* ==========================================================================
+   Confort d'usage sur petit écran
+   --------------------------------------------------------------------------
+   Corrections transversales, mesurées sur l'application plutôt que
+   supposées. Chargée en dernier (index.jsx) pour l'emporter sur les
+   feuilles de composants.
+
+   Deux constats à l'origine de ce fichier :
+
+   1. Tous les champs de saisie avaient une police de 13 à 14 px. Safari iOS
+      zoome automatiquement dès qu'un champ sous 16 px reçoit le focus : la
+      page se recadre à chaque clic, et l'utilisateur doit dézoomer à la
+      main. C'est le défaut le plus pénible de l'application au doigt.
+
+   2. Les boutons mesuraient 30 à 34 px de haut, le sélecteur de langue 15 px.
+      Les recommandations d'accessibilité tactile situent la cible minimale
+      autour de 44 px : en dessous, on vise à côté.
+
+   `!important` est employé à dessein : ces règles sont un garde-fou global
+   qui ne doit pas céder devant une feuille de composant chargée plus tard
+   (les vues sont chargées à la demande, leur CSS arrive donc après celui-ci).
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* --- 1. Aucun zoom parasite à la saisie ------------------------------- */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* --- 2. Cibles tactiles confortables ---------------------------------- */
+  button,
+  .btn,
+  .premium-btn,
+  a.btn,
+  a.premium-btn,
+  input[type='submit'],
+  input[type='button'] {
+    min-height: 44px;
+  }
+
+  /* Champs de formulaire : même hauteur que les boutons, pour un alignement
+     régulier des lignes mixtes (champ + bouton). */
+  input:not([type='checkbox']):not([type='radio']):not([type='file']),
+  select {
+    min-height: 44px;
+  }
+
+  /* Cases à cocher : la zone par défaut (13 px) est difficile à viser. */
+  input[type='checkbox'],
+  input[type='radio'] {
+    min-width: 20px;
+    min-height: 20px;
+  }
+
+  /* --- 3. Éléments trop petits repérés à l'audit ------------------------ */
+  /* Sélecteur de langue de la barre de navigation : 15 px de haut. */
+  .app-nav select,
+  .lang-select {
+    min-height: 40px;
+    padding: 0 0.4rem;
+  }
+
+  /* Pastilles de filtre et bascules de vue (30-31 px). */
+  .filter-pill,
+  .toggle-btn,
+  .doc-cat-btn {
+    min-height: 40px;
+  }
+
+  /* Boutons d'action ronds des tableaux : la surface tactile est portée à
+     40 px sans grossir le cercle visible, via le padding. */
+  .btn-action.btn-icon-only {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* --- 4. Respiration ---------------------------------------------------- */
+  /* Les lignes de boutons débordaient d'une seule ligne : on les laisse
+     passer à la ligne plutôt que de les comprimer. */
+  .cell-actions,
+  .admin-table-actions,
+  .dashboard-inline,
+  .modal-actions,
+  .filter-controls {
+    flex-wrap: wrap;
+  }
+
+  /* Un bouton isolé sur une ligne occupe toute la largeur : plus facile à
+     viser, et la mise en page reste régulière. */
+  .modal-actions .premium-btn,
+  .modal-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+/* Très petits écrans (moins de 380 px) : le contenu principal gagne de la
+   place, les marges latérales étant plus coûteuses que sur un écran large. */
+@media (max-width: 380px) {
+  .dashboard-content,
+  .videos-body {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+}
