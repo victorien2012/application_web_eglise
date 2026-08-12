@@ -189,7 +189,13 @@ class ReinitialisationMotDePasseTests(APITestCase):
 
 
 class VerificationEmailTests(APITestCase):
-    def test_inscription_cree_un_profil_non_verifie_et_envoie_un_email(self):
+    def test_inscription_donne_un_compte_utilisable_sans_verification(self):
+        """L'inscription n'exige plus de confirmer son adresse.
+
+        Le compte est utilisable immediatement et aucun email de verification
+        n'est envoye. La route de verification reste en place, utilisable si
+        cette exigence revenait un jour.
+        """
         response = self.client.post(
             reverse("inscription"),
             {
@@ -201,11 +207,34 @@ class VerificationEmailTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertFalse(response.data["email_verifie"])
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("verifier-email", mail.outbox[0].body)
+        self.assertTrue(response.data["email_verifie"])
+        self.assertEqual(len(mail.outbox), 0)
         user = User.objects.get(username="membre_verif")
-        self.assertFalse(user.profil.email_verifie)
+        self.assertTrue(user.profil.email_verifie)
+
+    def test_inscription_pasteur_donne_acces_immediat(self):
+        """Un pasteur accede a son espace sans approbation d'un administrateur.
+
+        est_valide conditionne l'acces a l'espace pasteur : laisse a False, le
+        compte restait bloque en attente d'une validation que plus personne ne
+        donne depuis la suppression de cette etape.
+        """
+        response = self.client.post(
+            reverse("inscription"),
+            {
+                "username": "pasteur_direct",
+                "email": "pasteur-direct@example.com",
+                "password": "MotDePasseSolide123",
+                "est_pasteur": True,
+                "nom_affichage": "Pasteur Direct",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(username="pasteur_direct")
+        self.assertTrue(user.profil_pasteur.est_valide)
+        self.assertFalse(user.profil_pasteur.est_rejete)
 
     def test_verification_avec_token_valide_marque_email_verifie(self):
         from api.services.email_service import generateur_token_email

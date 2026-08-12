@@ -110,18 +110,19 @@ class InscriptionView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        # Pour les pasteurs, l'email est envoyé uniquement après validation par l'admin.
-        # Pour les fidèles, on envoie l'email de vérification immédiatement.
+        # L'inscription est desormais immediate : plus de verification par
+        # email, plus d'approbation prealable d'un administrateur. Aucun email
+        # de verification n'est donc envoye, et le compte est utilisable tout
+        # de suite.
+        #
+        # Les administrateurs restent informes de l'arrivee d'un pasteur, mais
+        # a titre indicatif : ils n'ont plus rien a valider.
         est_pasteur = request.data.get('est_pasteur') in (True, 'true', 'True', 1, '1')
         if est_pasteur:
-            # Notifier les administrateurs qu'un nouveau pasteur attend leur validation.
             try:
-                pasteur_obj = user.profil_pasteur
-                envoyer_email_notification_admin_nouveau_pasteur(pasteur_obj)
+                envoyer_email_notification_admin_nouveau_pasteur(user.profil_pasteur)
             except Pasteur.DoesNotExist:
                 pass
-        else:
-            envoyer_email_verification(user)
 
         refresh = RefreshToken.for_user(user)
         profil = getattr(user, 'profil', None)

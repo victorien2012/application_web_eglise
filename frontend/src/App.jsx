@@ -17,7 +17,6 @@ import { RouteProtegee } from "./components/shared/RouteProtegee";
 import { Button } from "./components/Button";
 
 // Feature: Auth
-import { BanniereEmail } from "./features/auth/components/BanniereEmail";
 import { CompteFidele } from "./features/auth/pages/CompteFidele";
 import { ComptePasteur } from "./features/auth/pages/ComptePasteur";
 import { MotDePasseOublie } from "./features/auth/pages/MotDePasseOublie";
@@ -79,6 +78,8 @@ export default function App() {
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
+  // Ne masque plus que le pied de page : la banniere de verification d'email
+  // a disparu avec l'inscription sans confirmation d'adresse.
   const masquerBanniereEtFooter =
     location.pathname === "/compte-fidele" ||
     location.pathname === "/compte-pasteur" ||
@@ -89,7 +90,10 @@ export default function App() {
     <>
       <a href="#contenu-principal" className="lien-evitement">Aller au contenu principal</a>
       <AudioPlayer />
-      {!masquerBanniereEtFooter && <BanniereEmail />}
+      {/* Banniere de verification d'email retiree : l'inscription ne passe
+          plus par une confirmation d'adresse, elle inviterait donc a une
+          action devenue sans objet. Le composant et les routes serveur sont
+          conserves, prets a resservir si la verification revenait. */}
 
       <nav className="app-nav-shell" aria-label="Navigation principale">
         <div className="app-nav">

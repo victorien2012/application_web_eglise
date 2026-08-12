@@ -125,7 +125,11 @@ class InscriptionSerializer(serializers.Serializer):
         )
         ProfilUtilisateur.objects.create(
             utilisateur=user,
-            contact=validated_data.get('contact', '')
+            contact=validated_data.get('contact', ''),
+            # La verification par email n'est plus exigee : le compte est
+            # utilisable des l'inscription. L'adresse reste enregistree et
+            # sert aux reinitialisations de mot de passe.
+            email_verifie=True,
         )
         if validated_data.get('est_pasteur'):
             pasteur = Pasteur.objects.create(
@@ -134,7 +138,12 @@ class InscriptionSerializer(serializers.Serializer):
                 nom_eglise=validated_data.get('nom_eglise', ''),
                 contact=validated_data.get('contact', ''),
                 avatar=validated_data.get('avatar', None),
-                logo_eglise=validated_data.get('logo_eglise', None)
+                logo_eglise=validated_data.get('logo_eglise', None),
+                # Acces immediat a l'espace pasteur, sans approbation d'un
+                # administrateur. Ce n'est pas une ouverture sans controle :
+                # la publication reste conditionnee a un abonnement actif
+                # (voir abonnement_pasteur_est_actif dans predication_views).
+                est_valide=True,
             )
             from api.models.paiement import creer_souscription_essai
             creer_souscription_essai(pasteur)
