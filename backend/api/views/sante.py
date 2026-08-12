@@ -63,6 +63,9 @@ class DiagnosticConfigurationView(APIView):
             'stockage_objet': settings.USE_S3,
             # Envoi reel des emails (verification, reinitialisation).
             'email_smtp': 'smtp' in settings.EMAIL_BACKEND,
+            # Vrai lorsque le backend SMTP a ete demande sans serveur : les
+            # messages sont alors ecrits dans les journaux plutot que perdus.
+            'email_repli_console': getattr(settings, 'EMAIL_SMTP_INCOMPLET', False),
             # Comptages seuls : les domaines eux-memes ne sont pas divulgues.
             'nb_domaines_autorises': len([h for h in settings.ALLOWED_HOSTS if h]),
             'nb_origines_cors': len([o for o in settings.CORS_ALLOWED_ORIGINS if o]),

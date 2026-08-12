@@ -253,6 +253,19 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'no-reply@plateforme-eglise.local')
 
+# Repli explicite : demander le backend SMTP sans renseigner de serveur fait
+# partir les messages vers localhost:25, ou rien n'ecoute. Les emails de
+# verification d'inscription et de reinitialisation de mot de passe echouaient
+# alors sans que rien ne le signale — l'utilisateur attend un lien qui ne
+# partira jamais.
+#
+# Mieux vaut afficher le message dans les journaux : le lien reste recuperable
+# manuellement, et le diagnostic (/api/admin/diagnostic/) signale honnetement
+# que SMTP n'est pas operationnel.
+EMAIL_SMTP_INCOMPLET = 'smtp' in EMAIL_BACKEND and EMAIL_HOST in ('', 'localhost')
+if EMAIL_SMTP_INCOMPLET:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 # URL publique du frontend, utilisee pour construire les liens envoyes par email.
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 
