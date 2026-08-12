@@ -3,14 +3,12 @@ import { Film, Mic2, Play } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../../../components/ui/Badge';
 import { DataTable } from '../../../components/ui/DataTable';
+import { miniaturePredication } from '../../../utils/youtube';
 
+// Logique partagée avec SermonCard et la page d'accueil : une couverture
+// enregistrée mais introuvable bascule sur la miniature YouTube.
 function extraireImage(p) {
-  if (p.image_couverture) return p.image_couverture;
-  if (p.url_video) {
-    const match = p.url_video.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
-    if (match && match[1]) return `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`;
-  }
-  return null;
+  return miniaturePredication(p).source;
 }
 
 // Recherche et pagination restent gérées par les pages appelantes (Videos,
@@ -39,7 +37,23 @@ export function SermonTable({
         const imageUrl = extraireImage(p);
         return imageUrl ? (
           <div className="image-wrapper" onClick={() => onImageClick && onImageClick(p)} style={{ cursor: onImageClick && isVideo ? 'pointer' : 'default' }}>
-            <img src={imageUrl} alt={p.titre} onError={(e) => { e.target.src = 'https://via.placeholder.com/48x36?text=Vidéo'; }} />
+            {/* Bascule vers la miniature YouTube quand la couverture
+                enregistree est introuvable. Le repli precedent pointait vers
+                via.placeholder.com, un service tiers : une image cassee y
+                etait remplacee par une autre image cassee des que ce service
+                devenait indisponible. */}
+            <img
+              src={imageUrl}
+              alt={p.titre}
+              onError={(e) => {
+                const repli = miniaturePredication(p).repli;
+                if (repli && e.currentTarget.src !== repli) {
+                  e.currentTarget.src = repli;
+                } else {
+                  e.currentTarget.style.display = 'none';
+                }
+              }}
+            />
             {isVideo && <div className="play-overlay-mini"><Play size={14} fill="white" color="white" /></div>}
           </div>
         ) : (

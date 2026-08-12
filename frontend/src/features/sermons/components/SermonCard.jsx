@@ -5,6 +5,7 @@ import { Download, MonitorPlay, Headphones, UserRound, Loader2, Play } from 'luc
 import { useAuth } from '../../../context/AuthContext';
 import { telechargerRessource, telechargerRessourceExterne } from '../../../services/api';
 import { Button } from '../../../components/Button';
+import { miniaturePredication } from '../../../utils/youtube';
 import './SermonCard.css';
 
 export function SermonCard({ sermon }) {
@@ -17,7 +18,7 @@ export function SermonCard({ sermon }) {
   const youtubeMatch = sermon.url_video ? sermon.url_video.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/) : null;
   const youtubeId = youtubeMatch ? youtubeMatch[1] : null;
   const estVideo = sermon.type_media !== 'AUDIO';
-  const imageUrl = sermon.url_image_couverture || sermon.image_couverture || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null);
+  const { source: imageUrl, repli: imageRepli } = miniaturePredication(sermon);
 
   // La durée était affichée en secondes brutes (« 4800s ») : illisible.
   const dureeLisible = (() => {
@@ -113,7 +114,23 @@ export function SermonCard({ sermon }) {
           )
         ) : (
           imageUrl ? (
-            <img src={imageUrl} alt={sermon.titre} className="cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img
+              src={imageUrl}
+              alt={sermon.titre}
+              className="cover"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              // Une couverture enregistree mais introuvable laissait une image
+              // morte : on bascule alors sur la miniature YouTube. Le repli est
+              // retire avant d'etre applique, pour ne pas boucler s'il echoue
+              // a son tour.
+              onError={(e) => {
+                if (imageRepli && e.currentTarget.src !== imageRepli) {
+                  e.currentTarget.src = imageRepli;
+                } else {
+                  e.currentTarget.style.display = 'none';
+                }
+              }}
+            />
           ) : (
             <div className="cover" style={{ width: '100%', height: '100%', backgroundColor: 'var(--bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
               {estVideo ? <MonitorPlay size={48} /> : <Headphones size={48} />}

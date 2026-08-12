@@ -32,6 +32,34 @@ export function miniatureYoutube(idVideo) {
 }
 
 /**
+ * Miniature d'une prédication, avec repli sur YouTube.
+ *
+ * La couverture enregistrée peut exister en base tout en étant introuvable :
+ * les couvertures des vidéos importées ne sont que des miniatures YouTube
+ * téléchargées, et elles disparaissent si le stockage n'est pas persistant.
+ * Le repli ne se déclenchait alors pas, puisqu'il ne testait que l'absence de
+ * valeur — l'application affichait une image morte plutôt que la miniature
+ * d'origine, pourtant toujours disponible chez YouTube.
+ *
+ * Renvoie { source, repli } : `repli` sert au gestionnaire onError de la
+ * balise <img>, pour basculer une fois le chargement echoue.
+ */
+export function miniaturePredication(predication) {
+  if (!predication) return { source: null, repli: null };
+
+  const idVideo =
+    predication.youtube_id || extraireIdVideoYoutube(predication.url_video);
+  const secours = idVideo ? miniatureYoutube(idVideo) : null;
+  const enregistree =
+    predication.url_image_couverture || predication.image_couverture || null;
+
+  // Sans couverture propre, la miniature YouTube devient la source directe :
+  // inutile de prévoir un repli vers elle-même.
+  if (!enregistree) return { source: secours, repli: null };
+  return { source: enregistree, repli: secours };
+}
+
+/**
  * Formats de lien de chaîne que le serveur sait résoudre.
  * Retourne le type reconnu, ou null.
  */
