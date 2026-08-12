@@ -157,6 +157,19 @@ if USE_S3:
     AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN')  # CDN
     AWS_QUERYSTRING_AUTH = False
     AWS_DEFAULT_ACL = None
+    # Chez AWS, le nom du bucket se place dans le sous-domaine
+    # (bucket.s3.amazonaws.com). Les fournisseurs compatibles S3 — Supabase,
+    # Cloudflare R2, Backblaze, MinIO — attendent au contraire le bucket dans
+    # le chemin. Sans cette precision, boto3 construisait une adresse du type
+    # bucket.projet.supabase.co, qui n'existe pas : tout televersement
+    # echouait. On bascule donc en style « path » des qu'un endpoint
+    # personnalise est fourni, tout en laissant la main par variable.
+    AWS_S3_ADDRESSING_STYLE = os.environ.get(
+        'AWS_S3_ADDRESSING_STYLE',
+        'path' if AWS_S3_ENDPOINT_URL else 'auto',
+    )
+    # Signature v4 : exigee par la plupart des fournisseurs compatibles.
+    AWS_S3_SIGNATURE_VERSION = os.environ.get('AWS_S3_SIGNATURE_VERSION', 's3v4')
     STORAGES = {
         'default': {'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage'},
         'staticfiles': {
