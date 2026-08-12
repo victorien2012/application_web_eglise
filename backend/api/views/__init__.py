@@ -18,6 +18,7 @@ from .admin_views import (
 )
 
 from .sante import (
+    DiagnosticConfigurationView,
     SanteView,
 )
 

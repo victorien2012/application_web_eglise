@@ -8,6 +8,7 @@ from .views import (
     CommentaireViewSet,
     ConfirmationReinitialisationMotDePasseView,
     ConnexionTokenView,
+    DiagnosticConfigurationView,
     RafraichirTokenView,
     DemandeReinitialisationMotDePasseView,
     EtiquetteViewSet,
@@ -74,6 +75,7 @@ urlpatterns = [
         name='reinitialiser_mot_de_passe',
     ),
     path('admin/statistiques/', StatistiquesGlobalesView.as_view(), name='statistiques_globales'),
+    path('admin/diagnostic/', DiagnosticConfigurationView.as_view(), name='diagnostic_configuration'),
     path('auth/verifier-email/', VerificationEmailView.as_view(), name='verifier_email'),
     path(
         'auth/renvoyer-verification/',
