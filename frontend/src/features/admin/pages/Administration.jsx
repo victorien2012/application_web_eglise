@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ShieldCheck, Flag, BadgeCheck, BarChart3, CheckCircle, XCircle, Trash2, Clock, AlertTriangle, Users, Video, Eye, Download, MessageSquare, Heart, Bell, Megaphone, Edit, MonitorPlay, Settings, UserX, UserCheck } from 'lucide-react';
+import { ShieldCheck, Flag, BadgeCheck, BarChart3, CheckCircle, XCircle, Trash2, Clock, AlertTriangle, Users, Video, Eye, Download, MessageSquare, Heart, Bell, Megaphone, Edit, Menu, MonitorPlay, Settings, UserX, UserCheck } from 'lucide-react';
 import { api, extraireListe } from '../../../services/api';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../../components/Button';
@@ -55,6 +55,17 @@ export function Administration() {
   const [compteurRafraichissementVideos, setCompteurRafraichissementVideos] = useState(0);
   const ELEMENTS_PAR_PAGE = 5;
   const [ongletActif, setOngletActif] = useState('apercu');
+  // Sous 992 px la barre latérale sort de l'écran : sans ce commutateur,
+  // aucune section n'était atteignable depuis un téléphone, et seul l'onglet
+  // par défaut (le tableau de bord) restait visible.
+  const [menuOuvert, setMenuOuvert] = useState(false);
+
+  // Refermer le menu après un choix : sur mobile il recouvre le contenu, il
+  // masquerait donc la section qui vient d'être demandée.
+  function choisirOnglet(nom) {
+    setOngletActif(nom);
+    setMenuOuvert(false);
+  }
   
   // Existing generic confirm modal state
   const [modalOuvert, setModalOuvert] = useState(false);
@@ -406,41 +417,48 @@ export function Administration() {
 
   return (
     <div className="dashboard-container" style={{ padding: 0 }}>
+      {/* Voile de fermeture : un appui hors du menu le referme, comme dans
+          l'espace pasteur. */}
+      <div
+        className={`sidebar-overlay ${menuOuvert ? 'active' : ''}`}
+        onClick={() => setMenuOuvert(false)}
+      />
+
       {/* Barre Latérale */}
-      <aside className="dashboard-sidebar">
+      <aside className={`dashboard-sidebar ${menuOuvert ? 'sidebar-open' : ''}`}>
         <div className="sidebar-header">
           <h2>{t('admin.title')}</h2>
         </div>
         <nav className="sidebar-menu">
-          <button type="button" className={`menu-item ${ongletActif === 'apercu' ? 'active' : ''}`} onClick={() => setOngletActif('apercu')}>
+          <button type="button" className={`menu-item ${ongletActif === 'apercu' ? 'active' : ''}`} onClick={() => choisirOnglet('apercu')}>
             <BarChart3 size={18} />
             <span>Tableau de bord</span>
           </button>
-          <button type="button" className={`menu-item ${ongletActif === 'pasteurs' ? 'active' : ''}`} onClick={() => setOngletActif('pasteurs')}>
+          <button type="button" className={`menu-item ${ongletActif === 'pasteurs' ? 'active' : ''}`} onClick={() => choisirOnglet('pasteurs')}>
             <Users size={18} />
             <span>Demandes Pasteurs</span>
           </button>
-          <button type="button" className={`menu-item ${ongletActif === 'pasteurs_valides' ? 'active' : ''}`} onClick={() => setOngletActif('pasteurs_valides')}>
+          <button type="button" className={`menu-item ${ongletActif === 'pasteurs_valides' ? 'active' : ''}`} onClick={() => choisirOnglet('pasteurs_valides')}>
             <BadgeCheck size={18} />
             <span>Pasteurs Validés</span>
           </button>
-          <button type="button" className={`menu-item ${ongletActif === 'signalements' ? 'active' : ''}`} onClick={() => setOngletActif('signalements')}>
+          <button type="button" className={`menu-item ${ongletActif === 'signalements' ? 'active' : ''}`} onClick={() => choisirOnglet('signalements')}>
             <ShieldCheck size={18} />
             <span>Modération</span>
           </button>
-          <button type="button" className={`menu-item ${ongletActif === 'annonces' ? 'active' : ''}`} onClick={() => setOngletActif('annonces')}>
+          <button type="button" className={`menu-item ${ongletActif === 'annonces' ? 'active' : ''}`} onClick={() => choisirOnglet('annonces')}>
             <Megaphone size={18} />
             <span>Annonces</span>
           </button>
-          <button type="button" className={`menu-item ${ongletActif === 'videos' ? 'active' : ''}`} onClick={() => setOngletActif('videos')}>
+          <button type="button" className={`menu-item ${ongletActif === 'videos' ? 'active' : ''}`} onClick={() => choisirOnglet('videos')}>
             <Video size={18} />
             <span>Vidéos (À la une)</span>
           </button>
-          <button type="button" className={`menu-item ${ongletActif === 'carrousel' ? 'active' : ''}`} onClick={() => setOngletActif('carrousel')}>
+          <button type="button" className={`menu-item ${ongletActif === 'carrousel' ? 'active' : ''}`} onClick={() => choisirOnglet('carrousel')}>
             <MonitorPlay size={18} />
             <span>Carrousel</span>
           </button>
-          <button type="button" className={`menu-item ${ongletActif === 'configuration' ? 'active' : ''}`} onClick={() => setOngletActif('configuration')}>
+          <button type="button" className={`menu-item ${ongletActif === 'configuration' ? 'active' : ''}`} onClick={() => choisirOnglet('configuration')}>
             <Settings size={18} />
             <span>Paramètres globaux</span>
           </button>
@@ -449,9 +467,21 @@ export function Administration() {
 
       <main className="dashboard-content">
         <div className="dashboard-topbar">
-          <div className="dashboard-title-area">
-            <h1>{t('admin.subtitle')}</h1>
-            <p>Gérez le contenu et les utilisateurs</p>
+          <div className="dashboard-title-area" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {/* Masqué au-delà de 992 px, où la barre latérale est déjà visible. */}
+            <button
+              type="button"
+              className="mobile-menu-btn"
+              onClick={() => setMenuOuvert(true)}
+              aria-label="Ouvrir le menu"
+              aria-expanded={menuOuvert}
+            >
+              <Menu size={28} />
+            </button>
+            <div>
+              <h1>{t('admin.subtitle')}</h1>
+              <p>Gérez le contenu et les utilisateurs</p>
+            </div>
           </div>
         </div>
         {erreur ? <div className="admin-alert-error">{erreur}</div> : null}
@@ -465,7 +495,7 @@ export function Administration() {
             <h2>{t('admin.overview')}</h2>
           </div>
           {(stats.signalements_par_statut?.NOUVEAU || 0) + (stats.signalements_par_statut?.EN_COURS || 0) > 0 && (
-            <button type="button" className="admin-moderation-alert" onClick={() => setOngletActif('signalements')}>
+            <button type="button" className="admin-moderation-alert" onClick={() => choisirOnglet('signalements')}>
               <AlertTriangle size={22} />
               <div className="admin-moderation-alert-texte">
                 <strong>
