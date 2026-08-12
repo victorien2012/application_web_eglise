@@ -3,9 +3,27 @@
 Document de référence pour le déploiement de test sur **Vercel** (frontend) +
 **Render** (backend Django + PostgreSQL) + **Cloudflare R2** (fichiers).
 
-> Dernière mise à jour : 11 août 2026
-> Branche concernée : `audit/corrections-qualite-et-performance`
+> Dernière mise à jour : 12 août 2026
+> Branche déployée : `main`
 > Dépôt : `github.com/victorien2012/application_web_eglise`
+
+## 0. Environnement en ligne
+
+| Service | URL | État |
+|---|---|---|
+| Frontend (Vercel) | https://application-web-eglise.vercel.app | ✅ En ligne |
+| Backend (Render) | https://sermon-backend.onrender.com | ✅ En ligne |
+| Base PostgreSQL (Render) | `sermon-db` (interne) | ✅ Connectée |
+| Stockage objet | — | ⬜ À brancher (étape 6) |
+
+Vérifications effectuées sur l'environnement réel le 12 août 2026 :
+sonde de santé 200, API 200, CORS validé depuis l'origine Vercel dans un
+navigateur, HTTPS forcé, HSTS actif, en-têtes de sécurité présents des deux
+côtés, routage SPA fonctionnel, aucune fuite d'information sur erreur.
+
+**Reste à faire :** créer le compte administrateur (§4, étape 4) et brancher
+le stockage objet (§4, étape 6) — sans lui, les fichiers téléversés ne
+survivent pas à un redéploiement.
 
 ---
 
