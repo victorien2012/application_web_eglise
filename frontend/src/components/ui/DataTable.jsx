@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowUp, ArrowDown, ChevronsUpDown, FileSpreadsheet, Search } from 'lucide-react';
+import { ArrowUp, ArrowDown, ChevronDown, ChevronsUpDown, FileSpreadsheet, Search } from 'lucide-react';
 import Pagination from '../Pagination';
 import { exporterCsv } from '../../utils/exportCsv';
 import './Table.css';
@@ -27,7 +27,15 @@ const TAILLES_PAGE_DEFAUT = [10, 25, 50, 100];
  * l'outil d'administration ; 'site' garde l'en-tête bleu marine/blanc du
  * reste de la plateforme (Documents, SermonTable, espace pasteur) — ces
  * pages publiques ou pastorales gardent la charte navy/ambre existante.
+ *
+ * Sous 768 px chaque ligne devient une carte (voir DataTable.css). Au-delà
+ * de SEUIL_ACCORDEON colonnes, cette carte devient repliable : seule la
+ * colonne principale reste visible, un chevron déplie le reste. Sans cela
+ * une ligne de 8 colonnes occupait plus de 400 px de haut, et trois lignes
+ * suffisaient à remplir l'écran. Les tableaux courts, eux, restent dépliés :
+ * un chevron n'y masquerait qu'une ou deux valeurs, pour un clic en plus.
  */
+const SEUIL_ACCORDEON = 4;
 export function DataTable({
   columns,
   data,
@@ -46,6 +54,7 @@ export function DataTable({
   rowStyle,
   pagination = true,
   variant = 'admin',
+  mobileAccordeon,
   serverSide = false,
   totalItems,
   page: pageControlee,
@@ -57,6 +66,32 @@ export function DataTable({
   const [taillePage, setTaillePage] = useState(defaultPageSize);
   const [tri, setTri] = useState(null); // { cle, direction: 'asc' | 'desc' }
   const [selection, setSelection] = useState(() => new Set());
+  const [lignesDepliees, setLignesDepliees] = useState(() => new Set());
+
+  // Repliable seulement si la carte est assez dense pour le justifier.
+  const accordeonActif = mobileAccordeon ?? columns.length > SEUIL_ACCORDEON;
+
+  // Colonne servant d'en-tête à la carte : le titre si la page en désigne un
+  // (className « cell-title », convention déjà suivie partout), sinon la
+  // première colonne réellement porteuse de texte. Les colonnes d'image et
+  // de case à cocher sont écartées : elles ne résument pas la ligne.
+  const colonnePrincipale = useMemo(() => {
+    const parTitre = columns.find((c) => (c.className || '').includes('cell-title'));
+    if (parTitre) return parTitre.key;
+    const premiereTextuelle = columns.find(
+      (c) => typeof c.header === 'string' && c.header && c.key !== 'actions'
+    );
+    return (premiereTextuelle || columns[0])?.key;
+  }, [columns]);
+
+  function basculerDepliage(cle) {
+    setLignesDepliees((actuelles) => {
+      const prochaines = new Set(actuelles);
+      if (prochaines.has(cle)) prochaines.delete(cle);
+      else prochaines.add(cle);
+      return prochaines;
+    });
+  }
 
   const rechercheActive = searchable && !serverSide;
 
@@ -253,8 +288,13 @@ export function DataTable({
             <tbody>
               {donneesPage.map((ligne, i) => {
                 const cle = extraireCle(ligne, i);
+                const depliee = lignesDepliees.has(cle);
                 return (
-                  <tr key={cle} className="datatable-row" style={rowStyle ? rowStyle(ligne) : undefined}>
+                  <tr
+                    key={cle}
+                    className={`datatable-row${accordeonActif ? ' datatable-repliable' : ''}${depliee ? ' est-depliee' : ''}`}
+                    style={rowStyle ? rowStyle(ligne) : undefined}
+                  >
                     {columns.map((colonne) => (
                       <td
                         key={colonne.key}
@@ -266,8 +306,20 @@ export function DataTable({
                         // Ignore si l'en-tete est du JSX (case a cocher) ou
                         // vide (colonne d'image) : aucun libelle a afficher.
                         data-label={typeof colonne.header === 'string' && colonne.header ? colonne.header : undefined}
+                        data-principal={colonne.key === colonnePrincipale ? '' : undefined}
                       >
                         {colonne.render ? colonne.render(ligne) : ligne[colonne.field]}
+                        {accordeonActif && colonne.key === colonnePrincipale ? (
+                          <button
+                            type="button"
+                            className="datatable-chevron"
+                            onClick={() => basculerDepliage(cle)}
+                            aria-expanded={depliee}
+                            aria-label={depliee ? 'Masquer les détails' : 'Afficher les détails'}
+                          >
+                            <ChevronDown size={18} />
+                          </button>
+                        ) : null}
                       </td>
                     ))}
                     {selectable && (

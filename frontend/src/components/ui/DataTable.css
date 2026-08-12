@@ -163,6 +163,13 @@
   opacity: 0.45;
 }
 
+/* Chevron de depliage : reserve aux cartes des petits ecrans. Masque par
+   defaut, il est reactive dans la media query plus bas — declare ici pour
+   que cette derniere l'emporte, l'ordre primant a specificite egale. */
+.datatable-chevron {
+  display: none;
+}
+
 .datatable-pied {
   display: flex;
   align-items: center;
@@ -281,8 +288,54 @@
     flex-wrap: wrap;
   }
 
-  .datatable-vide {
-    padding: 2rem 1rem;
+  /* ----- Cartes repliables (tableaux denses) -------------------------------
+     Au-dela de 4 colonnes, une carte depassait 400 px de haut : trois lignes
+     remplissaient l'ecran. Seule la colonne principale reste donc visible,
+     le chevron deplie le reste. */
+  .datatable-repliable td[data-principal] {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-main);
+  }
+
+  /* La cellule principale sert d'en-tete a la carte : son libelle ferait
+     doublon avec la valeur qu'elle met en avant. */
+  .datatable-repliable td[data-principal]::before {
+    content: none;
+  }
+
+  .datatable-repliable:not(.est-depliee) td:not([data-principal]) {
+    display: none;
+  }
+
+  .datatable-repliable:not(.est-depliee) td[data-principal] {
+    border-bottom: none;
+  }
+
+  .datatable-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    margin-left: 0.5rem;
+    padding: 0;
+    border: 1px solid var(--pd-border);
+    border-radius: 50%;
+    background: var(--bg-alt);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+  }
+
+  .datatable-chevron:hover {
+    background: var(--bg-card);
+    color: var(--text-main);
+  }
+
+  .est-depliee .datatable-chevron {
+    transform: rotate(180deg);
   }
 }
 
