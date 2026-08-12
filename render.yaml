@@ -52,17 +52,23 @@ services:
           name: sermon-db
           property: port
 
-      # --- Domaines autorises : a renseigner une fois les URLs connues ---
-      # ALLOWED_HOSTS      : le domaine Render du backend (ex. sermon-backend.onrender.com)
-      # CORS_ALLOWED_ORIGINS / CSRF_TRUSTED_ORIGINS / FRONTEND_URL : le domaine Vercel
+      # --- Domaines autorises ---
+      # ALLOWED_HOSTS : domaine Render du backend, sans protocole. Saisi dans
+      # le tableau de bord car il depend du nom attribue au service.
       - key: ALLOWED_HOSTS
         sync: false
+      # Domaine du frontend Vercel : avec protocole, sans slash final.
+      # Ce n'est pas un secret, d'ou une valeur versionnee plutot qu'une
+      # saisie manuelle — la configuration reste ainsi reproductible.
+      #   CORS  : autorise les appels a l'API depuis le navigateur
+      #   CSRF  : accepte les formulaires venant de cette origine
+      #   FRONTEND_URL : construit les liens des emails de verification
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        value: https://application-web-eglise.vercel.app
       - key: CSRF_TRUSTED_ORIGINS
-        sync: false
+        value: https://application-web-eglise.vercel.app
       - key: FRONTEND_URL
-        sync: false
+        value: https://application-web-eglise.vercel.app
 
       # --- Stockage objet (Cloudflare R2 / Backblaze B2 / S3) ---
       # Laisse a False pour le tout premier deploiement : le site fonctionne
