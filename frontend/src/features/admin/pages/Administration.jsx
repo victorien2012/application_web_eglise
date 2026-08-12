@@ -1321,14 +1321,13 @@ export function Administration() {
           </ChampFiltre>
         </SearchFilterPanel>
 
-        {chargementPredications ? (
-          <div className="admin-loading" style={{ minHeight: '200px' }}>
-            <div className="admin-loading-spinner" />
-            <p>Chargement des vidéos…</p>
-          </div>
-        ) : (
+        {(
+          // Le chargement est signale par le tableau lui-meme plutot que par
+          // un bloc qui le remplace : la barre d'outils et la pagination
+          // restent en place, sans saut de mise en page a chaque recherche.
           <DataTable
             serverSide
+            chargement={chargementPredications}
             data={predications}
             totalItems={totalPredications}
             page={pagePredications}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowUp, ArrowDown, ChevronDown, ChevronsUpDown, FileSpreadsheet, Search } from 'lucide-react';
+import { ArrowUp, ArrowDown, ChevronDown, ChevronsUpDown, FileSpreadsheet, Loader2, Search, X } from 'lucide-react';
 import Pagination from '../Pagination';
 import { exporterCsv } from '../../utils/exportCsv';
 import './Table.css';
@@ -50,6 +50,10 @@ export function DataTable({
   pageSizeOptions = TAILLES_PAGE_DEFAUT,
   defaultPageSize = TAILLES_PAGE_DEFAUT[0],
   emptyMessage = 'Aucun élément trouvé.',
+  // Les listes alimentees par le serveur mettent un instant a arriver :
+  // sans ce drapeau, le tableau affichait « Aucun element trouve » entre
+  // temps, ce que l'utilisateur lisait comme une liste vide.
+  chargement = false,
   toolbarExtra,
   rowStyle,
   pagination = true,
@@ -238,12 +242,46 @@ export function DataTable({
               placeholder={searchPlaceholder}
               aria-label={searchPlaceholder}
             />
+            {/* Effacer d'un geste plutot que de vider le champ touche par
+                touche — au doigt, la difference est nette. */}
+            {recherche ? (
+              <button
+                type="button"
+                className="datatable-effacer-recherche"
+                onClick={() => changerRecherche('')}
+                aria-label="Effacer la recherche"
+                title="Effacer la recherche"
+              >
+                <X size={15} />
+              </button>
+            ) : null}
           </div>
         )}
       </div>
 
-      {donneesPage.length === 0 ? (
-        <div className="datatable-vide">{emptyMessage}</div>
+      {chargement ? (
+        // Sans cet etat, un tableau alimente par le serveur affichait
+        // « Aucun element trouve » pendant le chargement : l'utilisateur
+        // croyait la liste vide alors qu'elle arrivait.
+        <div className="datatable-vide datatable-chargement" role="status" aria-live="polite">
+          <Loader2 size={20} className="datatable-spinner" aria-hidden="true" />
+          <span>Chargement…</span>
+        </div>
+      ) : donneesPage.length === 0 ? (
+        <div className="datatable-vide">
+          {rechercheActive && recherche.trim() ? (
+            // Distinguer « rien a afficher » de « rien ne correspond a cette
+            // recherche » : le second cas appelle une action, pas un constat.
+            <>
+              <p className="datatable-vide-titre">Aucun résultat pour « {recherche.trim()} »</p>
+              <button type="button" className="datatable-btn-reinitialiser" onClick={() => changerRecherche('')}>
+                Effacer la recherche
+              </button>
+            </>
+          ) : (
+            emptyMessage
+          )}
+        </div>
       ) : (
         <div className="datatable-responsive">
           <table className={`premium-table datatable-triable ${variant === 'site' ? 'datatable-site' : ''}`}>
@@ -255,6 +293,21 @@ export function DataTable({
                     style={colonne.style}
                     className={colonne.sortValue ? 'datatable-th-triable' : undefined}
                     onClick={colonne.sortValue ? () => basculerTri(colonne.key) : undefined}
+                    // Le tri n'etait accessible qu'a la souris : l'en-tete
+                    // portait un onClick sans role ni tabIndex, donc hors de
+                    // portee au clavier et non annonce comme actionnable.
+                    role={colonne.sortValue ? 'button' : undefined}
+                    tabIndex={colonne.sortValue ? 0 : undefined}
+                    onKeyDown={
+                      colonne.sortValue
+                        ? (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault(); // Espace ferait defiler la page
+                              basculerTri(colonne.key);
+                            }
+                          }
+                        : undefined
+                    }
                     aria-sort={
                       tri?.cle === colonne.key
                         ? (tri.direction === 'asc' ? 'ascending' : 'descending')

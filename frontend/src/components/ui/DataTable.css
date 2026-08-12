@@ -92,13 +92,83 @@
   width: 100%;
 }
 
+.datatable-effacer-recherche {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.datatable-effacer-recherche:hover {
+  background: var(--border-color);
+  color: var(--text-main);
+}
+
 .datatable-vide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
   padding: 3rem 1.5rem;
   text-align: center;
   color: var(--text-muted);
   background: var(--bg-alt);
   border-radius: 12px;
   border: 1px solid var(--pd-border);
+}
+
+.datatable-vide-titre {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* Une recherche sans resultat appelle une action, pas un simple constat. */
+.datatable-btn-reinitialiser {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--pd-border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.datatable-btn-reinitialiser:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.datatable-chargement {
+  flex-direction: row;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+}
+
+.datatable-spinner {
+  animation: datatable-rotation 1s linear infinite;
+}
+
+@keyframes datatable-rotation {
+  to { transform: rotate(360deg); }
+}
+
+/* Respecte le reglage systeme « animations reduites ». */
+@media (prefers-reduced-motion: reduce) {
+  .datatable-spinner {
+    animation: none;
+  }
 }
 
 /* En-tête neutre (fond clair, texte sombre) plutôt que le bandeau bleu
@@ -151,6 +221,12 @@
 
 .datatable-th-triable:hover {
   background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Le tri etant desormais atteignable au clavier, le focus doit se voir. */
+.datatable-th-triable:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
 }
 
 .datatable-th-contenu {
