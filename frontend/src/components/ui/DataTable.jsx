@@ -256,7 +256,17 @@ export function DataTable({
                 return (
                   <tr key={cle} className="datatable-row" style={rowStyle ? rowStyle(ligne) : undefined}>
                     {columns.map((colonne) => (
-                      <td key={colonne.key} style={colonne.cellStyle} className={colonne.className || ''}>
+                      <td
+                        key={colonne.key}
+                        style={colonne.cellStyle}
+                        className={colonne.className || ''}
+                        // Sur petit ecran l'en-tete disparait et chaque ligne
+                        // devient une carte : la cellule affiche alors ce
+                        // libelle en face de sa valeur (voir DataTable.css).
+                        // Ignore si l'en-tete est du JSX (case a cocher) ou
+                        // vide (colonne d'image) : aucun libelle a afficher.
+                        data-label={typeof colonne.header === 'string' && colonne.header ? colonne.header : undefined}
+                      >
                         {colonne.render ? colonne.render(ligne) : ligne[colonne.field]}
                       </td>
                     ))}

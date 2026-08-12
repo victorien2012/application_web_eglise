@@ -176,6 +176,116 @@
   color: var(--pd-text-muted, var(--text-muted));
 }
 
+/* ==========================================================================
+   Petits ecrans : chaque ligne devient une carte
+   --------------------------------------------------------------------------
+   Un tableau de 7 a 8 colonnes mesure plus de 1100 px : dans 320 px utiles,
+   il ne restait qu'un defilement horizontal ou seule la premiere colonne
+   etait visible. Les lignes sont donc empilees en cartes, chaque cellule
+   affichant son libelle (attribut data-label pose par DataTable.jsx) en face
+   de sa valeur. Le tableau reste un <table> : lisibilite et semantique
+   preservees, aucun composant appelant a modifier.
+   ========================================================================== */
+@media (max-width: 768px) {
+  .datatable-responsive {
+    overflow-x: visible;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    border-radius: 0;
+  }
+
+  .datatable-triable.premium-table,
+  .datatable-triable.premium-table tbody,
+  .datatable-triable.premium-table tr,
+  .datatable-triable.premium-table td {
+    display: block;
+    width: 100%;
+  }
+
+  /* Masque l'en-tete : chaque cellule porte desormais son propre libelle.
+     clip plutot que display:none pour rester annonce aux lecteurs d'ecran. */
+  .datatable-triable.premium-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .datatable-triable.premium-table tr {
+    background-color: var(--bg-card);
+    border: 1px solid var(--pd-border);
+    border-radius: 12px;
+    margin-bottom: 0.85rem;
+    padding: 0.25rem 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Le survol deplacait et agrandissait la ligne : sans souris, cet etat
+     restait fige apres un appui sur mobile. */
+  .datatable-triable.premium-table tr:hover {
+    transform: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+
+  .datatable-triable.premium-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 0.9rem;
+    white-space: normal;
+    border-bottom: 1px solid var(--pd-border);
+    text-align: left !important;
+    font-size: 0.9rem;
+  }
+
+  .datatable-triable.premium-table td:last-child {
+    border-bottom: none;
+  }
+
+  .datatable-triable.premium-table td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    max-width: 45%;
+    color: var(--pd-text-muted, var(--text-muted));
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Colonnes sans libelle (vignette, case a cocher) : la valeur occupe
+     toute la largeur plutot que d'etre repoussee a droite par un vide. */
+  .datatable-triable.premium-table td:not([data-label]) {
+    justify-content: flex-start;
+  }
+
+  .datatable-triable.premium-table td:not([data-label])::before {
+    content: none;
+  }
+
+  /* Le titre etait tronque a 2 lignes dans 300 px : en carte il dispose de
+     toute la largeur et n'a plus besoin d'etre coupe. */
+  .datatable-triable.premium-table .cell-title {
+    max-width: none;
+    -webkit-line-clamp: unset;
+    display: block;
+    text-align: right;
+  }
+
+  .datatable-triable.premium-table .cell-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .datatable-vide {
+    padding: 2rem 1rem;
+  }
+}
+
 @media (max-width: 640px) {
   .datatable-barre-outils,
   .datatable-pied {
@@ -183,7 +293,15 @@
     align-items: stretch;
   }
 
+  .datatable-barre-gauche {
+    justify-content: space-between;
+  }
+
   .datatable-recherche {
     min-width: 0;
+  }
+
+  .datatable-info-pagination {
+    text-align: center;
   }
 }
