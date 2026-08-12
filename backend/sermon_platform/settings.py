@@ -132,11 +132,14 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # En production, WhiteNoise sert les fichiers statiques avec compression et cache.
+# Le stockage est volontairement tolerant aux references introuvables (voir
+# stockage.py) : une icone manquante d'un theme tiers ne doit pas rendre toute
+# l'administration inaccessible.
 if not DEBUG:
     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
     STORAGES = {
         'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
-        'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+        'staticfiles': {'BACKEND': 'sermon_platform.stockage.StockageStatiquesTolerant'},
     }
 
 # Media files (Sermons uploads, pastor avatars, covers)
@@ -158,7 +161,7 @@ if USE_S3:
         'default': {'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage'},
         'staticfiles': {
             'BACKEND': (
-                'whitenoise.storage.CompressedManifestStaticFilesStorage'
+                'sermon_platform.stockage.StockageStatiquesTolerant'
                 if not DEBUG else 'django.contrib.staticfiles.storage.StaticFilesStorage'
             )
         },
