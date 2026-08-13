@@ -61,7 +61,7 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  background: var(--primary);
   color: #fff;
   display: flex;
   align-items: center;
@@ -269,23 +269,25 @@
 }
 
 .pmmodal-btn-confirm {
-  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  background: var(--primary);
   color: #fff;
 }
 .pmmodal-btn-confirm:hover {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: var(--primary);
 }
 .pmmodal-btn-confirm:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
+/* Couleur unie (rouge, l'association d'usage avec YouTube) plutôt que le
+   dégradé à deux tons. */
 .pmmodal-btn-youtube {
-  background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
+  background: var(--danger);
   color: #fff;
 }
 .pmmodal-btn-youtube:hover {
-  background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
+  filter: brightness(0.88);
 }
 .pmmodal-btn-youtube:disabled {
   opacity: 0.6;

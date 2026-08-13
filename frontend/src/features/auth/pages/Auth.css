@@ -17,7 +17,7 @@
 
 .auth-visual-side {
   flex: 1;
-  background: linear-gradient(135deg, #001f45 0%, #00336b 60%, #004a94 100%);
+  background: var(--primary);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -392,8 +392,9 @@
   height: 50px;
   font-size: 1rem;
   border-radius: 12px;
-  /* Gradient background */
-  background: linear-gradient(135deg, var(--primary), #f79e0b);
+  /* Couleur unie plutôt que le dégradé bleu → ambre : bleu institutionnel
+     du site, sans effet de fondu. */
+  background: var(--primary);
   color: #fff;
   border: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);

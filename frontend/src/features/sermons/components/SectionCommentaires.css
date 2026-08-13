@@ -119,7 +119,10 @@
   align-items: center;
   gap: 0.45rem;
   padding: 0.6rem 1.25rem;
-  background: linear-gradient(135deg, #7c5cff, #9d7dff);
+  /* Bleu institutionnel uni plutôt que le dégradé violet, qui ne
+     correspondait à aucune autre couleur du site — aligné sur les autres
+     boutons d'action principaux (ex. .auth-submit-btn). */
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -127,14 +130,14 @@
   font-weight: 700;
   cursor: pointer;
   transition: opacity 0.2s, transform 0.18s, box-shadow 0.2s;
-  box-shadow: 0 4px 12px rgba(124, 92, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
   white-space: nowrap;
 }
 
 .sc-submit-btn:hover:not(:disabled) {
   opacity: 0.92;
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(124, 92, 255, 0.4);
+  box-shadow: 0 6px 18px rgba(var(--primary-rgb), 0.4);
 }
 
 .sc-submit-btn:disabled {

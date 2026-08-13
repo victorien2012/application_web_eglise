@@ -62,7 +62,7 @@
 .profil-guest-icon {
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  background: var(--primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -116,7 +116,7 @@
   width: 110px;
   height: 110px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  background: var(--primary);
   padding: 3px;
   box-shadow: 0 8px 28px rgba(0, 74, 148, 0.35);
 }
@@ -134,7 +134,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  background: var(--primary);
   border: 3px solid var(--bg-card);
   display: flex;
   align-items: center;
@@ -282,7 +282,8 @@
   top: 0; left: 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, var(--primary), var(--accent));
+  /* Couleur unie plutôt que le dégradé bleu → ambre. */
+  background: var(--primary);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -311,10 +312,13 @@
   color: #fff; flex-shrink: 0;
 }
 
-.icon-favoris   { background: linear-gradient(135deg, #f43f5e, #fb7185); box-shadow: 0 4px 12px rgba(244,63,94,0.25); }
-.icon-abos      { background: linear-gradient(135deg, #004a94, #fbbf24); box-shadow: 0 4px 12px rgba(245,158,11,0.25); }
-.icon-historique{ background: linear-gradient(135deg, #0ea5e9, #38bdf8); box-shadow: 0 4px 12px rgba(14,165,233,0.25); }
-.icon-rgpd      { background: linear-gradient(135deg, #475569, #64748b); box-shadow: 0 4px 12px rgba(71,85,105,0.25); }
+/* Couleurs unies plutôt que les dégradés à deux tons d'origine — celui de
+   .icon-abos mélangeait en plus deux teintes franchement différentes (bleu
+   marine et ambre), le cas le plus visible de ce fichier. */
+.icon-favoris   { background: #f43f5e; box-shadow: 0 4px 12px rgba(244,63,94,0.25); }
+.icon-abos      { background: var(--primary); box-shadow: 0 4px 12px rgba(0,74,148,0.25); }
+.icon-historique{ background: #0ea5e9; box-shadow: 0 4px 12px rgba(14,165,233,0.25); }
+.icon-rgpd      { background: #64748b; box-shadow: 0 4px 12px rgba(71,85,105,0.25); }
 
 /* ── Listes ──────────────────────────────────────────────────────────────── */
 .profil-liste {

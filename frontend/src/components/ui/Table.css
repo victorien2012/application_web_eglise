@@ -183,28 +183,33 @@
   background: #fcd34d;
 }
 
+/* Couleurs unies plutôt que les dégradés d'origine, cohérent avec
+   .btn-visionner ci-dessus qui utilise déjà un fond plein. Les tons
+   correspondent aux jetons sémantiques --danger / --success, ce qui les
+   rend au passage lisibles en thème sombre — les valeurs fixes précédentes
+   ne s'y adaptaient pas. */
 .btn-pdf {
-  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  background: var(--danger);
   border: none;
   color: #fff;
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 2px 6px rgba(var(--danger-rgb), 0.25);
 }
 
 .btn-pdf:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.35);
-  background: linear-gradient(135deg, #f87171 0%, #991b1b 100%);
+  box-shadow: 0 4px 10px rgba(var(--danger-rgb), 0.4);
+  filter: brightness(1.12);
 }
 
 .btn-download {
-  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  background: var(--success);
   border: none;
   color: #fff;
-  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 2px 6px rgba(var(--success-rgb), 0.25);
 }
 
 .btn-download:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.35);
-  background: linear-gradient(135deg, #34d399 0%, #065f46 100%);
+  box-shadow: 0 4px 10px rgba(var(--success-rgb), 0.4);
+  filter: brightness(1.12);
 }

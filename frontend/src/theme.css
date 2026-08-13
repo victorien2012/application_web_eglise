@@ -47,7 +47,13 @@
 body {
   font-family: 'Inter', sans-serif;
   color: var(--color-text-main);
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  /* Couleur unie (jeton de thème) plutôt que le dégradé quasi blanc
+     d'origine. Ce dernier utilisait le raccourci "background", qui
+     réinitialise implicitement background-color : combiné aux autres
+     règles body d'index.css et PastorDashboard.css, cela avait déjà causé
+     un vrai bug de couleur figée en thème sombre. background-color evite
+     ce piège en ne touchant qu'elle-même. */
+  background-color: var(--color-bg-main);
   margin: 0;
   min-height: 100vh;
 }

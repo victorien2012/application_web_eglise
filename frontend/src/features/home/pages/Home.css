@@ -59,6 +59,7 @@
 
 /* Respect du reglage systeme « animations reduites ». */
 @media (prefers-reduced-motion: reduce) {
+
   .reveal-actif .reveal-on-scroll,
   .reveal-actif .reveal-cascade {
     opacity: 1;
@@ -125,7 +126,7 @@
 .section-heading h2 {
   font-size: 2.4rem;
   font-weight: 900;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: var(--primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
@@ -235,7 +236,7 @@
 }
 
 .home-kicker-pill {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.25));
+  background: rgba(245, 158, 11, 0.16);
   color: var(--primary);
   border: 1px solid rgba(245, 158, 11, 0.3);
   padding: 0.4rem 1rem;
@@ -258,10 +259,10 @@
 }
 
 .text-primary {
+  /* Couleur unie plutôt qu'un dégradé texte ambre → bleu (même correctif
+     que le titre de la page Abonnement) : une couleur pleine, cohérente
+     avec le bleu institutionnel du site, sans effet de fondu. */
   color: var(--primary);
-  background: linear-gradient(90deg, var(--accent), var(--primary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   display: inline-block;
 }
 
@@ -370,7 +371,7 @@
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--primary));
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -480,37 +481,24 @@
   }
 }
 
-@keyframes gradientPan {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
 .announcement-banner {
-  /* Gradient "Aurore Boréale" Animé (Bleu -> Violet -> Rose -> Or) */
-  background: linear-gradient(270deg, #1e3a8a, #581c87, #be185d, #b45309);
-  background-size: 400% 400%;
+  /* Couleur institutionnelle unie plutôt que le dégradé animé "Aurore
+     Boréale" (bleu → violet → rose → or) : ce bloc porte son propre texte
+     blanc fixe, comme le bandeau de navigation — même contexte, même
+     couleur. gradientPan (le défilement du dégradé) n'a plus lieu d'être
+     sur une couleur pleine. */
+  background: var(--navbar-bg);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   padding: 1.2rem 1.5rem;
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  box-shadow: 0 10px 40px rgba(88, 28, 135, 0.3);
+  box-shadow: 0 10px 40px rgba(var(--navbar-bg-rgb), 0.35);
   overflow: hidden;
   position: relative;
   opacity: 0;
-  animation:
-    cinematicSlide 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards,
-    gradientPan 15s ease infinite;
+  animation: cinematicSlide 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Douce vague lumineuse (Shimmer subtil) */
@@ -552,7 +540,7 @@
 
 .announcement-banner:hover {
   transform: translateY(-2px);
-  box-shadow: 0 15px 50px rgba(190, 24, 93, 0.4);
+  box-shadow: 0 15px 50px rgba(var(--navbar-bg-rgb), 0.45);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -792,7 +780,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark, var(--primary)));
+  background: var(--primary);
   color: #fff;
 }
 
@@ -1095,10 +1083,10 @@
 /* Les enfants de grille ont min-width: auto : une image large empêche alors la
    colonne de rétrécir et pousse toute la page au-delà de l'écran. Le défaut
    existait déjà, mais l'ancien panneau à largeur fixe le masquait. */
-.home-flux .grid > *,
-.home-flux .sermon-grid > *,
-.home-flux .home-pastors-grid > *,
-.home-fil-liste > * {
+.home-flux .grid>*,
+.home-flux .sermon-grid>*,
+.home-flux .home-pastors-grid>*,
+.home-fil-liste>* {
   min-width: 0;
 }
 

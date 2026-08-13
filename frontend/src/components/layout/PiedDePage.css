@@ -1,7 +1,9 @@
 /* src/components/PiedDePage.css */
 
 .footer-premium {
-  background: linear-gradient(180deg, var(--navbar-bg) 0%, #001f3f 100%);
+  /* Couleur unie, identique au bandeau de navigation, plutôt qu'un dégradé
+     vers un bleu marine à peine différent (#001f3f). */
+  background: var(--navbar-bg);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 2rem 1.5rem 1rem;
   font-family: 'Outfit', system-ui, sans-serif;
