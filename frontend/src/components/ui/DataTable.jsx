@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowUp, ArrowDown, ChevronDown, ChevronsUpDown, FileSpreadsheet, Loader2, Search, X } from 'lucide-react';
+import { ArrowUp, ArrowDown, ChevronsUpDown, FileSpreadsheet, Loader2, Search, X } from 'lucide-react';
 import Pagination from '../Pagination';
 import { exporterCsv } from '../../utils/exportCsv';
 import './Table.css';
@@ -28,14 +28,13 @@ const TAILLES_PAGE_DEFAUT = [10, 25, 50, 100];
  * reste de la plateforme (Documents, SermonTable, espace pasteur) — ces
  * pages publiques ou pastorales gardent la charte navy/ambre existante.
  *
- * Sous 768 px chaque ligne devient une carte (voir DataTable.css). Au-delà
- * de SEUIL_ACCORDEON colonnes, cette carte devient repliable : seule la
- * colonne principale reste visible, un chevron déplie le reste. Sans cela
- * une ligne de 8 colonnes occupait plus de 400 px de haut, et trois lignes
- * suffisaient à remplir l'écran. Les tableaux courts, eux, restent dépliés :
- * un chevron n'y masquerait qu'une ou deux valeurs, pour un clic en plus.
+ * Sous 768 px, le tableau reste un tableau (mêmes colonnes, même en-tête) et
+ * défile horizontalement — l'expérience demandée était explicitement « comme
+ * sur PC », pas une mise en page alternative. Une première version empilait
+ * les lignes en cartes repliables par chevron ; elle a été retirée au profit
+ * du défilement, avec une première colonne fixée (voir DataTable.css) pour
+ * garder le repère de ligne pendant le défilement.
  */
-const SEUIL_ACCORDEON = 4;
 export function DataTable({
   columns,
   data,
@@ -58,7 +57,6 @@ export function DataTable({
   rowStyle,
   pagination = true,
   variant = 'admin',
-  mobileAccordeon,
   serverSide = false,
   totalItems,
   page: pageControlee,
@@ -70,32 +68,6 @@ export function DataTable({
   const [taillePage, setTaillePage] = useState(defaultPageSize);
   const [tri, setTri] = useState(null); // { cle, direction: 'asc' | 'desc' }
   const [selection, setSelection] = useState(() => new Set());
-  const [lignesDepliees, setLignesDepliees] = useState(() => new Set());
-
-  // Repliable seulement si la carte est assez dense pour le justifier.
-  const accordeonActif = mobileAccordeon ?? columns.length > SEUIL_ACCORDEON;
-
-  // Colonne servant d'en-tête à la carte : le titre si la page en désigne un
-  // (className « cell-title », convention déjà suivie partout), sinon la
-  // première colonne réellement porteuse de texte. Les colonnes d'image et
-  // de case à cocher sont écartées : elles ne résument pas la ligne.
-  const colonnePrincipale = useMemo(() => {
-    const parTitre = columns.find((c) => (c.className || '').includes('cell-title'));
-    if (parTitre) return parTitre.key;
-    const premiereTextuelle = columns.find(
-      (c) => typeof c.header === 'string' && c.header && c.key !== 'actions'
-    );
-    return (premiereTextuelle || columns[0])?.key;
-  }, [columns]);
-
-  function basculerDepliage(cle) {
-    setLignesDepliees((actuelles) => {
-      const prochaines = new Set(actuelles);
-      if (prochaines.has(cle)) prochaines.delete(cle);
-      else prochaines.add(cle);
-      return prochaines;
-    });
-  }
 
   const rechercheActive = searchable && !serverSide;
 
@@ -287,11 +259,11 @@ export function DataTable({
           <table className={`premium-table datatable-triable ${variant === 'site' ? 'datatable-site' : ''}`}>
             <thead>
               <tr>
-                {columns.map((colonne) => (
+                {columns.map((colonne, indexColonne) => (
                   <th
                     key={colonne.key}
                     style={colonne.style}
-                    className={colonne.sortValue ? 'datatable-th-triable' : undefined}
+                    className={`${colonne.sortValue ? 'datatable-th-triable' : ''} ${indexColonne === 0 ? 'datatable-col-fixe' : ''}`.trim() || undefined}
                     onClick={colonne.sortValue ? () => basculerTri(colonne.key) : undefined}
                     // Le tri n'etait accessible qu'a la souris : l'en-tete
                     // portait un onClick sans role ni tabIndex, donc hors de
@@ -341,38 +313,24 @@ export function DataTable({
             <tbody>
               {donneesPage.map((ligne, i) => {
                 const cle = extraireCle(ligne, i);
-                const depliee = lignesDepliees.has(cle);
                 return (
                   <tr
                     key={cle}
-                    className={`datatable-row${accordeonActif ? ' datatable-repliable' : ''}${depliee ? ' est-depliee' : ''}`}
+                    className="datatable-row"
                     style={rowStyle ? rowStyle(ligne) : undefined}
                   >
-                    {columns.map((colonne) => (
+                    {columns.map((colonne, indexColonne) => (
                       <td
                         key={colonne.key}
                         style={colonne.cellStyle}
-                        className={colonne.className || ''}
-                        // Sur petit ecran l'en-tete disparait et chaque ligne
-                        // devient une carte : la cellule affiche alors ce
-                        // libelle en face de sa valeur (voir DataTable.css).
-                        // Ignore si l'en-tete est du JSX (case a cocher) ou
-                        // vide (colonne d'image) : aucun libelle a afficher.
-                        data-label={typeof colonne.header === 'string' && colonne.header ? colonne.header : undefined}
-                        data-principal={colonne.key === colonnePrincipale ? '' : undefined}
+                        // La première colonne reste fixée pendant le défilement
+                        // horizontal sur petit écran (voir DataTable.css) : sans
+                        // repère, on perd de vue à quelle ligne appartient ce
+                        // qu'on regarde une fois les premières colonnes sorties
+                        // de l'écran.
+                        className={`${colonne.className || ''} ${indexColonne === 0 ? 'datatable-col-fixe' : ''}`.trim()}
                       >
                         {colonne.render ? colonne.render(ligne) : ligne[colonne.field]}
-                        {accordeonActif && colonne.key === colonnePrincipale ? (
-                          <button
-                            type="button"
-                            className="datatable-chevron"
-                            onClick={() => basculerDepliage(cle)}
-                            aria-expanded={depliee}
-                            aria-label={depliee ? 'Masquer les détails' : 'Afficher les détails'}
-                          >
-                            <ChevronDown size={18} />
-                          </button>
-                        ) : null}
                       </td>
                     ))}
                     {selectable && (

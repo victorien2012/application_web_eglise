@@ -239,13 +239,6 @@
   opacity: 0.45;
 }
 
-/* Chevron de depliage : reserve aux cartes des petits ecrans. Masque par
-   defaut, il est reactive dans la media query plus bas — declare ici pour
-   que cette derniere l'emporte, l'ordre primant a specificite egale. */
-.datatable-chevron {
-  display: none;
-}
-
 .datatable-pied {
   display: flex;
   align-items: center;
@@ -260,159 +253,40 @@
 }
 
 /* ==========================================================================
-   Petits ecrans : chaque ligne devient une carte
+   Petits ecrans : defilement horizontal, premiere colonne fixe
    --------------------------------------------------------------------------
-   Un tableau de 7 a 8 colonnes mesure plus de 1100 px : dans 320 px utiles,
-   il ne restait qu'un defilement horizontal ou seule la premiere colonne
-   etait visible. Les lignes sont donc empilees en cartes, chaque cellule
-   affichant son libelle (attribut data-label pose par DataTable.jsx) en face
-   de sa valeur. Le tableau reste un <table> : lisibilite et semantique
-   preservees, aucun composant appelant a modifier.
+   Le tableau garde sa forme normale (colonnes, en-tete) a toutes les
+   largeurs — .datatable-responsive (Table.css) fournit deja le
+   overflow-x: auto necessaire pour le faire glisser du doigt. La premiere
+   colonne (marquee .datatable-col-fixe par DataTable.jsx) reste epinglee a
+   gauche pendant le defilement, pour garder un repere de ligne sur un
+   tableau large — utile aussi bien sur petit ecran qu'en desktop si la
+   fenetre est etroite.
    ========================================================================== */
-@media (max-width: 768px) {
-  .datatable-responsive {
-    overflow-x: visible;
-    border: none;
-    box-shadow: none;
-    background: transparent;
-    border-radius: 0;
-  }
+.datatable-col-fixe {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.06);
+}
 
-  .datatable-triable.premium-table,
-  .datatable-triable.premium-table tbody,
-  .datatable-triable.premium-table tr,
-  .datatable-triable.premium-table td {
-    display: block;
-    width: 100%;
-  }
+.premium-table td.datatable-col-fixe {
+  background-color: var(--bg-card);
+}
 
-  /* Masque l'en-tete : chaque cellule porte desormais son propre libelle.
-     clip plutot que display:none pour rester annonce aux lecteurs d'ecran. */
-  .datatable-triable.premium-table thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
+.datatable-row:hover td.datatable-col-fixe {
+  background-color: var(--bg-alt);
+}
 
-  .datatable-triable.premium-table tr {
-    background-color: var(--bg-card);
-    border: 1px solid var(--pd-border);
-    border-radius: 12px;
-    margin-bottom: 0.85rem;
-    padding: 0.25rem 0;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-  }
+/* En-tete admin (fond clair) : la colonne fixe doit reprendre ce meme fond,
+   sinon le contenu defilant apparait derriere en transparence. */
+.datatable-triable.premium-table th.datatable-col-fixe {
+  background-color: #f4f6f5;
+}
 
-  /* Le survol deplacait et agrandissait la ligne : sans souris, cet etat
-     restait fige apres un appui sur mobile. */
-  .datatable-triable.premium-table tr:hover {
-    transform: none;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-  }
-
-  .datatable-triable.premium-table td {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.6rem 0.9rem;
-    white-space: normal;
-    border-bottom: 1px solid var(--pd-border);
-    text-align: left !important;
-    font-size: 0.9rem;
-  }
-
-  .datatable-triable.premium-table td:last-child {
-    border-bottom: none;
-  }
-
-  .datatable-triable.premium-table td::before {
-    content: attr(data-label);
-    flex-shrink: 0;
-    max-width: 45%;
-    color: var(--pd-text-muted, var(--text-muted));
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  /* Colonnes sans libelle (vignette, case a cocher) : la valeur occupe
-     toute la largeur plutot que d'etre repoussee a droite par un vide. */
-  .datatable-triable.premium-table td:not([data-label]) {
-    justify-content: flex-start;
-  }
-
-  .datatable-triable.premium-table td:not([data-label])::before {
-    content: none;
-  }
-
-  /* Le titre etait tronque a 2 lignes dans 300 px : en carte il dispose de
-     toute la largeur et n'a plus besoin d'etre coupe. */
-  .datatable-triable.premium-table .cell-title {
-    max-width: none;
-    -webkit-line-clamp: unset;
-    display: block;
-    text-align: right;
-  }
-
-  .datatable-triable.premium-table .cell-actions {
-    justify-content: flex-end;
-    flex-wrap: wrap;
-  }
-
-  /* ----- Cartes repliables (tableaux denses) -------------------------------
-     Au-dela de 4 colonnes, une carte depassait 400 px de haut : trois lignes
-     remplissaient l'ecran. Seule la colonne principale reste donc visible,
-     le chevron deplie le reste. */
-  .datatable-repliable td[data-principal] {
-    font-weight: 700;
-    font-size: 0.95rem;
-    color: var(--text-main);
-  }
-
-  /* La cellule principale sert d'en-tete a la carte : son libelle ferait
-     doublon avec la valeur qu'elle met en avant. */
-  .datatable-repliable td[data-principal]::before {
-    content: none;
-  }
-
-  .datatable-repliable:not(.est-depliee) td:not([data-principal]) {
-    display: none;
-  }
-
-  .datatable-repliable:not(.est-depliee) td[data-principal] {
-    border-bottom: none;
-  }
-
-  .datatable-chevron {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    margin-left: 0.5rem;
-    padding: 0;
-    border: 1px solid var(--pd-border);
-    border-radius: 50%;
-    background: var(--bg-alt);
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: transform 0.2s ease, background-color 0.2s ease;
-  }
-
-  .datatable-chevron:hover {
-    background: var(--bg-card);
-    color: var(--text-main);
-  }
-
-  .est-depliee .datatable-chevron {
-    transform: rotate(180deg);
-  }
+/* Variante 'site' : en-tete bleu marine. */
+.datatable-triable.datatable-site.premium-table th.datatable-col-fixe {
+  background-color: var(--primary);
 }
 
 @media (max-width: 640px) {
