@@ -21,10 +21,14 @@
   font-size: 2.25rem;
   font-weight: 800;
   margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, var(--text-main) 0%, var(--primary) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  /* Bleu uni, même famille que le bandeau de navigation, plutôt qu'un
+     dégradé texte. --navbar-bg (utilisé ici initialement) est fixe car il
+     repose sur son propre fond marine dans la navbar ; copié comme simple
+     couleur de texte sur le fond de page, il devenait quasi illisible en
+     thème sombre (bleu très sombre sur fond très sombre). --primary est la
+     même teinte en thème clair et s'éclaircit en thème sombre pour rester
+     lisible — déjà le choix retenu partout ailleurs sur le site. */
+  color: var(--primary);
   letter-spacing: -0.02em;
 }
 
