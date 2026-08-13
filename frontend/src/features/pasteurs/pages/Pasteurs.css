@@ -4,7 +4,7 @@
 
 /* Bandeau Hero — identique à la Home */
 .pasteurs-hero-wrapper {
-  background: linear-gradient(135deg, #004a94 0%, #00336b 60%, #001f45 100%);
+  background: var(--primary);
   width: 100%;
   padding: 1.5rem 2rem;
   box-sizing: border-box;

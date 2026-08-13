@@ -12,7 +12,7 @@
 
 /* Bandeau Hero du profil */
 .pasteur-detail-hero-wrapper {
-  background: linear-gradient(135deg, #004a94 0%, #00336b 60%, #001f45 100%);
+  background: var(--primary);
   width: 100%;
   padding: 4rem 2rem;
   box-sizing: border-box;

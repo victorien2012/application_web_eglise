@@ -11,14 +11,18 @@
   border: 1px solid rgba(0, 0, 0, 0.08);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-  position: relative; /* Pour d'éventuels overlays */
+  position: relative;
+  /* Pour d'éventuels overlays */
 }
 
 /* Bordure interne subtile style glassmorphism */
 .sermon-card::after {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.5);
   pointer-events: none;
@@ -115,7 +119,8 @@
   color: var(--text-muted);
   font-size: 0.8rem;
   font-weight: 600;
-  margin-top: auto; /* Pousse les méta vers le bas */
+  margin-top: auto;
+  /* Pousse les méta vers le bas */
 }
 
 /* CATEGORIES */
@@ -143,6 +148,7 @@
   align-items: center;
   flex-wrap: wrap;
 }
+
 /* Titre et image mènent à la prédication, sans que le lien altère
    l'apparence de la carte. */
 .sermon-titre-lien {

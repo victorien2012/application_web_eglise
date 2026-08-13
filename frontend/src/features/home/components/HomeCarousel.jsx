@@ -95,8 +95,8 @@ const HomeCarousel = ({ medias }) => {
         </button>
       )}
 
-      <div 
-        className={`home-carousel-container ${hasCarouselEffect ? 'scrollable-banner' : ''}`} 
+      <div
+        className={`home-carousel-container ${hasCarouselEffect ? 'scrollable-banner' : ''}`}
         ref={scrollRef}
         onScroll={handleScroll}
       >
@@ -120,9 +120,9 @@ const HomeCarousel = ({ medias }) => {
                 );
               } else {
                 mediaContent = (
-                  <img 
-                    src={`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`} 
-                    alt={media.titre || "Video Thumbnail"} 
+                  <img
+                    src={`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`}
+                    alt={media.titre || "Video Thumbnail"}
                     className="carousel-media"
                     style={{ objectFit: 'cover' }}
                   />
@@ -146,7 +146,7 @@ const HomeCarousel = ({ medias }) => {
           return (
             <div key={media.id} className="carousel-slide-banner">
               {mediaContent}
-              
+
               {(media.titre || media.description) && (
                 <div className="carousel-caption-banner">
                   {media.titre && <h3>{media.titre}</h3>}
@@ -166,7 +166,7 @@ const HomeCarousel = ({ medias }) => {
           <button className="carousel-nav-btn next" onClick={scrollRight} aria-label="Suivant">
             <ChevronRight size={24} />
           </button>
-          
+
           <div className="carousel-indicators">
             {displayMedias.map((_, idx) => (
               <button
