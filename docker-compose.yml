@@ -20,6 +20,13 @@ services:
       timeout: 5s
       retries: 5
 
+  maildev:
+    image: maildev/maildev
+    container_name: sermon_maildev
+    ports:
+      - "1080:1080" # interface web : http://localhost:1080
+      - "1025:1025" # port SMTP interne au reseau docker
+
   backend:
     build:
       context: ./backend
@@ -44,11 +51,11 @@ services:
       - SECRET_KEY=${DJANGO_SECRET_KEY}
       - DEBUG=${DJANGO_DEBUG}
       - ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
-      - EMAIL_BACKEND=${EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
+      - EMAIL_BACKEND=${EMAIL_BACKEND:-django.core.mail.backends.smtp.EmailBackend}
       - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-koffikouassivictorien@gmail.com}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
-      - EMAIL_HOST=${EMAIL_HOST:-localhost}
-      - EMAIL_PORT=${EMAIL_PORT:-25}
+      - EMAIL_HOST=${EMAIL_HOST:-maildev}
+      - EMAIL_PORT=${EMAIL_PORT:-1025}
       - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
       - EMAIL_USE_TLS=${EMAIL_USE_TLS:-False}
@@ -56,6 +63,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      maildev:
+        condition: service_started
 
   frontend:
     build:
