@@ -1,5 +1,5 @@
 // src/pages/SermonDetail.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { VideoPlayer } from '../../sermons/components/VideoPlayer';
@@ -12,7 +12,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useFavori } from '../../../hooks/useEngagement';
 import { Button } from '../../../components/Button';
-import { api, telechargerRessource, telechargerRessourceExterne, extraireListe } from '../../../services/api';
+import { api, telechargerRessource, telechargerRessourceExterne, journaliserLecture, extraireListe } from '../../../services/api';
 import { SermonCard } from '../components/SermonCard';
 import './SermonDetail.css';
 
@@ -29,6 +29,7 @@ export function SermonDetail() {
   const [sermonsSimilaires, setSermonsSimilaires] = useState([]);
   const [modeCinema, setModeCinema] = useState(false);
   const { estFavori, basculer, pret: favoriPret } = useFavori(id);
+  const vueEnregistreeRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -56,6 +57,7 @@ export function SermonDetail() {
     }
 
     charger();
+    vueEnregistreeRef.current = false;
     return () => {
       active = false;
     };
@@ -135,6 +137,13 @@ export function SermonDetail() {
   };
 
   const handleMediaPlay = () => {
+    // Une seule vue comptabilisee par visite, au premier declenchement reel
+    // de la lecture (pas au simple affichage de la page).
+    if (!vueEnregistreeRef.current) {
+      vueEnregistreeRef.current = true;
+      journaliserLecture(id).catch(() => {});
+    }
+
     if (sermon.type_media !== 'AUDIO' && (sermon.fichier_video || sermon.url_video)) {
       setShowVideo(true);
     } else if (sermon.fichier_audio) {

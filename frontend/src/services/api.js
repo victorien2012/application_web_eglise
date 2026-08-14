@@ -156,8 +156,8 @@ export async function telechargerRessource(predicationId, format = 'audio') {
 
 /**
  * Recupere le lien direct via yt-dlp sur le serveur et lance le telechargement (redirection native du navigateur).
- * @param {number|string} predicationId 
- * @param {'audio'|'video'} format 
+ * @param {number|string} predicationId
+ * @param {'audio'|'video'} format
  */
 export async function telechargerRessourceExterne(predicationId, format = 'video') {
   const reponse = await api.get(`/predications/${predicationId}/lien_telechargement_externe/?media=${format}`);
@@ -165,4 +165,15 @@ export async function telechargerRessourceExterne(predicationId, format = 'video
     // Rediriger le navigateur vers l'url directe du flux video/audio
     window.location.href = reponse.data.url;
   }
+}
+
+/**
+ * Journalise une lecture (audio ou video) sur la plateforme : incremente
+ * nombre_vues et alimente le journal analytique du pasteur. Ouvert aux
+ * visiteurs non connectes (comme les vues YouTube), donc pas d'intercepteur
+ * de token requis ici.
+ * @param {number|string} predicationId
+ */
+export async function journaliserLecture(predicationId) {
+  await api.post(`/predications/${predicationId}/journaliser_lecture/`);
 }

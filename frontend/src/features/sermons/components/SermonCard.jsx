@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Download, MonitorPlay, Headphones, UserRound, Loader2, Play } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
-import { telechargerRessource, telechargerRessourceExterne } from '../../../services/api';
+import { telechargerRessource, telechargerRessourceExterne, journaliserLecture } from '../../../services/api';
 import { Button } from '../../../components/Button';
 import { miniaturePredication } from '../../../utils/youtube';
 import './SermonCard.css';
@@ -14,6 +14,7 @@ export function SermonCard({ sermon }) {
   const { estConnecte } = useAuth();
   const [telechargement, setTelechargement] = useState(null); // { statut: 'chargement' | 'erreur', erreurMsg: '' }
   const [survol, setSurvol] = useState(false);
+  const vueEnregistreeRef = useRef(false);
 
   const youtubeMatch = sermon.url_video ? sermon.url_video.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/) : null;
   const youtubeId = youtubeMatch ? youtubeMatch[1] : null;
@@ -31,6 +32,10 @@ export function SermonCard({ sermon }) {
 
   const handlePlay = () => {
     if (sermon.fichier_audio) {
+      if (!vueEnregistreeRef.current) {
+        vueEnregistreeRef.current = true;
+        journaliserLecture(sermon.id).catch(() => {});
+      }
       const event = new CustomEvent('play-sermon', {
         detail: { url: sermon.fichier_audio, title: sermon.titre },
       });
