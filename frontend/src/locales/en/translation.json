@@ -319,7 +319,16 @@
     "personal_data_desc": "You are in control of your data. Export them or request the permanent deletion of your account.",
     "export_btn": "Export my data",
     "delete_btn": "Delete my account",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "security": "Security",
+    "security_desc": "Change your password. Use a unique password that you don't use on any other site.",
+    "current_password": "Current password",
+    "new_password": "New password",
+    "confirm_new_password": "Confirm new password",
+    "change_password_btn": "Change password",
+    "change_password_success": "Your password has been changed successfully.",
+    "change_password_mismatch": "The two passwords do not match.",
+    "change_password_error": "Password change failed."
   },
   "admin": {
     "status_new": "New",

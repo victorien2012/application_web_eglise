@@ -9,6 +9,7 @@ from .auth_views import (
     ConfirmationReinitialisationMotDePasseView,
     VerificationEmailView,
     RenvoyerVerificationEmailView,
+    ChangerMotDePasseView,
     MesDonneesView,
     SupprimerCompteView,
 )

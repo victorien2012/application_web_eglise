@@ -318,6 +318,7 @@
 .icon-favoris   { background: #f43f5e; box-shadow: 0 4px 12px rgba(244,63,94,0.25); }
 .icon-abos      { background: var(--primary); box-shadow: 0 4px 12px rgba(0,74,148,0.25); }
 .icon-historique{ background: #0ea5e9; box-shadow: 0 4px 12px rgba(14,165,233,0.25); }
+.icon-securite  { background: #16a34a; box-shadow: 0 4px 12px rgba(22,163,74,0.25); }
 .icon-rgpd      { background: #64748b; box-shadow: 0 4px 12px rgba(71,85,105,0.25); }
 
 /* ── Listes ──────────────────────────────────────────────────────────────── */
@@ -395,6 +396,36 @@
 .btn-danger:hover {
   background: #ef4444; color: #fff;
   box-shadow: 0 4px 12px rgba(239,68,68,0.2); transform: translateY(-2px);
+}
+
+/* ── Formulaire securite (changement de mot de passe) ───────────────────── */
+.profil-form-securite {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.profil-form-securite input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--profil-border);
+  border-radius: 10px;
+  background: var(--bg-alt);
+  color: var(--profil-text-main);
+  font-size: 0.92rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.profil-form-securite input:focus {
+  outline: none;
+  border-color: var(--profil-primary);
+  box-shadow: 0 0 0 3px rgba(0, 74, 148, 0.12);
+}
+
+.profil-form-securite button[type="submit"] {
+  align-self: flex-start;
+  margin-top: 0.15rem;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */

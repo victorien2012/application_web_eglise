@@ -319,7 +319,16 @@
     "personal_data_desc": "Vous avez le contrôle sur vos données. Exportez-les ou demandez la suppression définitive de votre compte.",
     "export_btn": "Exporter mes données",
     "delete_btn": "Supprimer mon compte",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "security": "Sécurité",
+    "security_desc": "Changez votre mot de passe. Utilisez un mot de passe unique que vous n'utilisez sur aucun autre site.",
+    "current_password": "Mot de passe actuel",
+    "new_password": "Nouveau mot de passe",
+    "confirm_new_password": "Confirmer le nouveau mot de passe",
+    "change_password_btn": "Changer le mot de passe",
+    "change_password_success": "Votre mot de passe a été modifié avec succès.",
+    "change_password_mismatch": "Les deux mots de passe ne correspondent pas.",
+    "change_password_error": "Le changement de mot de passe a échoué."
   },
   "admin": {
     "status_new": "Nouveau",

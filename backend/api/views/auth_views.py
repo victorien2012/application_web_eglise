@@ -19,6 +19,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api.models import Pasteur, ProfilUtilisateur
 from api.serializers import (
     AbonnementSerializer,
+    ChangerMotDePasseSerializer,
     CommentaireSerializer,
     ConfirmationReinitialisationSerializer,
     DemandeReinitialisationSerializer,
@@ -260,6 +261,32 @@ class RenvoyerVerificationEmailView(APIView):
         envoyer_email_verification(request.user)
         return Response(
             {"detail": "Un nouvel email de verification a ete envoye."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class ChangerMotDePasseView(APIView):
+    """Permet a l'utilisateur connecte de changer son mot de passe en
+    fournissant l'actuel — distinct du flux « mot de passe oublie », qui
+    passe par un lien envoye par email sans connaissance du mot de passe
+    actuel."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangerMotDePasseSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        donnees = serializer.validated_data
+
+        if not request.user.check_password(donnees['mot_de_passe_actuel']):
+            return Response(
+                {"mot_de_passe_actuel": ["Mot de passe actuel incorrect."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        request.user.set_password(donnees['nouveau_mot_de_passe'])
+        request.user.save(update_fields=['password'])
+        return Response(
+            {"detail": "Votre mot de passe a ete modifie avec succes."},
             status=status.HTTP_200_OK,
         )
 

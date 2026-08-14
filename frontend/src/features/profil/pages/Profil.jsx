@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Heart, BellRing, History, Download, Trash2,
-  Loader2, UserRound, LogIn, BookOpen, CheckCircle2, AlertTriangle
+  Loader2, UserRound, LogIn, BookOpen, CheckCircle2, AlertTriangle, KeyRound
 } from 'lucide-react';
 import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import { Toast } from 'primereact/toast';
@@ -22,6 +22,9 @@ export function Profil() {
   const [chargement, setChargement] = useState(true);
   const [imgErreur, setImgErreur] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [motDePasseForm, setMotDePasseForm] = useState({ actuel: '', nouveau: '', confirmation: '' });
+  const [motDePasseErreur, setMotDePasseErreur] = useState('');
+  const [motDePasseEnCours, setMotDePasseEnCours] = useState(false);
   const toast = useRef(null);
 
   useEffect(() => {
@@ -54,6 +57,35 @@ export function Profil() {
       URL.revokeObjectURL(url);
     } catch {
       setActionRgpd(t('profile.export_error'));
+    }
+  }
+
+  async function changerMotDePasse(e) {
+    e.preventDefault();
+    setMotDePasseErreur('');
+
+    if (motDePasseForm.nouveau !== motDePasseForm.confirmation) {
+      setMotDePasseErreur(t('profile.change_password_mismatch'));
+      return;
+    }
+
+    setMotDePasseEnCours(true);
+    try {
+      await api.post('/auth/changer-mot-de-passe/', {
+        mot_de_passe_actuel: motDePasseForm.actuel,
+        nouveau_mot_de_passe: motDePasseForm.nouveau,
+      });
+      setMotDePasseForm({ actuel: '', nouveau: '', confirmation: '' });
+      toast.current?.show({ severity: 'success', summary: t('profile.change_password_success'), life: 4000 });
+    } catch (error) {
+      const donnees = error.response?.data;
+      const message = donnees?.mot_de_passe_actuel?.[0]
+        || donnees?.nouveau_mot_de_passe?.[0]
+        || donnees?.detail
+        || t('profile.change_password_error');
+      setMotDePasseErreur(message);
+    } finally {
+      setMotDePasseEnCours(false);
     }
   }
 
@@ -231,6 +263,45 @@ export function Profil() {
                 ))}
               </ul>
             ) : <Vide texte={t('profile.no_history')} />}
+          </section>
+
+          {/* Sécurité */}
+          <section className="profil-card">
+            <h2><div className="icon-wrapper icon-securite"><KeyRound size={18} /></div>{t('profile.security')}</h2>
+            <p className="profil-info" style={{ marginBottom: '1rem' }}>
+              {t('profile.security_desc')}
+            </p>
+            <form className="profil-form-securite" onSubmit={changerMotDePasse}>
+              <input
+                type="password"
+                placeholder={t('profile.current_password')}
+                value={motDePasseForm.actuel}
+                onChange={(e) => setMotDePasseForm((f) => ({ ...f, actuel: e.target.value }))}
+                autoComplete="current-password"
+                required
+              />
+              <input
+                type="password"
+                placeholder={t('profile.new_password')}
+                value={motDePasseForm.nouveau}
+                onChange={(e) => setMotDePasseForm((f) => ({ ...f, nouveau: e.target.value }))}
+                autoComplete="new-password"
+                required
+              />
+              <input
+                type="password"
+                placeholder={t('profile.confirm_new_password')}
+                value={motDePasseForm.confirmation}
+                onChange={(e) => setMotDePasseForm((f) => ({ ...f, confirmation: e.target.value }))}
+                autoComplete="new-password"
+                required
+              />
+              {motDePasseErreur && <div className="profil-erreur">{motDePasseErreur}</div>}
+              <button type="submit" className="btn-profil btn-export" disabled={motDePasseEnCours}>
+                {motDePasseEnCours ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <KeyRound size={18} />}
+                {t('profile.change_password_btn')}
+              </button>
+            </form>
           </section>
 
           {/* RGPD */}

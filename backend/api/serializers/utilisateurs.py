@@ -170,3 +170,15 @@ class ConfirmationReinitialisationSerializer(serializers.Serializer):
 class VerificationEmailSerializer(serializers.Serializer):
     uid = serializers.CharField()
     token = serializers.CharField()
+
+
+class ChangerMotDePasseSerializer(serializers.Serializer):
+    mot_de_passe_actuel = serializers.CharField(write_only=True)
+    nouveau_mot_de_passe = serializers.CharField(write_only=True)
+
+    def validate_nouveau_mot_de_passe(self, value):
+        try:
+            validate_password(value)
+        except DjangoValidationError as erreur:
+            raise serializers.ValidationError(list(erreur.messages))
+        return value

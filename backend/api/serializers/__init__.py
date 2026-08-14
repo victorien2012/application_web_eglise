@@ -13,6 +13,7 @@ from .utilisateurs import (  # noqa: F401
     DemandeReinitialisationSerializer,
     ConfirmationReinitialisationSerializer,
     VerificationEmailSerializer,
+    ChangerMotDePasseSerializer,
 )
 
 from .contenu import (  # noqa: F401

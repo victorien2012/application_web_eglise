@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     AbonnementViewSet,
     CategorieViewSet,
+    ChangerMotDePasseView,
     CommentaireViewSet,
     ConfirmationReinitialisationMotDePasseView,
     ConnexionTokenView,
@@ -82,6 +83,7 @@ urlpatterns = [
         RenvoyerVerificationEmailView.as_view(),
         name='renvoyer_verification',
     ),
+    path('auth/changer-mot-de-passe/', ChangerMotDePasseView.as_view(), name='changer_mot_de_passe'),
     path('auth/mes-donnees/', MesDonneesView.as_view(), name='mes_donnees'),
     path('auth/mon-compte/', SupprimerCompteView.as_view(), name='supprimer_compte'),
 ]

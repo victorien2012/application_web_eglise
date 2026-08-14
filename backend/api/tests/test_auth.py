@@ -187,6 +187,63 @@ class ReinitialisationMotDePasseTests(APITestCase):
         self.assertIn("nouveau_mot_de_passe", response.data)
 
 
+class ChangerMotDePasseTests(APITestCase):
+    def setUp(self):
+        self.utilisateur = User.objects.create_user(
+            username="membre_securite",
+            email="securite@example.com",
+            password="AncienMotDePasse123",
+        )
+
+    def test_utilisateur_non_connecte_est_rejete(self):
+        response = self.client.post(
+            reverse("changer_mot_de_passe"),
+            {"mot_de_passe_actuel": "AncienMotDePasse123", "nouveau_mot_de_passe": "NouveauMotDePasse456"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_mot_de_passe_actuel_correct_change_le_mot_de_passe(self):
+        self.client.force_authenticate(user=self.utilisateur)
+
+        response = self.client.post(
+            reverse("changer_mot_de_passe"),
+            {"mot_de_passe_actuel": "AncienMotDePasse123", "nouveau_mot_de_passe": "NouveauMotDePasse456"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.utilisateur.refresh_from_db()
+        self.assertTrue(self.utilisateur.check_password("NouveauMotDePasse456"))
+
+    def test_mot_de_passe_actuel_incorrect_est_rejete(self):
+        self.client.force_authenticate(user=self.utilisateur)
+
+        response = self.client.post(
+            reverse("changer_mot_de_passe"),
+            {"mot_de_passe_actuel": "MauvaisMotDePasse", "nouveau_mot_de_passe": "NouveauMotDePasse456"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("mot_de_passe_actuel", response.data)
+        self.utilisateur.refresh_from_db()
+        self.assertTrue(self.utilisateur.check_password("AncienMotDePasse123"))
+
+    def test_nouveau_mot_de_passe_faible_est_rejete(self):
+        self.client.force_authenticate(user=self.utilisateur)
+
+        response = self.client.post(
+            reverse("changer_mot_de_passe"),
+            {"mot_de_passe_actuel": "AncienMotDePasse123", "nouveau_mot_de_passe": "123"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("nouveau_mot_de_passe", response.data)
+
+
 
 class VerificationEmailTests(APITestCase):
     def test_inscription_donne_un_compte_utilisable_sans_verification(self):
