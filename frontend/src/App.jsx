@@ -67,6 +67,17 @@ export default function App() {
     setIsAccountMenuOpen(false);
   }, [location.pathname]);
 
+  // Remonte en haut a chaque nouvelle page : sans ca, une navigation depuis
+  // le bas d'une page (ex. carte « Visionner » en bas de l'accueil) arrivait
+  // sur la nouvelle page deja scrollee au meme endroit — on tombait sur le
+  // pied de page au lieu du contenu. Le conteneur de defilement reel est
+  // #root (overflow-x masque sur body y rend l'overflow-y automatique),
+  // pas window : les deux sont remontes par securite.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.getElementById('root')?.scrollTo(0, 0);
+  }, [location.pathname]);
+
   // Fermer le dropdown au clic extérieur
   useEffect(() => {
     const handleOutsideClick = (e) => {
