@@ -1180,3 +1180,47 @@ body {
     padding: 1.5rem 1rem;
   }
 }
+
+/* ── Apercu video (tableau de gestion) ──────────────────────────────────────
+   Contrairement a la page de lecture publique (SermonDetail), qui integre
+   desormais le lecteur directement dans la mise en page, cet apercu reste
+   une fenetre : le pasteur regarde un extrait sans quitter son tableau. */
+.video-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  z-index: 1200;
+}
+
+.video-preview-panel {
+  position: relative;
+  width: min(90vw, 1000px);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.video-preview-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.6);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.video-preview-close:hover {
+  background: rgba(15, 23, 42, 0.85);
+}

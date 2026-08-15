@@ -1157,8 +1157,24 @@ export function PastorDashboard() {
                 <GestionPiecesJointes predicationId={piecesOuvertes} onClose={() => setPiecesOuvertes(null)} />
               )}
 
-              {videoEnLecture && (
-                <VideoPlayer src={videoEnLecture} onClose={() => setVideoEnLecture(null)} />
+              {videoEnLecture && createPortal(
+                <div
+                  className="video-preview-overlay"
+                  onClick={() => setVideoEnLecture(null)}
+                >
+                  <div className="video-preview-panel" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      className="video-preview-close"
+                      onClick={() => setVideoEnLecture(null)}
+                      aria-label="Fermer l'aperçu"
+                    >
+                      <X size={20} />
+                    </button>
+                    <VideoPlayer src={videoEnLecture} />
+                  </div>
+                </div>,
+                document.body
               )}
 
 

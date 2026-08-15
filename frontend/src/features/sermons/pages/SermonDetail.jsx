@@ -195,9 +195,11 @@ export function SermonDetail() {
       <div className={`sermon-detail-grid ${modeCinema ? 'mode-cinema-active' : ''}`}>
         {/* COLONNE PRINCIPALE (GAUCHE) */}
         <div className="sermon-main-col">
-          {/* Cover Interactive */}
+          {/* Cover Interactive / Lecteur */}
           <div className="sermon-interactive-cover-wrapper">
-            {coverUrl ? (
+            {showVideo ? (
+              <VideoPlayer src={sermon.fichier_video || sermon.url_video} />
+            ) : coverUrl ? (
               <div className="sermon-cover-interactive" onClick={handleMediaPlay} style={{ cursor: aDuMedia ? 'pointer' : 'default' }}>
                 <img src={coverUrl} alt={sermon.titre} className="cover-img" />
                 {aDuMedia && (
@@ -435,10 +437,6 @@ export function SermonDetail() {
             ))}
           </div>
         </div>
-      )}
-
-      {showVideo && (
-        <VideoPlayer src={sermon.fichier_video || sermon.url_video} onClose={() => setShowVideo(false)} />
       )}
 
       {/* MODAL DE TÉLÉCHARGEMENT */}

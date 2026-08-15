@@ -6,7 +6,6 @@ import { Search, PlaySquare, FileText, Loader2, Play, Film, Mic2, Download, Layo
 import { useTranslation } from 'react-i18next';
 import { api, extraireListe, telechargerRessource, telechargerRessourceExterne } from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
-import { VideoPlayer } from '../../sermons/components/VideoPlayer';
 import { SermonTable } from '../../sermons/components/SermonTable';
 import { SermonCard } from '../components/SermonCard';
 import Pagination from '../../../components/Pagination';
@@ -36,7 +35,6 @@ export function Videos() {
   const [page, setPage] = useState(1);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState('');
-  const [videoEnLecture, setVideoEnLecture] = useState(null);
   const [telechargement, setTelechargement] = useState(null); // { sermon, statut: 'chargement' | 'erreur', erreurMsg: '' }
   const [vueActive, setVueActive] = useState('grille'); // 'grille' ou 'liste'
   const [filtreType, setFiltreType] = useState('tous'); // 'tous', 'video', 'audio'
@@ -220,7 +218,7 @@ export function Videos() {
                 onImageClick={(p) => {
                   const isVideo = p.type_media === 'VIDEO' || !!p.url_video;
                   if (isVideo && p.url_video) {
-                    setVideoEnLecture(p.url_video);
+                    navigate(`/sermon/${p.id}`);
                   }
                 }}
                 renderActions={(p) => {
@@ -228,7 +226,7 @@ export function Videos() {
                   return (
                     <>
                       {isVideo && (p.url_video || p.fichier_video) && (
-                        <button type="button" className="btn-action btn-icon-only btn-visionner" onClick={() => setVideoEnLecture(p.url_video || p.fichier_video)} title={t('videos.action_watch')}>
+                        <button type="button" className="btn-action btn-icon-only btn-visionner" onClick={() => navigate(`/sermon/${p.id}`)} title={t('videos.action_watch')}>
                           <Play size={14} fill="currentColor" />
                         </button>
                       )}
@@ -331,11 +329,6 @@ export function Videos() {
       )}
 
       </div>{/* fin videos-body */}
-
-      {videoEnLecture && createPortal(
-        <VideoPlayer src={videoEnLecture} onClose={() => setVideoEnLecture(null)} />,
-        document.body
-      )}
     </div>
   );
 }
