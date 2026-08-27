@@ -90,3 +90,26 @@ def lancer_import_youtube_async(channel_id, pasteur_id):
             connection.close()
 
     threading.Thread(target=_tache, daemon=True).start()
+
+
+def lancer_telechargement_videos_async(job_id, pasteur_id):
+    """Lance le telechargement en masse des fichiers video dans un thread —
+    potentiellement long (plusieurs Go, plusieurs heures pour une chaine
+    entiere), ne doit donc jamais bloquer la requete HTTP."""
+    def _tache():
+        from django.db import connection
+        from api.models import TelechargementYoutube
+        try:
+            call_command('telecharger_videos_youtube', pasteur=pasteur_id, job_id=job_id)
+        except Exception:  # noqa: BLE001 — on journalise sans propager (thread detache)
+            logger.exception(
+                "Echec du telechargement video asynchrone (job %s, pasteur %s)",
+                job_id, pasteur_id,
+            )
+            TelechargementYoutube.objects.filter(pk=job_id).update(
+                statut='ERREUR', message="Erreur inattendue — voir les journaux serveur.",
+            )
+        finally:
+            connection.close()
+
+    threading.Thread(target=_tache, daemon=True).start()

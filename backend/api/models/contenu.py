@@ -3,6 +3,14 @@ from django.db import models
 from .utilisateurs import Pasteur
 
 
+def chemin_video_predication(instance, filename):
+    """Organise les vidéos téléchargées en masse par année de publication
+    (ex. videos/2025/abc123.mp4) — plus facile à parcourir manuellement
+    qu'un unique dossier pour toute une chaîne YouTube."""
+    annee = instance.date_publication.year if instance.date_publication else 'sans-date'
+    return f'videos/{annee}/{filename}'
+
+
 class Predication(models.Model):
     TYPE_MEDIA_CHOICES = [
         ('AUDIO', 'Audio'),
@@ -15,7 +23,7 @@ class Predication(models.Model):
     description = models.TextField(blank=True, null=True, db_column='description')
     type_media = models.CharField(max_length=10, choices=TYPE_MEDIA_CHOICES, default='AUDIO', db_column='type_media')
     fichier_audio = models.FileField(upload_to='audios/', blank=True, null=True, db_column='fichier_audio')
-    fichier_video = models.FileField(upload_to='videos/', blank=True, null=True, db_column='fichier_video')
+    fichier_video = models.FileField(upload_to=chemin_video_predication, blank=True, null=True, db_column='fichier_video')
     url_video = models.URLField(blank=True, null=True, help_text="Lien externe (YouTube, Vimeo, etc.)", db_column='url_video')
     youtube_id = models.CharField(
         max_length=20,
@@ -174,3 +182,35 @@ class Document(models.Model):
 
     def __str__(self):
         return self.titre
+
+
+class TelechargementYoutube(models.Model):
+    """Suivi d'un telechargement en masse des fichiers video d'une chaine
+    YouTube, declenche par un administrateur. Tourne en arriere-plan (thread
+    serveur, voir youtube_service.lancer_telechargement_videos_async) — ce
+    modele permet au frontend de suivre la progression par sondage."""
+
+    STATUT_CHOICES = [
+        ('EN_COURS', 'En cours'),
+        ('TERMINE', 'Terminé'),
+        ('ERREUR', 'Erreur'),
+    ]
+
+    pasteur = models.ForeignKey(
+        Pasteur, on_delete=models.CASCADE,
+        related_name='telechargements_youtube', db_column='pasteur_id',
+    )
+    statut = models.CharField(max_length=10, choices=STATUT_CHOICES, default='EN_COURS', db_column='statut')
+    total_videos = models.IntegerField(default=0, db_column='total_videos')
+    videos_traitees = models.IntegerField(default=0, db_column='videos_traitees')
+    videos_echouees = models.IntegerField(default=0, db_column='videos_echouees')
+    message = models.TextField(blank=True, null=True, db_column='message')
+    cree_le = models.DateTimeField(auto_now_add=True, db_column='cree_le')
+    termine_le = models.DateTimeField(blank=True, null=True, db_column='termine_le')
+
+    class Meta:
+        db_table = 'telechargements_youtube'
+        ordering = ['-cree_le']
+
+    def __str__(self):
+        return f"Téléchargement YouTube #{self.pk} — {self.pasteur.nom_affichage} ({self.statut})"

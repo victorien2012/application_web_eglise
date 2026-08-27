@@ -8,7 +8,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from api.models import Pasteur, SouscriptionPasteur
+from api.models import Pasteur, Predication, SouscriptionPasteur, TelechargementYoutube
 from api.models.paiement import abonnement_pasteur_est_actif
 from api.services.youtube_service import (
     motif_blocage_import,
@@ -259,3 +259,80 @@ class AdminSynchronisationYoutubeTests(APITestCase):
         self.assertIn('Les vidéos', reponse.data['detail'])
         self.pasteur.refresh_from_db()
         self.assertEqual(self.pasteur.lien_youtube, 'https://www.youtube.com/@MaChaine')
+
+
+class AdminTelechargementVideosYoutubeTests(APITestCase):
+    """admin_telecharger_videos_youtube : telecharge les fichiers video des
+    predications deja synchronisees (avec youtube_id) pour un pasteur cree
+    par l'admin. Le telechargement lui-meme (yt-dlp) tourne dans un thread
+    detache : on le remplace ici par un mock pour ne pas dependre du reseau."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username='admin_dl', email='admin_dl@example.com', password='MotDePasseSolide123',
+            is_staff=True,
+        )
+        self.utilisateur_cible = User.objects.create_user(
+            username='pasteur_dl', email='pasteur_dl@example.com', password='MotDePasseSolide123'
+        )
+        self.pasteur = Pasteur.objects.create(
+            utilisateur=self.utilisateur_cible, nom_affichage='Pasteur DL',
+            est_valide=True, cree_par_admin=True,
+        )
+        self.client.force_authenticate(user=self.admin)
+
+    def test_refuse_si_pasteur_non_cree_par_admin(self):
+        autre_utilisateur = User.objects.create_user(
+            username='pasteur_public_dl', email='public_dl@example.com', password='MotDePasseSolide123'
+        )
+        pasteur_public = Pasteur.objects.create(
+            utilisateur=autre_utilisateur, nom_affichage='Pasteur Public DL', est_valide=True,
+            cree_par_admin=False,
+        )
+        reponse = self.client.post(
+            f'/api/pasteurs/{pasteur_public.id}/admin_telecharger_videos_youtube/'
+        )
+        self.assertEqual(reponse.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_refuse_si_non_admin(self):
+        self.client.force_authenticate(user=self.utilisateur_cible)
+        reponse = self.client.post(
+            f'/api/pasteurs/{self.pasteur.id}/admin_telecharger_videos_youtube/'
+        )
+        self.assertEqual(reponse.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_refuse_si_aucune_video_synchronisee(self):
+        reponse = self.client.post(
+            f'/api/pasteurs/{self.pasteur.id}/admin_telecharger_videos_youtube/'
+        )
+        self.assertEqual(reponse.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('api.views.pasteur_views.lancer_telechargement_videos_async')
+    def test_accepte_et_cree_un_job_si_videos_synchronisees(self, mock_telecharger):
+        Predication.objects.create(
+            pasteur=self.pasteur, titre='Vidéo test', type_media='VIDEO',
+            url_video='https://www.youtube.com/watch?v=abc123', youtube_id='abc123',
+        )
+        reponse = self.client.post(
+            f'/api/pasteurs/{self.pasteur.id}/admin_telecharger_videos_youtube/'
+        )
+        self.assertEqual(reponse.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(reponse.data['statut'], 'EN_COURS')
+        mock_telecharger.assert_called_once()
+        self.assertTrue(TelechargementYoutube.objects.filter(pasteur=self.pasteur).exists())
+
+    def test_statut_404_si_aucun_job(self):
+        reponse = self.client.get(
+            f'/api/pasteurs/{self.pasteur.id}/admin_statut_telechargement_youtube/'
+        )
+        self.assertEqual(reponse.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_statut_retourne_le_dernier_job(self):
+        TelechargementYoutube.objects.create(pasteur=self.pasteur, statut='TERMINE', total_videos=3, videos_traitees=3)
+        job_recent = TelechargementYoutube.objects.create(pasteur=self.pasteur, statut='EN_COURS', total_videos=5, videos_traitees=2)
+        reponse = self.client.get(
+            f'/api/pasteurs/{self.pasteur.id}/admin_statut_telechargement_youtube/'
+        )
+        self.assertEqual(reponse.status_code, status.HTTP_200_OK)
+        self.assertEqual(reponse.data['id'], job_recent.id)
+        self.assertEqual(reponse.data['statut'], 'EN_COURS')

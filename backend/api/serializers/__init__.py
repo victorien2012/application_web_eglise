@@ -29,6 +29,7 @@ from .contenu import (  # noqa: F401
     extraire_nom_predicateur,
     DocumentSerializer,
     DocumentEcritureSerializer,
+    TelechargementYoutubeSerializer,
 )
 
 from .interactions import (  # noqa: F401

@@ -20,6 +20,7 @@ from .contenu import (  # noqa: F401
     Serie,
     PieceJointe,
     Document,
+    TelechargementYoutube,
 )
 
 from .interactions import (  # noqa: F401

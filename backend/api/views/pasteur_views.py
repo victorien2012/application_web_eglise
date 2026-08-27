@@ -17,14 +17,16 @@ from api.models import (
     Pasteur,
     Predication,
     ProfilUtilisateur,
+    TelechargementYoutube,
 )
-from api.serializers import PasteurSerializer, PredicationSerializer
+from api.serializers import PasteurSerializer, PredicationSerializer, TelechargementYoutubeSerializer
 from api.services.email_service import (
     envoyer_email_rejet_pasteur,
     envoyer_email_validation_pasteur,
 )
 from api.services.youtube_service import (
     lancer_import_youtube_async,
+    lancer_telechargement_videos_async,
     motif_blocage_import,
     resoudre_channel_id_youtube,
 )
@@ -172,13 +174,72 @@ class PasteurViewSet(viewsets.ModelViewSet):
         if request.data.get('supprimer_videos'):
             Predication.objects.filter(pasteur=pasteur, url_video__icontains='youtube.com').delete()
             Predication.objects.filter(pasteur=pasteur, url_video__icontains='youtu.be').delete()
-            
+
         return Response({"detail": "La chaîne a été retirée avec succès."}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser],
+            url_path='admin_telecharger_videos_youtube')
+    def admin_telecharger_videos_youtube(self, request, pk=None):
+        """Lance le telechargement en masse des fichiers video (yt-dlp) de
+        toutes les predications synchronisees depuis YouTube pour ce pasteur,
+        et les attache au stockage de la plateforme (organise par annee).
+
+        Complementaire a admin_synchroniser_youtube, qui ne recupere que les
+        metadonnees : il faut d'abord synchroniser la chaine pour que les
+        predications existent, avant de pouvoir telecharger leurs fichiers.
+        """
+        try:
+            pasteur = Pasteur.objects.get(id=pk, cree_par_admin=True)
+        except Pasteur.DoesNotExist:
+            return Response(
+                {"detail": "Pasteur introuvable ou non créé par l'admin."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not Predication.objects.filter(
+            pasteur=pasteur, type_media='VIDEO',
+        ).exclude(youtube_id__isnull=True).exclude(youtube_id='').exists():
+            return Response(
+                {"detail": "Aucune vidéo synchronisée pour ce pasteur. "
+                           "Synchronisez d'abord la chaîne YouTube."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        job = TelechargementYoutube.objects.create(pasteur=pasteur)
+        lancer_telechargement_videos_async(job.id, pasteur.id)
+
+        return Response(
+            TelechargementYoutubeSerializer(job).data,
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAdminUser],
+            url_path='admin_statut_telechargement_youtube')
+    def admin_statut_telechargement_youtube(self, request, pk=None):
+        """Retourne le dernier telechargement en masse lance pour ce pasteur
+        — sonde par le frontend pour afficher la progression."""
+        try:
+            pasteur = Pasteur.objects.get(id=pk, cree_par_admin=True)
+        except Pasteur.DoesNotExist:
+            return Response(
+                {"detail": "Pasteur introuvable ou non créé par l'admin."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        job = TelechargementYoutube.objects.filter(pasteur=pasteur).order_by('-cree_le').first()
+        if not job:
+            return Response(
+                {"detail": "Aucun téléchargement en cours ou passé."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(TelechargementYoutubeSerializer(job).data)
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy', 'synchroniser_youtube']:
             return [permissions.IsAuthenticated()]
-        if self.action in ['valider', 'a_valider', 'admin_synchroniser_youtube', 'creer_compte_admin']:
+        if self.action in [
+            'valider', 'a_valider', 'admin_synchroniser_youtube', 'creer_compte_admin',
+            'admin_telecharger_videos_youtube', 'admin_statut_telechargement_youtube',
+        ]:
             return [permissions.IsAdminUser()]
         return [permissions.AllowAny()]
 
