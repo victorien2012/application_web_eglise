@@ -419,10 +419,11 @@ export function PastorDashboard() {
   }
 
   // Des qu'un lien YouTube reconnu est colle, recupere titre/description/
-  // predicateur devine depuis YouTube pour eviter de les ressaisir a la
-  // main — l'admin n'a plus qu'a les ajuster si besoin. Debounce le temps
-  // que la saisie se stabilise, et ne redeclenche pas pour un lien deja
-  // traite (notamment celui deja present a l'ouverture d'une modification).
+  // predicateur devine/date de mise en ligne depuis YouTube pour eviter de
+  // les ressaisir a la main — l'admin n'a plus qu'a les ajuster si besoin.
+  // Debounce le temps que la saisie se stabilise, et ne redeclenche pas pour
+  // un lien deja traite (notamment celui deja present a l'ouverture d'une
+  // modification).
   useEffect(() => {
     const idVideo = extraireIdVideoYoutube(formulaire.url_video);
     if (!idVideo || idVideo === idVideoInfoRecupereeRef.current) return;
@@ -440,6 +441,11 @@ export function PastorDashboard() {
             titre: data.titre || actuel.titre,
             description: data.description || actuel.description,
             nom_predicateur: data.nom_predicateur || actuel.nom_predicateur,
+            // Date a laquelle la video a ete mise en ligne : une valeur par
+            // defaut raisonnable pour la date de predication, que le pasteur
+            // reste libre de corriger si l'enseignement a ete donne un autre
+            // jour que sa publication sur YouTube.
+            date_predication: data.date_predication || actuel.date_predication,
           }
         ));
       } catch {

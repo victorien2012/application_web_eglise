@@ -302,9 +302,10 @@ class PredicationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def info_youtube(self, request):
-        """Recupere titre, description et predicateur devine depuis l'API
-        YouTube pour un lien colle dans le formulaire d'ajout de video —
-        evite au pasteur de ressaisir a la main ce que YouTube sait deja."""
+        """Recupere titre, description, predicateur devine et date de mise en
+        ligne depuis l'API YouTube pour un lien colle dans le formulaire
+        d'ajout de video — evite au pasteur de ressaisir a la main ce que
+        YouTube sait deja."""
         video_id = extraire_youtube_id(request.query_params.get('url', ''))
         if not video_id:
             return Response(
@@ -346,11 +347,17 @@ class PredicationViewSet(viewsets.ModelViewSet):
             or extraire_nom_predicateur(description)
             or snippet.get('channelTitle') or ''
         )
+        # « Date a laquelle la video a ete mise en ligne » sert de valeur par
+        # defaut raisonnable pour la date de predication (le pasteur reste
+        # libre de la corriger) : le format ISO (YYYY-MM-DDTHH:MM:SSZ) n'est
+        # tronque a la seule date que pour ce champ, qui n'a pas d'heure.
+        date_mise_en_ligne = (snippet.get('publishedAt') or '')[:10] or None
 
         return Response({
             'titre': titre,
             'description': description,
             'nom_predicateur': nom_predicateur,
+            'date_predication': date_mise_en_ligne,
         })
 
     def _get_adresse_ip(self, request):

@@ -76,6 +76,27 @@ class UploadPredicationTests(APITestCase):
         predication = Predication.objects.get(id=response.data["id"])
         self.assertTrue(predication.fichier_audio)
 
+    def test_date_predication_est_enregistree(self):
+        """date_predication existait dans le formulaire frontend et etait
+        envoyee a chaque enregistrement, mais absente du modele : silencieusement
+        ignoree par le serializer. Verifie qu'elle est desormais persistee."""
+        fichier = SimpleUploadedFile("predication.mp3", b"contenu-audio", content_type="audio/mpeg")
+        response = self.client.post(
+            "/api/predications/",
+            {
+                "titre": "Avec date de predication",
+                "type_media": "AUDIO",
+                "fichier_audio": fichier,
+                "est_publie": True,
+                "date_predication": "2024-06-15",
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        predication = Predication.objects.get(id=response.data["id"])
+        self.assertEqual(str(predication.date_predication), "2024-06-15")
+
     def test_upload_audio_mauvais_format_est_rejete(self):
         fichier = SimpleUploadedFile("predication.exe", b"binaire", content_type="application/octet-stream")
         response = self.client.post(
@@ -248,13 +269,15 @@ class ServiceVideosYoutubeFactice:
                 'title': 'Message du Pasteur Jean - La foi qui déplace les montagnes',
                 'description': "Une prédication puissante.\n\nPasteur Jean Dupont",
                 'channelTitle': 'Chaîne Église Test',
+                'publishedAt': '2024-06-15T18:30:00Z',
             }}]}
         return {'items': []}
 
 
 class InfoYoutubeTests(APITestCase):
-    """info_youtube : recupere titre/description/predicateur pour pre-remplir
-    le formulaire d'ajout de video par lien, sans ressaisie manuelle."""
+    """info_youtube : recupere titre/description/predicateur/date pour
+    pre-remplir le formulaire d'ajout de video par lien, sans ressaisie
+    manuelle."""
 
     def setUp(self):
         self.utilisateur = User.objects.create_user(
@@ -287,6 +310,7 @@ class InfoYoutubeTests(APITestCase):
         self.assertIn('La foi qui déplace les montagnes', reponse.data['titre'])
         self.assertIn('prédication puissante', reponse.data['description'])
         self.assertEqual(reponse.data['nom_predicateur'], 'Jean')
+        self.assertEqual(reponse.data['date_predication'], '2024-06-15')
 
     @patch('googleapiclient.discovery.build')
     @patch.dict('os.environ', {'GOOGLE_API_KEY': 'cle-de-test'})

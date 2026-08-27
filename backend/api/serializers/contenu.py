@@ -93,7 +93,7 @@ class PredicationSerializer(serializers.ModelSerializer):
             'fichier_audio', 'url_fichier_audio', 'fichier_video', 'url_fichier_video',
             'url_video', 'youtube_id', 'nom_predicateur', 'image_couverture', 'url_image_couverture', 'duree_secondes',
             'nombre_vues', 'nombre_telechargements', 'est_publie', 'est_a_la_une', 'date_publication',
-            'est_planifiee', 'categories', 'etiquettes', 'serie', 'pieces_jointes', 'cree_le'
+            'date_predication', 'est_planifiee', 'categories', 'etiquettes', 'serie', 'pieces_jointes', 'cree_le'
         ]
 
     def get_est_planifiee(self, obj):
@@ -192,7 +192,7 @@ class PredicationEcritureSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'pasteur', 'titre', 'description', 'type_media',
             'fichier_audio', 'fichier_video', 'url_video', 'nom_predicateur', 'image_couverture',
-            'duree_secondes', 'est_publie', 'est_a_la_une', 'date_publication', 'serie',
+            'duree_secondes', 'est_publie', 'est_a_la_une', 'date_publication', 'date_predication', 'serie',
             'categories_ids', 'etiquettes_ids'
         ]
         read_only_fields = ('pasteur',)

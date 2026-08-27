@@ -53,6 +53,17 @@ class Predication(models.Model):
         db_column='date_publication',
         help_text="Si renseignee et future, la predication n'est publique qu'a partir de cette date.",
     )
+    # Distincte de date_publication : celle-ci pilote la visibilite sur le
+    # site (planification), celle-ci est une information sur la predication
+    # elle-meme (quand elle a ete donnee). Champ deja present dans le
+    # formulaire frontend, mais jusqu'ici jamais relie a un champ du modele
+    # (envoye a chaque enregistrement, silencieusement ignore par le serializer).
+    date_predication = models.DateField(
+        blank=True,
+        null=True,
+        db_column='date_predication',
+        help_text="Date a laquelle la predication a ete donnee (distincte de la date de publication sur la plateforme).",
+    )
     categories = models.ManyToManyField(
         'Categorie',
         related_name='predications',
