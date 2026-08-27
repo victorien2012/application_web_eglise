@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ShieldCheck, Flag, BadgeCheck, BarChart3, CheckCircle, XCircle, Trash2, Clock, AlertTriangle, Users, Video, Eye, Download, MessageSquare, Heart, Bell, Megaphone, Edit, Menu, MonitorPlay, Settings, UserX, UserCheck } from 'lucide-react';
+import { ShieldCheck, Flag, BadgeCheck, BarChart3, CheckCircle, XCircle, Trash2, Clock, AlertTriangle, Users, Video, Eye, Download, MessageSquare, Heart, Bell, Megaphone, Edit, Menu, MonitorPlay, Settings, UserX, UserCheck, FolderDown } from 'lucide-react';
 import { api, extraireListe } from '../../../services/api';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../../components/Button';
@@ -83,6 +83,10 @@ export function Administration() {
   // New state for Publish Media modal
   const [showPublishMedia, setShowPublishMedia] = useState(false);
   const [selectedPasteurId, setSelectedPasteurId] = useState(null);
+  // Ouverture depuis le bouton dedie "Telecharger videos" (pasteurs inscrits
+  // eux-memes) plutot que "Publier media" (pasteurs crees par l'admin) :
+  // restreint la modale au seul onglet telechargement.
+  const [telechargerSeulement, setTelechargerSeulement] = useState(false);
 
   // Annonces Modal state
   const [showAnnonceModal, setShowAnnonceModal] = useState(false);
@@ -901,10 +905,23 @@ export function Administration() {
                     <Button
                       variant="primary"
                       icon={MonitorPlay}
-                      onClick={() => { setSelectedPasteurId(pasteur.id); setShowPublishMedia(true); }}
+                      onClick={() => { setSelectedPasteurId(pasteur.id); setTelechargerSeulement(false); setShowPublishMedia(true); }}
                       style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
                     >
                       Publier média
+                    </Button>
+                  )}
+                  {/* Pasteur inscrit lui-meme : pas de publication/synchro a
+                      sa place, seulement le telechargement de sauvegarde des
+                      videos deja synchronisees (par lui-meme). */}
+                  {!pasteur.cree_par_admin && pasteur.lien_youtube && (
+                    <Button
+                      variant="primary"
+                      icon={FolderDown}
+                      onClick={() => { setSelectedPasteurId(pasteur.id); setTelechargerSeulement(true); setShowPublishMedia(true); }}
+                      style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                    >
+                      Télécharger vidéos
                     </Button>
                   )}
                   {/* Sans chaine rattachee, le bouton n'avait aucun effet. */}
@@ -1454,8 +1471,9 @@ export function Administration() {
       />
       <PublishMediaModal
         isOpen={showPublishMedia}
-        onClose={() => { setShowPublishMedia(false); setSelectedPasteurId(null); }}
+        onClose={() => { setShowPublishMedia(false); setSelectedPasteurId(null); setTelechargerSeulement(false); }}
         pasteurId={selectedPasteurId}
+        telechargementSeul={telechargerSeulement}
         onPublished={() => {
           // La publication ne donnait aucun retour : rien ne distinguait un
           // enregistrement reussi d'un formulaire simplement referme.

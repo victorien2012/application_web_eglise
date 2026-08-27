@@ -187,12 +187,18 @@ class PasteurViewSet(viewsets.ModelViewSet):
         Complementaire a admin_synchroniser_youtube, qui ne recupere que les
         metadonnees : il faut d'abord synchroniser la chaine pour que les
         predications existent, avant de pouvoir telecharger leurs fichiers.
+
+        A la difference de admin_synchroniser_youtube, pas de restriction
+        cree_par_admin : le telechargement est une action de sauvegarde/
+        archivage cote plateforme, pas une publication de contenu — un admin
+        doit pouvoir l'utiliser aussi pour un pasteur inscrit lui-meme, des
+        lors que sa chaine a deja ete synchronisee (par lui ou par l'admin).
         """
         try:
-            pasteur = Pasteur.objects.get(id=pk, cree_par_admin=True)
+            pasteur = Pasteur.objects.get(id=pk)
         except Pasteur.DoesNotExist:
             return Response(
-                {"detail": "Pasteur introuvable ou non créé par l'admin."},
+                {"detail": "Pasteur introuvable."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -219,10 +225,10 @@ class PasteurViewSet(viewsets.ModelViewSet):
         """Retourne le dernier telechargement en masse lance pour ce pasteur
         — sonde par le frontend pour afficher la progression."""
         try:
-            pasteur = Pasteur.objects.get(id=pk, cree_par_admin=True)
+            pasteur = Pasteur.objects.get(id=pk)
         except Pasteur.DoesNotExist:
             return Response(
-                {"detail": "Pasteur introuvable ou non créé par l'admin."},
+                {"detail": "Pasteur introuvable."},
                 status=status.HTTP_404_NOT_FOUND,
             )
         job = TelechargementYoutube.objects.filter(pasteur=pasteur).order_by('-cree_le').first()

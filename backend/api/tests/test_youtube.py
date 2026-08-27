@@ -263,9 +263,13 @@ class AdminSynchronisationYoutubeTests(APITestCase):
 
 class AdminTelechargementVideosYoutubeTests(APITestCase):
     """admin_telecharger_videos_youtube : telecharge les fichiers video des
-    predications deja synchronisees (avec youtube_id) pour un pasteur cree
-    par l'admin. Le telechargement lui-meme (yt-dlp) tourne dans un thread
-    detache : on le remplace ici par un mock pour ne pas dependre du reseau."""
+    predications deja synchronisees (avec youtube_id) pour un pasteur —
+    cree par l'admin ou inscrit lui-meme : a la difference de
+    admin_synchroniser_youtube, le telechargement est une action de
+    sauvegarde cote plateforme, pas une publication de contenu, donc pas
+    restreinte a cree_par_admin. Le telechargement lui-meme (yt-dlp) tourne
+    dans un thread detache : on le remplace ici par un mock pour ne pas
+    dependre du reseau."""
 
     def setUp(self):
         self.admin = User.objects.create_user(
@@ -281,7 +285,8 @@ class AdminTelechargementVideosYoutubeTests(APITestCase):
         )
         self.client.force_authenticate(user=self.admin)
 
-    def test_refuse_si_pasteur_non_cree_par_admin(self):
+    @patch('api.views.pasteur_views.lancer_telechargement_videos_async')
+    def test_accepte_pour_un_pasteur_non_cree_par_admin(self, mock_telecharger):
         autre_utilisateur = User.objects.create_user(
             username='pasteur_public_dl', email='public_dl@example.com', password='MotDePasseSolide123'
         )
@@ -289,9 +294,18 @@ class AdminTelechargementVideosYoutubeTests(APITestCase):
             utilisateur=autre_utilisateur, nom_affichage='Pasteur Public DL', est_valide=True,
             cree_par_admin=False,
         )
+        Predication.objects.create(
+            pasteur=pasteur_public, titre='Vidéo test', type_media='VIDEO',
+            url_video='https://www.youtube.com/watch?v=abc123', youtube_id='abc123',
+        )
         reponse = self.client.post(
             f'/api/pasteurs/{pasteur_public.id}/admin_telecharger_videos_youtube/'
         )
+        self.assertEqual(reponse.status_code, status.HTTP_202_ACCEPTED)
+        mock_telecharger.assert_called_once()
+
+    def test_404_si_pasteur_inexistant(self):
+        reponse = self.client.post('/api/pasteurs/999999/admin_telecharger_videos_youtube/')
         self.assertEqual(reponse.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_refuse_si_non_admin(self):

@@ -16,11 +16,20 @@ const CONTRAINTE_AUDIO = {
   tailleMaxMo: 100,
 };
 
-export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
+export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, telechargementSeul = false }) {
   const { t } = useTranslation();
 
-  // Mode: 'video' (ajout par lien ou fichier) ou 'youtube' (synchroniser chaîne)
+  // Mode: 'video' (ajout par lien ou fichier), 'youtube' (synchroniser chaîne)
+  // ou 'telecharger' (télécharger les fichiers vidéo en masse).
   const [mode, setMode] = useState('video');
+
+  // Les pasteurs inscrits eux-mêmes (non créés par l'admin) n'ouvrent cette
+  // modale que pour le téléchargement en masse — ajouter une vidéo ou
+  // resynchroniser leur chaîne reste de leur ressort, pas de celui de
+  // l'admin. On force donc cet unique onglet à l'ouverture.
+  useEffect(() => {
+    if (isOpen) setMode(telechargementSeul ? 'telecharger' : 'video');
+  }, [isOpen, telechargementSeul]);
 
   // Form pour l'ajout de vidéo
   const [form, setForm] = useState({
@@ -256,29 +265,35 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
 
         <div className="pmmodal-header">
           <div className="pmmodal-icon">
-            <Upload size={24} />
+            {telechargementSeul ? <FolderDown size={24} /> : <Upload size={24} />}
           </div>
-          <h3>{t('admin.publish_media', 'Publier un média')}</h3>
+          <h3>{telechargementSeul ? 'Télécharger les vidéos' : t('admin.publish_media', 'Publier un média')}</h3>
         </div>
 
-        {/* Onglets : Vidéo / Synchroniser YouTube */}
+        {/* Onglets : Video / Synchroniser YouTube / Telecharger — un pasteur
+            inscrit lui-meme (telechargementSeul) ne voit que le dernier :
+            publier ou resynchroniser son contenu reste de son ressort. */}
         <div className="pmmodal-tabs">
-          <button
-            type="button"
-            className={`pmmodal-tab ${mode === 'video' ? 'active' : ''}`}
-            onClick={() => { setMode('video'); setError(''); setSuccess(''); }}
-          >
-            <LinkIcon size={16} />
-            Ajouter une vidéo
-          </button>
-          <button
-            type="button"
-            className={`pmmodal-tab ${mode === 'youtube' ? 'active' : ''}`}
-            onClick={() => { setMode('youtube'); setSyncError(''); setSyncSuccess(''); }}
-          >
-            <Youtube size={16} />
-            Synchroniser YouTube
-          </button>
+          {!telechargementSeul && (
+            <>
+              <button
+                type="button"
+                className={`pmmodal-tab ${mode === 'video' ? 'active' : ''}`}
+                onClick={() => { setMode('video'); setError(''); setSuccess(''); }}
+              >
+                <LinkIcon size={16} />
+                Ajouter une vidéo
+              </button>
+              <button
+                type="button"
+                className={`pmmodal-tab ${mode === 'youtube' ? 'active' : ''}`}
+                onClick={() => { setMode('youtube'); setSyncError(''); setSyncSuccess(''); }}
+              >
+                <Youtube size={16} />
+                Synchroniser YouTube
+              </button>
+            </>
+          )}
           <button
             type="button"
             className={`pmmodal-tab ${mode === 'telecharger' ? 'active' : ''}`}
