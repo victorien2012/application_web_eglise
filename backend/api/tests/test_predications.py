@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
@@ -227,4 +228,70 @@ class PieceJointeTests(APITestCase):
         response = self.client.delete(f"/api/pieces-jointes/{piece.id}/")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(PieceJointe.objects.filter(id=piece.id).exists())
+
+
+class ServiceVideosYoutubeFactice:
+    """Client YouTube minimal : ne repond que pour l'ID de video connu."""
+
+    ID_CONNU = 'abc12345678'
+
+    def videos(self):
+        return self
+
+    def list(self, **parametres):
+        self.parametres = parametres
+        return self
+
+    def execute(self):
+        if self.parametres.get('id') == self.ID_CONNU:
+            return {'items': [{'snippet': {
+                'title': 'Message du Pasteur Jean - La foi qui déplace les montagnes',
+                'description': "Une prédication puissante.\n\nPasteur Jean Dupont",
+                'channelTitle': 'Chaîne Église Test',
+            }}]}
+        return {'items': []}
+
+
+class InfoYoutubeTests(APITestCase):
+    """info_youtube : recupere titre/description/predicateur pour pre-remplir
+    le formulaire d'ajout de video par lien, sans ressaisie manuelle."""
+
+    def setUp(self):
+        self.utilisateur = User.objects.create_user(
+            username="pasteur_info_yt", email="info_yt@example.com", password="MotDePasseSolide123"
+        )
+        self.pasteur = creer_pasteur_publiant(self.utilisateur, "Pasteur Info YT")
+        self.client.force_authenticate(user=self.utilisateur)
+
+    def test_refuse_si_non_connecte(self):
+        self.client.force_authenticate(user=None)
+        reponse = self.client.get('/api/predications/info_youtube/?url=https://youtu.be/abc12345678')
+        self.assertEqual(reponse.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_refuse_si_lien_non_reconnu(self):
+        reponse = self.client.get('/api/predications/info_youtube/?url=https://exemple.com/pas-youtube')
+        self.assertEqual(reponse.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_503_si_cle_api_absente(self):
+        with patch.dict('os.environ', {}, clear=True):
+            reponse = self.client.get('/api/predications/info_youtube/?url=https://youtu.be/abc12345678')
+        self.assertEqual(reponse.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    @patch('googleapiclient.discovery.build')
+    @patch.dict('os.environ', {'GOOGLE_API_KEY': 'cle-de-test'})
+    def test_retourne_titre_description_et_predicateur_devine(self, mock_build):
+        mock_build.return_value = ServiceVideosYoutubeFactice()
+        reponse = self.client.get('/api/predications/info_youtube/?url=https://youtu.be/abc12345678')
+
+        self.assertEqual(reponse.status_code, status.HTTP_200_OK)
+        self.assertIn('La foi qui déplace les montagnes', reponse.data['titre'])
+        self.assertIn('prédication puissante', reponse.data['description'])
+        self.assertEqual(reponse.data['nom_predicateur'], 'Jean')
+
+    @patch('googleapiclient.discovery.build')
+    @patch.dict('os.environ', {'GOOGLE_API_KEY': 'cle-de-test'})
+    def test_video_introuvable(self, mock_build):
+        mock_build.return_value = ServiceVideosYoutubeFactice()
+        reponse = self.client.get('/api/predications/info_youtube/?url=https://youtu.be/introuvable12')
+        self.assertEqual(reponse.status_code, status.HTTP_404_NOT_FOUND)
 

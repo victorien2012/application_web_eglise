@@ -30,6 +30,7 @@ from api.serializers import (
     SerieEcritureSerializer,
     SerieSerializer,
 )
+from api.serializers.contenu import extraire_nom_predicateur, extraire_youtube_id
 
 logger = logging.getLogger(__name__)
 
@@ -298,6 +299,59 @@ class PredicationViewSet(viewsets.ModelViewSet):
                 {"detail": "Erreur lors de l'extraction de la vidéo externe."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def info_youtube(self, request):
+        """Recupere titre, description et predicateur devine depuis l'API
+        YouTube pour un lien colle dans le formulaire d'ajout de video —
+        evite au pasteur de ressaisir a la main ce que YouTube sait deja."""
+        video_id = extraire_youtube_id(request.query_params.get('url', ''))
+        if not video_id:
+            return Response(
+                {"detail": "Lien YouTube non reconnu."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        api_key = os.environ.get('GOOGLE_API_KEY')
+        if not api_key:
+            return Response(
+                {"detail": "La récupération automatique n'est pas configurée sur le serveur "
+                           "(clé API absente)."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        try:
+            from googleapiclient.discovery import build
+            service = build('youtube', 'v3', developerKey=api_key, cache_discovery=False)
+            reponse = service.videos().list(part='snippet', id=video_id).execute()
+        except Exception as erreur:  # noqa: BLE001
+            logger.exception("Echec recuperation info YouTube (%s) : %s", video_id, erreur)
+            return Response(
+                {"detail": "Impossible de joindre YouTube pour le moment. Réessayez plus tard."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        elements = reponse.get('items', [])
+        if not elements:
+            return Response(
+                {"detail": "Vidéo introuvable ou privée."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        snippet = elements[0].get('snippet', {})
+        titre = snippet.get('title') or ''
+        description = snippet.get('description') or ''
+        nom_predicateur = (
+            extraire_nom_predicateur(titre)
+            or extraire_nom_predicateur(description)
+            or snippet.get('channelTitle') or ''
+        )
+
+        return Response({
+            'titre': titre,
+            'description': description,
+            'nom_predicateur': nom_predicateur,
+        })
 
     def _get_adresse_ip(self, request):
         forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')

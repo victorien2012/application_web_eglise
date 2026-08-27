@@ -132,6 +132,11 @@ export function PastorDashboard() {
   const [resetFichiersKey, setResetFichiersKey] = useState(0);
   const [ongletActif, setOngletActif] = useState('catalogue');
   const [selectionnes, setSelectionnes] = useState([]);
+  const [chargementInfoYoutube, setChargementInfoYoutube] = useState(false);
+  // Evite de re-recuperer (et donc d'ecraser une saisie manuelle en cours)
+  // pour un lien deja traite — notamment celui deja present a l'ouverture
+  // du formulaire de modification.
+  const idVideoInfoRecupereeRef = useRef(null);
 
   const toggleSelectionnerTout = () => {
     const tousIdsSurPage = predicationsPagination.map(p => p.id);
@@ -413,6 +418,43 @@ export function PastorDashboard() {
     setFichiers((actuel) => ({ ...actuel, [cle]: probleme ? null : fichier }));
   }
 
+  // Des qu'un lien YouTube reconnu est colle, recupere titre/description/
+  // predicateur devine depuis YouTube pour eviter de les ressaisir a la
+  // main — l'admin n'a plus qu'a les ajuster si besoin. Debounce le temps
+  // que la saisie se stabilise, et ne redeclenche pas pour un lien deja
+  // traite (notamment celui deja present a l'ouverture d'une modification).
+  useEffect(() => {
+    const idVideo = extraireIdVideoYoutube(formulaire.url_video);
+    if (!idVideo || idVideo === idVideoInfoRecupereeRef.current) return;
+
+    const delai = setTimeout(async () => {
+      idVideoInfoRecupereeRef.current = idVideo;
+      setChargementInfoYoutube(true);
+      try {
+        const { data } = await api.get('/predications/info_youtube/', {
+          params: { url: formulaire.url_video },
+        });
+        setFormulaire((actuel) => (
+          extraireIdVideoYoutube(actuel.url_video) !== idVideo ? actuel : {
+            ...actuel,
+            titre: data.titre || actuel.titre,
+            description: data.description || actuel.description,
+            nom_predicateur: data.nom_predicateur || actuel.nom_predicateur,
+          }
+        ));
+      } catch {
+        // Recuperation automatique en confort seulement : en cas d'echec
+        // (cle API absente, video privee...) le pasteur saisit a la main,
+        // sans message d'erreur bloquant pour un champ qui reste optionnel.
+      } finally {
+        setChargementInfoYoutube(false);
+      }
+    }, 600);
+
+    return () => clearTimeout(delai);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formulaire.url_video]);
+
   // Changer de format masque le champ devenu hors-sujet, mais sans ceci sa
   // valeur restait en memoire et etait quand meme envoyee au serveur : passer
   // de "Les deux" a "Video" apres avoir choisi un fichier audio l'aurait
@@ -448,6 +490,7 @@ export function PastorDashboard() {
     setFichiers(FICHIERS_VIDES);
     setResetFichiersKey((cle) => cle + 1);
     setOngletActif('catalogue');
+    idVideoInfoRecupereeRef.current = null;
   }
 
   function commencerEdition(predication) {
@@ -468,6 +511,10 @@ export function PastorDashboard() {
     });
     setFichiers(FICHIERS_VIDES);
     setResetFichiersKey((cle) => cle + 1);
+    // Le lien existant est deja associe a des infos correctes : ne pas
+    // relancer une recuperation (et un ecrasement) au simple chargement
+    // de la modification.
+    idVideoInfoRecupereeRef.current = extraireIdVideoYoutube(predication.url_video);
   }
 
   async function rechargerResume() {
@@ -727,6 +774,12 @@ export function PastorDashboard() {
               <small className="champ-aide">
                 {t('dashboard.form_youtube_help')}
               </small>
+
+              {chargementInfoYoutube ? (
+                <small className="champ-aide" role="status">
+                  {t('dashboard.form_youtube_fetching', 'Récupération du titre, de la description et du prédicateur depuis YouTube…')}
+                </small>
+              ) : null}
 
               {/* Le serveur n'enregistre youtube_id que si l'URL
                   correspond à l'un de ses motifs. Sans ce retour, un
