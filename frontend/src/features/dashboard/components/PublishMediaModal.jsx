@@ -130,10 +130,29 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, tel
       if (data.statut !== 'EN_COURS') {
         arreterSondageTelechargement();
       }
+      return data;
     } catch {
       arreterSondageTelechargement();
+      return null;
     }
   };
+
+  // A l'ouverture, recupere le dernier job connu (s'il existe) pour que le
+  // zip d'un telechargement precedent reste accessible sans devoir tout
+  // relancer — et reprend le sondage s'il etait toujours en cours.
+  useEffect(() => {
+    if (!isOpen || !pasteurId) return;
+    let active = true;
+    (async () => {
+      const data = await sonderTelechargement();
+      if (active && data?.statut === 'EN_COURS') {
+        arreterSondageTelechargement();
+        sondagePollRef.current = setInterval(sonderTelechargement, 3000);
+      }
+    })();
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, pasteurId]);
 
   const handleTelechargerVideos = async () => {
     if (!pasteurId) return;
@@ -442,8 +461,8 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, tel
         )}
 
         {/* Mode : Télécharger en masse les fichiers vidéo (yt-dlp) des
-            prédications déjà synchronisées, et les stocker sur la plateforme,
-            classées par année de publication. */}
+            prédications déjà synchronisées, regroupés dans un seul zip
+            (dossiers par année de publication à l'intérieur). */}
         {mode === 'telecharger' && (
           <div className="pmmodal-form">
             <div className="pmmodal-youtube-info">
@@ -452,9 +471,9 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, tel
                 <h4>Télécharger les vidéos</h4>
                 <p>
                   Télécharge le fichier de chaque prédication déjà synchronisée depuis YouTube
-                  (onglet précédent) et l'enregistre sur la plateforme, classé par année de
-                  publication. Peut prendre longtemps pour une chaîne complète — la progression
-                  reste visible même si vous fermez cette fenêtre.
+                  (onglet précédent) et les regroupe dans un seul fichier .zip (dossiers par année
+                  de publication à l'intérieur). Peut prendre longtemps pour une chaîne complète —
+                  la progression reste visible même si vous fermez cette fenêtre.
                 </p>
               </div>
             </div>
@@ -478,6 +497,16 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, tel
                   {dlJob.statut === 'TERMINE' && (dlJob.message || `${dlJob.videos_traitees} vidéo(s) traitée(s).`)}
                   {dlJob.statut === 'ERREUR' && (dlJob.message || 'Le téléchargement a échoué.')}
                 </p>
+                {dlJob.statut === 'TERMINE' && dlJob.fichier_zip && (
+                  <a
+                    href={dlJob.fichier_zip}
+                    className="pmmodal-btn pmmodal-btn-confirm"
+                    style={{ alignSelf: 'flex-start', textDecoration: 'none' }}
+                  >
+                    <FolderDown size={16} />
+                    Télécharger le zip
+                  </a>
+                )}
               </div>
             )}
 

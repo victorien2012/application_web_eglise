@@ -311,6 +311,6 @@ class TelechargementYoutubeSerializer(serializers.ModelSerializer):
         model = TelechargementYoutube
         fields = [
             'id', 'statut', 'total_videos', 'videos_traitees',
-            'videos_echouees', 'message', 'cree_le', 'termine_le',
+            'videos_echouees', 'fichier_zip', 'message', 'cree_le', 'termine_le',
         ]
         read_only_fields = fields

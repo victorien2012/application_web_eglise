@@ -184,11 +184,20 @@ class Document(models.Model):
         return self.titre
 
 
+def chemin_zip_telechargement(instance, filename):
+    """Un zip par job de telechargement, range par pasteur."""
+    return f'telechargements_youtube/{instance.pasteur_id}/{filename}'
+
+
 class TelechargementYoutube(models.Model):
     """Suivi d'un telechargement en masse des fichiers video d'une chaine
     YouTube, declenche par un administrateur. Tourne en arriere-plan (thread
     serveur, voir youtube_service.lancer_telechargement_videos_async) — ce
-    modele permet au frontend de suivre la progression par sondage."""
+    modele permet au frontend de suivre la progression par sondage.
+
+    Le resultat est un unique fichier .zip (dossiers par annee a
+    l'interieur) plutot qu'un fichier attache a chaque predication : plus
+    simple a recuperer pour l'admin qu'une multitude de fichiers epars."""
 
     STATUT_CHOICES = [
         ('EN_COURS', 'En cours'),
@@ -204,6 +213,9 @@ class TelechargementYoutube(models.Model):
     total_videos = models.IntegerField(default=0, db_column='total_videos')
     videos_traitees = models.IntegerField(default=0, db_column='videos_traitees')
     videos_echouees = models.IntegerField(default=0, db_column='videos_echouees')
+    fichier_zip = models.FileField(
+        upload_to=chemin_zip_telechargement, blank=True, null=True, db_column='fichier_zip',
+    )
     message = models.TextField(blank=True, null=True, db_column='message')
     cree_le = models.DateTimeField(auto_now_add=True, db_column='cree_le')
     termine_le = models.DateTimeField(blank=True, null=True, db_column='termine_le')

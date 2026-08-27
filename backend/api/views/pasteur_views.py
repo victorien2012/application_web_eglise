@@ -215,7 +215,7 @@ class PasteurViewSet(viewsets.ModelViewSet):
         lancer_telechargement_videos_async(job.id, pasteur.id)
 
         return Response(
-            TelechargementYoutubeSerializer(job).data,
+            TelechargementYoutubeSerializer(job, context={'request': request}).data,
             status=status.HTTP_202_ACCEPTED,
         )
 
@@ -237,7 +237,7 @@ class PasteurViewSet(viewsets.ModelViewSet):
                 {"detail": "Aucun téléchargement en cours ou passé."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        return Response(TelechargementYoutubeSerializer(job).data)
+        return Response(TelechargementYoutubeSerializer(job, context={'request': request}).data)
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy', 'synchroniser_youtube']:
