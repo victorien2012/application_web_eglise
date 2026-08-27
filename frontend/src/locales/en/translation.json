@@ -129,7 +129,21 @@
     "btn_set_password_loading": "Saving...",
     "password_mismatch": "The two passwords do not match.",
     "password_reset_success": "Password reset successfully. You can now log in.",
-    "password_reset_error": "Reset failed. The link might be expired."
+    "password_reset_error": "Reset failed. The link might be expired.",
+    "error_required_fields": "Please fill in all required fields.",
+    "error_invalid_email": "This email address is not valid.",
+    "error_password_too_short": "Password must be at least 8 characters long.",
+    "error_display_name_required": "Please enter your display name.",
+    "password_feedback_prompt": "Enter a password",
+    "password_feedback_weak": "Weak",
+    "password_feedback_medium": "Medium",
+    "password_feedback_strong": "Strong",
+    "benefits_faithful_1": "Follow your favorite pastors",
+    "benefits_faithful_2": "Pick up your reading history where you left off",
+    "benefits_faithful_3": "Download sermons and documents",
+    "benefits_pastor_1": "Publish your sermons and series",
+    "benefits_pastor_2": "Track your audience statistics",
+    "benefits_pastor_3": "Reach a new community"
   },
   "videos": {
     "download_login_required": "Log in or register to download this resource.",

@@ -129,7 +129,21 @@
     "btn_set_password_loading": "Enregistrement...",
     "password_mismatch": "Les deux mots de passe ne correspondent pas.",
     "password_reset_success": "Mot de passe réinitialisé. Vous pouvez vous connecter.",
-    "password_reset_error": "Réinitialisation impossible. Le lien est peut-être expiré."
+    "password_reset_error": "Réinitialisation impossible. Le lien est peut-être expiré.",
+    "error_required_fields": "Veuillez remplir tous les champs obligatoires.",
+    "error_invalid_email": "Cette adresse email n'est pas valide.",
+    "error_password_too_short": "Le mot de passe doit contenir au moins 8 caractères.",
+    "error_display_name_required": "Veuillez renseigner votre nom d'affichage.",
+    "password_feedback_prompt": "Saisissez un mot de passe",
+    "password_feedback_weak": "Faible",
+    "password_feedback_medium": "Moyen",
+    "password_feedback_strong": "Fort",
+    "benefits_faithful_1": "Suivez vos pasteurs favoris",
+    "benefits_faithful_2": "Retrouvez votre historique de lecture",
+    "benefits_faithful_3": "Téléchargez prédications et documents",
+    "benefits_pastor_1": "Publiez vos prédications et séries",
+    "benefits_pastor_2": "Suivez vos statistiques d'audience",
+    "benefits_pastor_3": "Touchez une nouvelle communauté"
   },
   "videos": {
     "download_login_required": "Connectez-vous ou inscrivez-vous pour télécharger cette ressource.",

@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { AtSign, LockKeyhole, UserRound, Phone, UserPlus, LogIn } from 'lucide-react';
+import { AtSign, LockKeyhole, UserRound, Phone, UserPlus, LogIn, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../context/AuthContext';
 import { useSite } from '../../../context/SiteContext';
 import { Button } from '../../../components/Button';
 import { Password } from 'primereact/password';
-import { Stepper } from 'primereact/stepper';
-import { StepperPanel } from 'primereact/stepperpanel';
 import './Auth.css';
+
+const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function CompteFidele() {
   const { t } = useTranslation();
@@ -16,17 +16,17 @@ export function CompteFidele() {
   const location = useLocation();
   const { connexion, inscription, deconnexion } = useAuth();
   const { siteConfig } = useSite();
-  
+
   // mode: 'login' | 'register'
   const [mode, setMode] = useState('login');
-  const [step, setStep] = useState(1);
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [contact, setContact] = useState('');
   const [password, setPassword] = useState('');
-  
+
   const [erreur, setErreur] = useState('');
+  const [champsInvalides, setChampsInvalides] = useState(new Set());
   const [soumission, setSoumission] = useState(false);
 
   const depuis = location.state?.depuis;
@@ -41,18 +41,42 @@ export function CompteFidele() {
     if (Array.isArray(premier)) msg = String(premier[0]);
     else if (typeof premier === 'object' && premier !== null) msg = JSON.stringify(premier);
     else msg = String(premier);
-    
+
     if (msg.includes("No active account found") || msg.includes("No active account")) {
       return "Identifiant ou mot de passe incorrect.";
     }
     return msg || "Action impossible. Veuillez réessayer.";
   }
 
+  // Valide le formulaire d'inscription cote client : messages precis et
+  // champs fautifs signales, plutot que de laisser l'API renvoyer une
+  // erreur generique apres un aller-retour reseau.
+  function validerInscription() {
+    const invalides = new Set();
+    if (!username.trim()) invalides.add('username');
+    if (!email.trim() || !REGEX_EMAIL.test(email.trim())) invalides.add('email');
+    if (password.length < 8) invalides.add('password');
+    setChampsInvalides(invalides);
+
+    if (invalides.size === 0) return null;
+    if (invalides.has('email') && email.trim()) return t('auth.error_invalid_email');
+    if (invalides.has('password') && password) return t('auth.error_password_too_short');
+    return t('auth.error_required_fields');
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setErreur('');
-    setSoumission(true);
 
+    if (mode === 'register') {
+      const messageValidation = validerInscription();
+      if (messageValidation) {
+        setErreur(messageValidation);
+        return;
+      }
+    }
+
+    setSoumission(true);
     try {
       if (mode === 'login') {
         const session = await connexion({ username, password });
@@ -82,6 +106,12 @@ export function CompteFidele() {
     }
   }
 
+  function changerMode(prochainMode) {
+    setMode(prochainMode);
+    setErreur('');
+    setChampsInvalides(new Set());
+  }
+
   return (
     <div className={`auth-layout-wrapper ${mode === 'login' ? 'connexion-layout-wrapper' : 'inscription-layout-wrapper'}`}>
       <div className="auth-visual-side">
@@ -95,6 +125,11 @@ export function CompteFidele() {
             <>
               <h2>{t('auth.register_welcome')}</h2>
               <p>{t('auth.register_welcome_desc')}</p>
+              <ul className="auth-visual-benefits">
+                <li><CheckCircle2 size={20} />{t('auth.benefits_faithful_1')}</li>
+                <li><CheckCircle2 size={20} />{t('auth.benefits_faithful_2')}</li>
+                <li><CheckCircle2 size={20} />{t('auth.benefits_faithful_3')}</li>
+              </ul>
             </>
           )}
         </div>
@@ -111,17 +146,17 @@ export function CompteFidele() {
           </div>
 
           <div className="auth-tabs">
-            <button 
-              type="button" 
+            <button
+              type="button"
               className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
-              onClick={() => { setMode('login'); setStep(1); setErreur(''); }}
+              onClick={() => changerMode('login')}
             >
               {t('auth.btn_login')}
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className={`auth-tab ${mode === 'register' ? 'active' : ''}`}
-              onClick={() => { setMode('register'); setStep(1); setErreur(''); }}
+              onClick={() => changerMode('register')}
             >
               {t('auth.btn_register')}
             </button>
@@ -132,7 +167,6 @@ export function CompteFidele() {
           ) : null}
 
           <form className="auth-form" onSubmit={handleSubmit}>
-            {/* ETAPE 1 (ou mode login) : Identifiants */}
             {mode === 'login' ? (
               <>
                 <div className="auth-field-floating">
@@ -166,116 +200,88 @@ export function CompteFidele() {
                     <label htmlFor="password">{t('auth.password')}</label>
                   </div>
                 </div>
-                
+
                 {erreur ? <p className="auth-error">{erreur}</p> : null}
-                
+
                 <Button variant="primary" icon={LogIn} type="submit" disabled={soumission} className="auth-submit-btn">
                   {soumission ? t('auth.btn_login_loading') : t('auth.btn_login')}
                 </Button>
               </>
             ) : (
-              <Stepper activeStep={step - 1} onChangeStep={(e) => { setErreur(''); setStep(e.index + 1); }} linear>
-                <StepperPanel header="Identifiants">
-                  <div className="auth-form" style={{ padding: '1rem 0' }}>
-                    <div className="auth-field-floating">
-                      <div className="auth-input-wrapper">
-                        <UserRound className="field-icon" size={18} />
-                        <input
-                          id="username"
-                          value={username}
-                          onChange={(event) => setUsername(event.target.value)}
-                          placeholder=" "
-                          autoComplete="username"
-                          required
-                        />
-                        <label htmlFor="username">{t('auth.username')}</label>
-                      </div>
-                    </div>
-
-                    <div className="auth-field-floating">
-                      <div className="auth-input-wrapper">
-                        <LockKeyhole className="field-icon" size={18} />
-                        <Password
-                          id="password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          toggleMask
-                          feedback={false}
-                          placeholder=" "
-                          autoComplete="new-password"
-                          required
-                        />
-                        <label htmlFor="password">{t('auth.password')}</label>
-                      </div>
-                    </div>
-
-                    {erreur ? <p className="auth-error">{erreur}</p> : null}
-
-                    <div className="workflow-actions">
-                      <Button 
-                        variant="primary" 
-                        type="button" 
-                        onClick={() => {
-                          if (!username || !password) {
-                            setErreur("Veuillez remplir les champs obligatoires.");
-                            return;
-                          }
-                          setErreur('');
-                          setStep(2);
-                        }} 
-                        className="auth-submit-btn"
-                      >
-                        Suivant
-                      </Button>
-                    </div>
+              // Un seul ecran plutot qu'un assistant en 2 etapes : 4 champs
+              // seulement, un assistant multi-etapes n'ajoutait que des clics.
+              <>
+                <div className="auth-field-floating">
+                  <div className={`auth-input-wrapper ${champsInvalides.has('username') ? 'a-erreur' : ''}`}>
+                    <UserRound className="field-icon" size={18} />
+                    <input
+                      id="username"
+                      value={username}
+                      onChange={(event) => setUsername(event.target.value)}
+                      placeholder=" "
+                      autoComplete="username"
+                      required
+                    />
+                    <label htmlFor="username">{t('auth.username')}</label>
                   </div>
-                </StepperPanel>
-                
-                <StepperPanel header="Contact">
-                  <div className="auth-form" style={{ padding: '1rem 0' }}>
-                    <div className="auth-field-floating">
-                      <div className="auth-input-wrapper">
-                        <AtSign className="field-icon" size={18} />
-                        <input
-                          id="email"
-                          type="email"
-                          value={email}
-                          onChange={(event) => setEmail(event.target.value)}
-                          placeholder=" "
-                          autoComplete="email"
-                          required
-                        />
-                        <label htmlFor="email">{t('auth.email')}</label>
-                      </div>
-                    </div>
+                </div>
 
-                    <div className="auth-field-floating">
-                      <div className="auth-input-wrapper">
-                        <Phone className="field-icon" size={18} />
-                        <input
-                          id="contact"
-                          type="tel"
-                          value={contact}
-                          onChange={(event) => setContact(event.target.value)}
-                          placeholder=" "
-                        />
-                        <label htmlFor="contact">{t('auth.contact')}</label>
-                      </div>
-                    </div>
-
-                    {erreur ? <p className="auth-error">{erreur}</p> : null}
-
-                    <div className="workflow-actions">
-                      <Button variant="outline-dark" type="button" onClick={() => setStep(1)} className="auth-submit-btn">
-                        Précédent
-                      </Button>
-                      <Button variant="primary" icon={UserPlus} type="submit" disabled={soumission} className="auth-submit-btn">
-                        {soumission ? t('auth.btn_register_loading') : t('auth.btn_register')}
-                      </Button>
-                    </div>
+                <div className="auth-field-floating">
+                  <div className={`auth-input-wrapper ${champsInvalides.has('email') ? 'a-erreur' : ''}`}>
+                    <AtSign className="field-icon" size={18} />
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder=" "
+                      autoComplete="email"
+                      required
+                    />
+                    <label htmlFor="email">{t('auth.email')}</label>
                   </div>
-                </StepperPanel>
-              </Stepper>
+                </div>
+
+                <div className="auth-field-floating">
+                  <div className={`auth-input-wrapper ${champsInvalides.has('password') ? 'a-erreur' : ''}`}>
+                    <LockKeyhole className="field-icon" size={18} />
+                    <Password
+                      id="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      toggleMask
+                      placeholder=" "
+                      autoComplete="new-password"
+                      required
+                      promptLabel={t('auth.password_feedback_prompt')}
+                      weakLabel={t('auth.password_feedback_weak')}
+                      mediumLabel={t('auth.password_feedback_medium')}
+                      strongLabel={t('auth.password_feedback_strong')}
+                    />
+                    <label htmlFor="password">{t('auth.password')}</label>
+                  </div>
+                </div>
+
+                <div className="auth-field-floating">
+                  <div className="auth-input-wrapper">
+                    <Phone className="field-icon" size={18} />
+                    <input
+                      id="contact"
+                      type="tel"
+                      value={contact}
+                      onChange={(event) => setContact(event.target.value)}
+                      placeholder=" "
+                    />
+                    <label htmlFor="contact">{t('auth.contact')}</label>
+                  </div>
+                </div>
+
+                {erreur ? <p className="auth-error">{erreur}</p> : null}
+
+                <Button variant="primary" icon={UserPlus} type="submit" disabled={soumission} className="auth-submit-btn">
+                  {soumission ? t('auth.btn_register_loading') : t('auth.btn_register')}
+                </Button>
+              </>
             )}
           </form>
 
