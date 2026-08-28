@@ -335,6 +335,42 @@ class AdminTelechargementVideosYoutubeTests(APITestCase):
         mock_telecharger.assert_called_once()
         self.assertTrue(TelechargementYoutube.objects.filter(pasteur=self.pasteur).exists())
 
+    @patch('api.views.pasteur_views.lancer_telechargement_videos_async')
+    def test_refuse_second_lancement_si_job_actif_tres_recent(self, mock_telecharger):
+        """Deux processus yt-dlp concurrents ecriraient dans le meme dossier
+        de travail : un job EN_COURS de quelques secondes est traite comme
+        reellement actif, pas comme bloque."""
+        Predication.objects.create(
+            pasteur=self.pasteur, titre='Vidéo test', type_media='VIDEO',
+            url_video='https://www.youtube.com/watch?v=abc123', youtube_id='abc123',
+        )
+        TelechargementYoutube.objects.create(pasteur=self.pasteur, statut='EN_COURS')
+
+        reponse = self.client.post(
+            f'/api/pasteurs/{self.pasteur.id}/admin_telecharger_videos_youtube/'
+        )
+        self.assertEqual(reponse.status_code, status.HTTP_409_CONFLICT)
+        mock_telecharger.assert_not_called()
+
+    @patch('api.views.pasteur_views.lancer_telechargement_videos_async')
+    def test_autorise_relance_si_job_actif_ancien(self, mock_telecharger):
+        """Un job EN_COURS date (thread probablement mort suite a une
+        interruption) ne doit pas bloquer indefiniment une relance."""
+        Predication.objects.create(
+            pasteur=self.pasteur, titre='Vidéo test', type_media='VIDEO',
+            url_video='https://www.youtube.com/watch?v=abc123', youtube_id='abc123',
+        )
+        job_bloque = TelechargementYoutube.objects.create(pasteur=self.pasteur, statut='EN_COURS')
+        TelechargementYoutube.objects.filter(pk=job_bloque.pk).update(
+            cree_le=timezone.now() - timedelta(minutes=5)
+        )
+
+        reponse = self.client.post(
+            f'/api/pasteurs/{self.pasteur.id}/admin_telecharger_videos_youtube/'
+        )
+        self.assertEqual(reponse.status_code, status.HTTP_202_ACCEPTED)
+        mock_telecharger.assert_called_once()
+
     def test_statut_404_si_aucun_job(self):
         reponse = self.client.get(
             f'/api/pasteurs/{self.pasteur.id}/admin_statut_telechargement_youtube/'

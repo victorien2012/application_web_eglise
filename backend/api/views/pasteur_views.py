@@ -211,6 +211,22 @@ class PasteurViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Un job EN_COURS tres recent est probablement reellement actif :
+        # on refuse d'en lancer un second en parallele (deux processus
+        # yt-dlp ecrivant dans le meme dossier de travail pourraient se
+        # marcher dessus). Passe ce delai, le job precedent est plus
+        # vraisemblablement bloque (thread mort suite a une interruption) :
+        # on laisse relancer, la reprise (voir telecharger_videos_youtube)
+        # evite de retelecharger ce qui l'a deja ete.
+        job_actif = TelechargementYoutube.objects.filter(
+            pasteur=pasteur, statut='EN_COURS',
+        ).order_by('-cree_le').first()
+        if job_actif and (timezone.now() - job_actif.cree_le) < timedelta(seconds=20):
+            return Response(
+                {"detail": "Un téléchargement est déjà en cours pour ce pasteur. Patientez quelques secondes."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
         job = TelechargementYoutube.objects.create(pasteur=pasteur)
         lancer_telechargement_videos_async(job.id, pasteur.id)
 

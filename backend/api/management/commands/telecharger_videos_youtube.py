@@ -13,13 +13,19 @@ le fichier video lui-meme pour chaque predication synchronisee.
 
 Pensee pour un usage local/administratif : potentiellement plusieurs Go et
 plusieurs heures pour une chaine entiere, executee en arriere-plan (voir
-api.services.youtube_service.lancer_telechargement_videos_async). Chaque
-lancement regenere un zip complet (pas de reprise incrementale) : plus
-simple, et coherent avec l'idee d'obtenir un export a jour de la chaine.
+api.services.youtube_service.lancer_telechargement_videos_async) — donc
+vulnerable a une interruption (coupure reseau, redemarrage du serveur,
+rechargement du serveur de developpement). Pour ne pas reperdre toute la
+progression a chaque coupure, les videos deja telechargees sont conservees
+dans un dossier de travail propre au pasteur (hors du dossier temporaire
+auto-nettoye) : un nouveau lancement les reutilise telles quelles au lieu de
+les retelecharger, et ne reprend que la ou il s'etait arrete. Ce dossier
+n'est supprime qu'une fois le zip final produit avec succes.
 """
 
 import logging
 import os
+import shutil
 import tempfile
 import zipfile
 
@@ -88,68 +94,91 @@ class Command(BaseCommand):
             f"Téléchargement de {len(predications)} vidéo(s) pour « {pasteur.nom_affichage} »"
         ))
 
-        with tempfile.TemporaryDirectory() as dossier_temp:
-            erreurs = 0
-            fichiers_reussis = []
+        dossier_travail = self._dossier_travail(pasteur)
+        os.makedirs(dossier_travail, exist_ok=True)
 
-            for predication in predications:
-                try:
-                    chemin = self._telecharger(predication, dossier_temp)
-                    fichiers_reussis.append(chemin)
-                    self.stdout.write(self.style.SUCCESS(
-                        f"  + {predication.youtube_id} — {predication.titre[:70]}"
-                    ))
-                except Exception as erreur:  # noqa: BLE001 — une video ne doit pas bloquer le lot
-                    erreurs += 1
-                    logger.exception(
-                        "Echec telechargement video %s (predication %s) : %s",
-                        predication.youtube_id, predication.pk, erreur,
-                    )
-                    self.stderr.write(self.style.WARNING(
-                        f"  ! Echec sur {predication.youtube_id} : {erreur}"
-                    ))
-                finally:
-                    if job:
-                        job.videos_traitees += 1
-                        if erreurs and job.videos_echouees != erreurs:
-                            job.videos_echouees = erreurs
-                        job.save(update_fields=['videos_traitees', 'videos_echouees'])
+        erreurs = 0
+        fichiers_reussis = []
 
-            if job and fichiers_reussis:
-                chemin_zip = self._creer_zip(dossier_temp, fichiers_reussis, pasteur)
-                try:
-                    with open(chemin_zip, 'rb') as f:
-                        nom_zip = f"{pasteur.nom_affichage}-videos-youtube.zip"
-                        job.fichier_zip.save(nom_zip, File(f), save=False)
-                finally:
-                    os.remove(chemin_zip)
+        for predication in predications:
+            try:
+                chemin, deja_present = self._telecharger(predication, dossier_travail)
+                fichiers_reussis.append(chemin)
+                self.stdout.write(self.style.SUCCESS(
+                    f"  {'= (deja telechargee)' if deja_present else '+'} {predication.youtube_id} — {predication.titre[:70]}"
+                ))
+            except Exception as erreur:  # noqa: BLE001 — une video ne doit pas bloquer le lot
+                erreurs += 1
+                logger.exception(
+                    "Echec telechargement video %s (predication %s) : %s",
+                    predication.youtube_id, predication.pk, erreur,
+                )
+                self.stderr.write(self.style.WARNING(
+                    f"  ! Echec sur {predication.youtube_id} : {erreur}"
+                ))
+            finally:
+                if job:
+                    job.videos_traitees += 1
+                    if erreurs and job.videos_echouees != erreurs:
+                        job.videos_echouees = erreurs
+                    job.save(update_fields=['videos_traitees', 'videos_echouees'])
 
-            if job:
-                if predications and not fichiers_reussis:
-                    job.statut = 'ERREUR'
-                    job.message = f"Échec sur les {len(predications)} vidéo(s) : aucun fichier n'a pu être téléchargé."
-                else:
-                    job.statut = 'TERMINE'
-                    job.message = (
-                        f"{len(fichiers_reussis)} vidéo(s) téléchargée(s) et regroupée(s) en zip, {erreurs} échec(s)."
-                        if predications else "Aucune vidéo à télécharger : la chaîne n'a rien de synchronisé."
-                    )
-                job.termine_le = timezone.now()
-                job.save(update_fields=['statut', 'message', 'termine_le', 'fichier_zip'])
+        if job and fichiers_reussis:
+            chemin_zip = self._creer_zip(dossier_travail, fichiers_reussis, pasteur)
+            try:
+                with open(chemin_zip, 'rb') as f:
+                    nom_zip = f"{pasteur.nom_affichage}-videos-youtube.zip"
+                    job.fichier_zip.save(nom_zip, File(f), save=False)
+            finally:
+                os.remove(chemin_zip)
+
+        if job:
+            if predications and not fichiers_reussis:
+                job.statut = 'ERREUR'
+                job.message = f"Échec sur les {len(predications)} vidéo(s) : aucun fichier n'a pu être téléchargé."
+            else:
+                job.statut = 'TERMINE'
+                job.message = (
+                    f"{len(fichiers_reussis)} vidéo(s) téléchargée(s) et regroupée(s) en zip, {erreurs} échec(s)."
+                    if predications else "Aucune vidéo à télécharger : la chaîne n'a rien de synchronisé."
+                )
+            job.termine_le = timezone.now()
+            job.save(update_fields=['statut', 'message', 'termine_le', 'fichier_zip'])
+
+            # Nettoye le dossier de travail seulement en cas de succes complet :
+            # apres un echec partiel, les fichiers deja telecharges restent
+            # disponibles pour que le prochain lancement reprenne sans tout
+            # retelecharger.
+            if job.statut == 'TERMINE':
+                shutil.rmtree(dossier_travail, ignore_errors=True)
 
         self.stdout.write(self.style.SUCCESS(
             f"\nTerminé — {len(fichiers_reussis)} téléchargée(s), {erreurs} échec(s)."
         ))
 
     @staticmethod
-    def _telecharger(predication, dossier_temp):
-        """Telecharge une video dans <dossier_temp>/<annee>/<id>.<ext> et
-        retourne le chemin absolu du fichier produit."""
+    def _dossier_travail(pasteur):
+        """Dossier de travail stable (PAS auto-nettoye) pour ce pasteur —
+        persiste entre deux lancements pour permettre la reprise apres une
+        interruption."""
+        return os.path.join(tempfile.gettempdir(), 'telechargements_youtube', str(pasteur.pk))
+
+    @staticmethod
+    def _telecharger(predication, dossier_travail):
+        """Telecharge une video dans <dossier_travail>/<annee>/<id>.<ext> et
+        retourne (chemin absolu du fichier, deja_present). Si un fichier
+        pour cet ID existe deja (reprise apres interruption), il est reutilise
+        tel quel sans nouvel appel a YouTube."""
         import yt_dlp
 
         annee = str(predication.date_publication.year) if predication.date_publication else 'sans-date'
-        dossier_annee = os.path.join(dossier_temp, annee)
+        dossier_annee = os.path.join(dossier_travail, annee)
         os.makedirs(dossier_annee, exist_ok=True)
+
+        for nom_existant in os.listdir(dossier_annee):
+            if nom_existant.startswith(f"{predication.youtube_id}."):
+                return os.path.join(dossier_annee, nom_existant), True
+
         modele_sortie = os.path.join(dossier_annee, '%(id)s.%(ext)s')
 
         options_ydl = {
@@ -171,16 +200,16 @@ class Command(BaseCommand):
 
         if not os.path.exists(chemin_fichier):
             raise RuntimeError("yt-dlp n'a produit aucun fichier.")
-        return chemin_fichier
+        return chemin_fichier, False
 
     @staticmethod
-    def _creer_zip(dossier_temp, fichiers, pasteur):
+    def _creer_zip(dossier_travail, fichiers, pasteur):
         """Regroupe les fichiers telecharges dans un zip (dossiers par annee
-        preserves), a la racine de dossier_temp pour rester hors de l'arbre
-        qu'il compresse."""
+        preserves), a la racine du dossier temporaire systeme pour rester
+        hors de l'arbre qu'il compresse."""
         chemin_zip = os.path.join(tempfile.gettempdir(), f'telechargement-youtube-{pasteur.pk}-{os.getpid()}.zip')
         with zipfile.ZipFile(chemin_zip, 'w', zipfile.ZIP_STORED) as archive:
             for chemin_fichier in fichiers:
-                nom_dans_zip = os.path.relpath(chemin_fichier, dossier_temp)
+                nom_dans_zip = os.path.relpath(chemin_fichier, dossier_travail)
                 archive.write(chemin_fichier, arcname=nom_dans_zip)
         return chemin_zip

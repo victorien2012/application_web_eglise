@@ -473,7 +473,9 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, tel
                   Télécharge le fichier de chaque prédication déjà synchronisée depuis YouTube
                   (onglet précédent) et les regroupe dans un seul fichier .zip (dossiers par année
                   de publication à l'intérieur). Peut prendre longtemps pour une chaîne complète —
-                  la progression reste visible même si vous fermez cette fenêtre.
+                  la progression reste visible même si vous fermez cette fenêtre. En cas de coupure
+                  (réseau, redémarrage du serveur), relancez simplement : les vidéos déjà récupérées
+                  ne sont pas retéléchargées, seule la suite reprend.
                 </p>
               </div>
             </div>
@@ -520,10 +522,11 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, tel
                 type="button"
                 className="pmmodal-btn pmmodal-btn-youtube"
                 onClick={handleTelechargerVideos}
-                disabled={dlLoading || dlJob?.statut === 'EN_COURS'}
+                disabled={dlLoading}
+                title={dlJob?.statut === 'EN_COURS' ? 'Relance sans perdre la progression : les vidéos déjà récupérées ne sont pas retéléchargées.' : undefined}
               >
                 <FolderDown size={16} />
-                {dlJob?.statut === 'EN_COURS' ? 'Téléchargement en cours…' : 'Lancer le téléchargement'}
+                {dlLoading ? 'Démarrage…' : dlJob?.statut === 'EN_COURS' ? 'Semble bloqué ? Relancer' : 'Lancer le téléchargement'}
               </button>
             </div>
           </div>
