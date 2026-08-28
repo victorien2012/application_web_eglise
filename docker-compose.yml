@@ -38,11 +38,13 @@ services:
     volumes:
       - ./backend:/app
       - media_volume:/app/media
+      - D:/telechargements_youtube:/mnt/telechargements_youtube
     ports:
       - "8000:8000"
     env_file:
       - ".venv/PROJET WEB EGLISE/.env"
     environment:
+      - TELECHARGEMENT_YOUTUBE_DOSSIER=/mnt/telechargements_youtube
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

@@ -2,7 +2,6 @@
 
 import os
 import shutil
-import tempfile
 import zipfile
 from datetime import date, timedelta
 from unittest.mock import patch
@@ -427,8 +426,7 @@ class TelechargementVideosZipPartielTests(TestCase):
         self.job = TelechargementYoutube.objects.create(pasteur=self.pasteur)
 
     def tearDown(self):
-        dossier = os.path.join(tempfile.gettempdir(), 'telechargements_youtube', str(self.pasteur.pk))
-        shutil.rmtree(dossier, ignore_errors=True)
+        shutil.rmtree(Command._dossier_travail(self.pasteur), ignore_errors=True)
         for job in TelechargementYoutube.objects.filter(pasteur=self.pasteur):
             if job.fichier_zip:
                 job.fichier_zip.delete(save=False)
@@ -450,8 +448,7 @@ class TelechargementVideosZipPartielTests(TestCase):
             noms = sorted(archive.namelist())
         self.assertEqual(noms, sorted(f'2024/vid{i}.mp4' for i in range(5)))
         # succes complet : le dossier de travail (et son zip intermediaire) est nettoye
-        dossier = os.path.join(tempfile.gettempdir(), 'telechargements_youtube', str(self.pasteur.pk))
-        self.assertFalse(os.path.exists(dossier))
+        self.assertFalse(os.path.exists(Command._dossier_travail(self.pasteur)))
 
     @patch.object(Command, '_telecharger', side_effect=_faux_telecharger)
     def test_reprise_ne_reintegre_pas_deux_fois_une_video_deja_zippee(self, mock_telecharger):

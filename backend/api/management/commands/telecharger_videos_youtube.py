@@ -181,8 +181,14 @@ class Command(BaseCommand):
     def _dossier_travail(pasteur):
         """Dossier de travail stable (PAS auto-nettoye) pour ce pasteur —
         persiste entre deux lancements pour permettre la reprise apres une
-        interruption."""
-        return os.path.join(tempfile.gettempdir(), 'telechargements_youtube', str(pasteur.pk))
+        interruption. Si TELECHARGEMENT_YOUTUBE_DOSSIER est defini (ex. un
+        disque externe monte dans le conteneur), les videos y sont ecrites
+        au lieu du disque systeme — utile en local pour eviter de saturer
+        le disque C: sur des chaines volumineuses."""
+        base = os.environ.get('TELECHARGEMENT_YOUTUBE_DOSSIER') or os.path.join(
+            tempfile.gettempdir(), 'telechargements_youtube'
+        )
+        return os.path.join(base, str(pasteur.pk))
 
     @staticmethod
     def _telecharger(predication, dossier_travail):
