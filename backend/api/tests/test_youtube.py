@@ -1,19 +1,38 @@
 """Tests de la synchronisation YouTube (resolution de chaine et garde-fous)."""
 
-from datetime import timedelta
+import os
+import shutil
+import tempfile
+import zipfile
+from datetime import date, timedelta
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.test import TestCase
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from api.management.commands.telecharger_videos_youtube import Command
 from api.models import Pasteur, Predication, SouscriptionPasteur, TelechargementYoutube
 from api.models.paiement import abonnement_pasteur_est_actif
 from api.services.youtube_service import (
     motif_blocage_import,
     resoudre_channel_id_youtube,
 )
+
+
+def _faux_telecharger(predication, dossier_travail):
+    """Remplace `Command._telecharger` dans les tests : cree un vrai petit
+    fichier local sans appel reseau a YouTube, pour que le zip de travail
+    puisse l'archiver normalement."""
+    annee = str(predication.date_publication.year)
+    dossier_annee = os.path.join(dossier_travail, annee)
+    os.makedirs(dossier_annee, exist_ok=True)
+    chemin = os.path.join(dossier_annee, f'{predication.youtube_id}.mp4')
+    with open(chemin, 'wb') as f:
+        f.write(b'FAUX-CONTENU')
+    return chemin, False
 
 
 class ServiceYouTubeFactice:
@@ -386,3 +405,68 @@ class AdminTelechargementVideosYoutubeTests(APITestCase):
         self.assertEqual(reponse.status_code, status.HTTP_200_OK)
         self.assertEqual(reponse.data['id'], job_recent.id)
         self.assertEqual(reponse.data['statut'], 'EN_COURS')
+
+
+class TelechargementVideosZipPartielTests(TestCase):
+    """Le zip publie sur le job doit refleter les videos deja telechargees
+    au fil de l'eau, pas seulement une fois le job entierement termine —
+    sinon une interruption en cours de route laisse le job sans aucun zip
+    telechargeable malgre des videos deja recuperees."""
+
+    def setUp(self):
+        utilisateur = User.objects.create_user(username='pasteur_zip', password='motdepasse123')
+        self.pasteur = Pasteur.objects.create(
+            utilisateur=utilisateur, nom_affichage='Pasteur Zip Partiel', est_valide=True,
+        )
+        for i in range(5):
+            Predication.objects.create(
+                pasteur=self.pasteur, titre=f'Vidéo {i}', type_media='VIDEO',
+                url_video=f'https://www.youtube.com/watch?v=vid{i}', youtube_id=f'vid{i}',
+                date_publication=date(2024, 1, 1),
+            )
+        self.job = TelechargementYoutube.objects.create(pasteur=self.pasteur)
+
+    def tearDown(self):
+        dossier = os.path.join(tempfile.gettempdir(), 'telechargements_youtube', str(self.pasteur.pk))
+        shutil.rmtree(dossier, ignore_errors=True)
+        for job in TelechargementYoutube.objects.filter(pasteur=self.pasteur):
+            if job.fichier_zip:
+                job.fichier_zip.delete(save=False)
+
+    @patch.object(Command, '_publier_zip_partiel')
+    @patch.object(Command, '_telecharger', side_effect=_faux_telecharger)
+    def test_publie_le_zip_par_lots_de_trois(self, mock_telecharger, mock_publier):
+        Command().handle(pasteur=self.pasteur.pk, job_id=self.job.id)
+        # 5 videos, lots de 3 : une publication apres la 3e, une apres la 5e (derniere, meme incomplete)
+        self.assertEqual(mock_publier.call_count, 2)
+
+    @patch.object(Command, '_telecharger', side_effect=_faux_telecharger)
+    def test_zip_final_contient_toutes_les_videos_traitees(self, mock_telecharger):
+        Command().handle(pasteur=self.pasteur.pk, job_id=self.job.id)
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.statut, 'TERMINE')
+        self.assertTrue(self.job.fichier_zip)
+        with zipfile.ZipFile(self.job.fichier_zip.path) as archive:
+            noms = sorted(archive.namelist())
+        self.assertEqual(noms, sorted(f'2024/vid{i}.mp4' for i in range(5)))
+        # succes complet : le dossier de travail (et son zip intermediaire) est nettoye
+        dossier = os.path.join(tempfile.gettempdir(), 'telechargements_youtube', str(self.pasteur.pk))
+        self.assertFalse(os.path.exists(dossier))
+
+    @patch.object(Command, '_telecharger', side_effect=_faux_telecharger)
+    def test_reprise_ne_reintegre_pas_deux_fois_une_video_deja_zippee(self, mock_telecharger):
+        """Simule une interruption apres publication partielle : au
+        redemarrage, les videos deja presentes dans le zip de travail ne
+        doivent pas y etre dupliquees."""
+        Command().handle(pasteur=self.pasteur.pk, job_id=self.job.id)
+        self.job.refresh_from_db()
+
+        # Deuxieme lancement (ex. relance manuelle) sur un job qui a deja tout.
+        autre_job = TelechargementYoutube.objects.create(pasteur=self.pasteur)
+        Command().handle(pasteur=self.pasteur.pk, job_id=autre_job.id)
+        autre_job.refresh_from_db()
+
+        with zipfile.ZipFile(autre_job.fichier_zip.path) as archive:
+            noms = archive.namelist()
+        self.assertEqual(len(noms), len(set(noms)))
+        self.assertEqual(sorted(noms), sorted(f'2024/vid{i}.mp4' for i in range(5)))

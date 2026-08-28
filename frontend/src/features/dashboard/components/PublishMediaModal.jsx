@@ -473,9 +473,11 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, tel
                   Télécharge le fichier de chaque prédication déjà synchronisée depuis YouTube
                   (onglet précédent) et les regroupe dans un seul fichier .zip (dossiers par année
                   de publication à l'intérieur). Peut prendre longtemps pour une chaîne complète —
-                  la progression reste visible même si vous fermez cette fenêtre. En cas de coupure
-                  (réseau, redémarrage du serveur), relancez simplement : les vidéos déjà récupérées
-                  ne sont pas retéléchargées, seule la suite reprend.
+                  la progression reste visible même si vous fermez cette fenêtre, et le zip se met
+                  à jour au fur et à mesure : vous pouvez le télécharger sur votre ordinateur avant
+                  la fin pour récupérer les vidéos déjà traitées. En cas de coupure (réseau,
+                  redémarrage du serveur), relancez simplement : les vidéos déjà récupérées ne sont
+                  pas retéléchargées, seule la suite reprend.
                 </p>
               </div>
             </div>
@@ -499,14 +501,14 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, tel
                   {dlJob.statut === 'TERMINE' && (dlJob.message || `${dlJob.videos_traitees} vidéo(s) traitée(s).`)}
                   {dlJob.statut === 'ERREUR' && (dlJob.message || 'Le téléchargement a échoué.')}
                 </p>
-                {dlJob.statut === 'TERMINE' && dlJob.fichier_zip && (
+                {dlJob.fichier_zip && (
                   <a
                     href={dlJob.fichier_zip}
                     className="pmmodal-btn pmmodal-btn-confirm"
                     style={{ alignSelf: 'flex-start', textDecoration: 'none' }}
                   >
                     <FolderDown size={16} />
-                    Télécharger le zip
+                    {dlJob.statut === 'EN_COURS' ? 'Télécharger le zip (progression actuelle)' : 'Télécharger le zip'}
                   </a>
                 )}
               </div>

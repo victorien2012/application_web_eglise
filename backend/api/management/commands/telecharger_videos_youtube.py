@@ -21,6 +21,11 @@ dans un dossier de travail propre au pasteur (hors du dossier temporaire
 auto-nettoye) : un nouveau lancement les reutilise telles quelles au lieu de
 les retelecharger, et ne reprend que la ou il s'etait arrete. Ce dossier
 n'est supprime qu'une fois le zip final produit avec succes.
+
+Le zip publie sur le job (fichier_zip) est lui aussi mis a jour au fil de
+l'eau (pas seulement a la toute fin) : les videos deja telechargees restent
+donc visibles et telechargeables depuis la plateforme meme si le job est
+interrompu avant la fin.
 """
 
 import logging
@@ -96,14 +101,28 @@ class Command(BaseCommand):
 
         dossier_travail = self._dossier_travail(pasteur)
         os.makedirs(dossier_travail, exist_ok=True)
+        chemin_zip_travail = os.path.join(dossier_travail, '_partiel.zip')
+
+        noms_dans_zip = set()
+        if os.path.exists(chemin_zip_travail):
+            with zipfile.ZipFile(chemin_zip_travail, 'r') as archive:
+                noms_dans_zip = set(archive.namelist())
 
         erreurs = 0
         fichiers_reussis = []
+        depuis_dernier_flush = 0
 
-        for predication in predications:
+        for index, predication in enumerate(predications, start=1):
+            ajoute_au_zip = False
             try:
                 chemin, deja_present = self._telecharger(predication, dossier_travail)
                 fichiers_reussis.append(chemin)
+                nom_dans_zip = os.path.relpath(chemin, dossier_travail)
+                if nom_dans_zip not in noms_dans_zip:
+                    with zipfile.ZipFile(chemin_zip_travail, 'a', zipfile.ZIP_STORED) as archive:
+                        archive.write(chemin, arcname=nom_dans_zip)
+                    noms_dans_zip.add(nom_dans_zip)
+                    ajoute_au_zip = True
                 self.stdout.write(self.style.SUCCESS(
                     f"  {'= (deja telechargee)' if deja_present else '+'} {predication.youtube_id} — {predication.titre[:70]}"
                 ))
@@ -123,14 +142,16 @@ class Command(BaseCommand):
                         job.videos_echouees = erreurs
                     job.save(update_fields=['videos_traitees', 'videos_echouees'])
 
-        if job and fichiers_reussis:
-            chemin_zip = self._creer_zip(dossier_travail, fichiers_reussis, pasteur)
-            try:
-                with open(chemin_zip, 'rb') as f:
-                    nom_zip = f"{pasteur.nom_affichage}-videos-youtube.zip"
-                    job.fichier_zip.save(nom_zip, File(f), save=False)
-            finally:
-                os.remove(chemin_zip)
+                    # Republie le zip de travail des qu'il y a du nouveau contenu,
+                    # sans attendre la fin du job — regroupe les mises a jour par
+                    # lots de 3 pour eviter de re-uploader tout le zip a chaque
+                    # video sur une chaine entiere.
+                    if ajoute_au_zip:
+                        depuis_dernier_flush += 1
+                    est_derniere_video = index == len(predications)
+                    if depuis_dernier_flush and (depuis_dernier_flush >= 3 or est_derniere_video):
+                        self._publier_zip_partiel(job, chemin_zip_travail, pasteur)
+                        depuis_dernier_flush = 0
 
         if job:
             if predications and not fichiers_reussis:
@@ -143,7 +164,7 @@ class Command(BaseCommand):
                     if predications else "Aucune vidéo à télécharger : la chaîne n'a rien de synchronisé."
                 )
             job.termine_le = timezone.now()
-            job.save(update_fields=['statut', 'message', 'termine_le', 'fichier_zip'])
+            job.save(update_fields=['statut', 'message', 'termine_le'])
 
             # Nettoye le dossier de travail seulement en cas de succes complet :
             # apres un echec partiel, les fichiers deja telecharges restent
@@ -203,13 +224,15 @@ class Command(BaseCommand):
         return chemin_fichier, False
 
     @staticmethod
-    def _creer_zip(dossier_travail, fichiers, pasteur):
-        """Regroupe les fichiers telecharges dans un zip (dossiers par annee
-        preserves), a la racine du dossier temporaire systeme pour rester
-        hors de l'arbre qu'il compresse."""
-        chemin_zip = os.path.join(tempfile.gettempdir(), f'telechargement-youtube-{pasteur.pk}-{os.getpid()}.zip')
-        with zipfile.ZipFile(chemin_zip, 'w', zipfile.ZIP_STORED) as archive:
-            for chemin_fichier in fichiers:
-                nom_dans_zip = os.path.relpath(chemin_fichier, dossier_travail)
-                archive.write(chemin_fichier, arcname=nom_dans_zip)
-        return chemin_zip
+    def _publier_zip_partiel(job, chemin_zip, pasteur):
+        """Enregistre l'etat courant du zip de travail comme fichier_zip du
+        job : les videos deja telechargees restent ainsi visibles et
+        telechargeables depuis la plateforme meme si le job est interrompu
+        avant la fin. Remplace l'ancien fichier publie (meme nom) pour ne
+        pas accumuler une copie par mise a jour."""
+        if job.fichier_zip:
+            job.fichier_zip.delete(save=False)
+        with open(chemin_zip, 'rb') as f:
+            nom_zip = f"{pasteur.nom_affichage}-videos-youtube.zip"
+            job.fichier_zip.save(nom_zip, File(f), save=False)
+        job.save(update_fields=['fichier_zip'])
