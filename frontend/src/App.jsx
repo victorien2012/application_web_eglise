@@ -10,6 +10,7 @@ import { AudioPlayer } from "./components/layout/AudioPlayer";
 import { BanniereCookies } from "./components/layout/BanniereCookies";
 import { LanguageSelector } from "./components/layout/LanguageSelector";
 import { ThemeToggle } from "./components/layout/ThemeToggle";
+import { BoutonInstallation } from "./components/layout/BoutonInstallation";
 import { PiedDePage } from "./components/layout/PiedDePage";
 
 // Shared components
@@ -157,6 +158,7 @@ export default function App() {
             </div>
 
             <div className="app-nav-actions" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <BoutonInstallation />
               <ThemeToggle />
               <LanguageSelector />
               <button
