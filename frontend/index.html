@@ -7,6 +7,19 @@
   <meta name="description" content="Écoute, visionnage et téléchargement de prédications, espaces dédiés aux pasteurs." />
   <meta name="theme-color" content="#004a94" />
   <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+  <script>
+    // Chrome emet beforeinstallprompt des le chargement, souvent avant que
+    // React n'ait monte le bouton d'installation : l'ecouteur pose par le
+    // composant arriverait trop tard et l'evenement serait perdu (le
+    // navigateur ne le rejoue pas). On le capture donc ici, au plus tot, et
+    // le composant vient le recuperer.
+    window.__inviteInstallation = null;
+    window.addEventListener('beforeinstallprompt', function (evenement) {
+      evenement.preventDefault();
+      window.__inviteInstallation = evenement;
+      window.dispatchEvent(new Event('invite-installation-prete'));
+    });
+  </script>
   <link rel="preconnect" href="https://fonts.gstatic.com" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet" />
 </head>

@@ -12,22 +12,31 @@ import { Download } from 'lucide-react';
  * fois installee.
  */
 export function BoutonInstallation() {
-  const [invite, setInvite] = useState(null);
+  // L'evenement est souvent emis avant que React ne monte ce composant : il
+  // est capture au plus tot par le script de index.html, qu'on lit ici.
+  const [invite, setInvite] = useState(() => window.__inviteInstallation || null);
 
   useEffect(() => {
     // Deja lancee en mode application : rien a proposer.
     if (window.matchMedia('(display-mode: standalone)').matches) return undefined;
 
+    const surInvitePrete = () => setInvite(window.__inviteInstallation || null);
     const surInvite = (evenement) => {
-      // Sans cela, Chrome affiche sa propre mini-infobar a la place.
       evenement.preventDefault();
       setInvite(evenement);
     };
-    const surInstallation = () => setInvite(null);
+    const surInstallation = () => {
+      window.__inviteInstallation = null;
+      setInvite(null);
+    };
 
+    // Le premier couvre l'evenement capture par index.html, le second ceux
+    // qui surviendraient plus tard (l'app redevient eligible apres un refus).
+    window.addEventListener('invite-installation-prete', surInvitePrete);
     window.addEventListener('beforeinstallprompt', surInvite);
     window.addEventListener('appinstalled', surInstallation);
     return () => {
+      window.removeEventListener('invite-installation-prete', surInvitePrete);
       window.removeEventListener('beforeinstallprompt', surInvite);
       window.removeEventListener('appinstalled', surInstallation);
     };
@@ -40,6 +49,7 @@ export function BoutonInstallation() {
     await invite.userChoice;
     // L'evenement n'est utilisable qu'une fois : le navigateur en emettra un
     // nouveau si l'utilisateur a refuse et redevient eligible plus tard.
+    window.__inviteInstallation = null;
     setInvite(null);
   };
 
