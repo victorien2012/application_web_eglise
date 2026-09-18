@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -13,6 +14,8 @@ import './index.css';
 // Chargee en dernier : ses regles transversales de confort tactile doivent
 // l'emporter sur les feuilles de composants.
 import './mobile.css';
+
+registerSW({ immediate: true });
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

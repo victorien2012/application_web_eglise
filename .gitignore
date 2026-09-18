@@ -43,6 +43,7 @@ backend/staticfiles/
 node_modules/
 frontend/dist/
 frontend/dist-ssr/
+frontend/dev-dist/
 frontend/coverage/
 npm-debug.log*
 yarn-debug.log*
