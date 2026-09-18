@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { api } from '../../../services/api';
-import { X, Upload, Youtube, Link as LinkIcon, FileAudio, AlertCircle, FolderDown, Loader2 } from 'lucide-react';
+import { X, Upload, Youtube, Link as LinkIcon, FileAudio, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { extraireIdVideoYoutube, miniatureYoutube } from '../../../utils/youtube';
 import { verifierFichier } from '../../../utils/fichiers';
@@ -16,20 +16,15 @@ const CONTRAINTE_AUDIO = {
   tailleMaxMo: 100,
 };
 
-export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, telechargementSeul = false }) {
+export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished }) {
   const { t } = useTranslation();
 
-  // Mode: 'video' (ajout par lien ou fichier), 'youtube' (synchroniser chaîne)
-  // ou 'telecharger' (télécharger les fichiers vidéo en masse).
+  // Mode: 'video' (ajout par lien ou fichier) ou 'youtube' (synchroniser chaîne).
   const [mode, setMode] = useState('video');
 
-  // Les pasteurs inscrits eux-mêmes (non créés par l'admin) n'ouvrent cette
-  // modale que pour le téléchargement en masse — ajouter une vidéo ou
-  // resynchroniser leur chaîne reste de leur ressort, pas de celui de
-  // l'admin. On force donc cet unique onglet à l'ouverture.
   useEffect(() => {
-    if (isOpen) setMode(telechargementSeul ? 'telecharger' : 'video');
-  }, [isOpen, telechargementSeul]);
+    if (isOpen) setMode('video');
+  }, [isOpen]);
 
   // Form pour l'ajout de vidéo
   const [form, setForm] = useState({
@@ -51,12 +46,6 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, tel
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncError, setSyncError] = useState('');
   const [syncSuccess, setSyncSuccess] = useState('');
-
-  // Telechargement en masse des fichiers video (yt-dlp -> stockage du site)
-  const [dlJob, setDlJob] = useState(null);
-  const [dlLoading, setDlLoading] = useState(false);
-  const [dlError, setDlError] = useState('');
-  const sondagePollRef = useRef(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -95,79 +84,12 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, tel
     setLienChaine('');
     setSyncError('');
     setSyncSuccess('');
-    arreterSondageTelechargement();
-    setDlJob(null);
-    setDlError('');
   };
 
   const handleClose = () => {
     resetForm();
     setMode('video');
     onClose();
-  };
-
-  // Le telechargement en masse tourne en arriere-plan cote serveur : on
-  // sonde son statut toutes les 3s pour donner une progression, jusqu'a
-  // ce qu'il se termine (ou echoue).
-  const arreterSondageTelechargement = () => {
-    if (sondagePollRef.current) {
-      clearInterval(sondagePollRef.current);
-      sondagePollRef.current = null;
-    }
-  };
-
-  useEffect(() => () => arreterSondageTelechargement(), []);
-
-  const sonderTelechargement = async () => {
-    try {
-      const { data } = await api.get(`/pasteurs/${pasteurId}/admin_statut_telechargement_youtube/`);
-      setDlJob(data);
-      // Pas d'appel a onPublished ici : concu pour les flux "Ajouter une
-      // video" / "Synchroniser" (message et fermeture propres a ces cas), il
-      // affichait un message trompeur et perturbait cette modale toujours
-      // ouverte. La progression reste visible localement (dlJob) jusqu'a ce
-      // que l'admin ferme la fenetre lui-meme.
-      if (data.statut !== 'EN_COURS') {
-        arreterSondageTelechargement();
-      }
-      return data;
-    } catch {
-      arreterSondageTelechargement();
-      return null;
-    }
-  };
-
-  // A l'ouverture, recupere le dernier job connu (s'il existe) pour que le
-  // zip d'un telechargement precedent reste accessible sans devoir tout
-  // relancer — et reprend le sondage s'il etait toujours en cours.
-  useEffect(() => {
-    if (!isOpen || !pasteurId) return;
-    let active = true;
-    (async () => {
-      const data = await sonderTelechargement();
-      if (active && data?.statut === 'EN_COURS') {
-        arreterSondageTelechargement();
-        sondagePollRef.current = setInterval(sonderTelechargement, 3000);
-      }
-    })();
-    return () => { active = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, pasteurId]);
-
-  const handleTelechargerVideos = async () => {
-    if (!pasteurId) return;
-    setDlError('');
-    setDlLoading(true);
-    try {
-      const { data } = await api.post(`/pasteurs/${pasteurId}/admin_telecharger_videos_youtube/`);
-      setDlJob(data);
-      arreterSondageTelechargement();
-      sondagePollRef.current = setInterval(sonderTelechargement, 3000);
-    } catch (err) {
-      setDlError(err.response?.data?.detail || 'Erreur lors du lancement du téléchargement.');
-    } finally {
-      setDlLoading(false);
-    }
   };
 
   // Publier une vidéo (toujours par lien YouTube — la plateforme n'héberge
@@ -284,42 +206,27 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, tel
 
         <div className="pmmodal-header">
           <div className="pmmodal-icon">
-            {telechargementSeul ? <FolderDown size={24} /> : <Upload size={24} />}
+            <Upload size={24} />
           </div>
-          <h3>{telechargementSeul ? 'Télécharger les vidéos' : t('admin.publish_media', 'Publier un média')}</h3>
+          <h3>{t('admin.publish_media', 'Publier un média')}</h3>
         </div>
 
-        {/* Onglets : Video / Synchroniser YouTube / Telecharger — un pasteur
-            inscrit lui-meme (telechargementSeul) ne voit que le dernier :
-            publier ou resynchroniser son contenu reste de son ressort. */}
         <div className="pmmodal-tabs">
-          {!telechargementSeul && (
-            <>
-              <button
-                type="button"
-                className={`pmmodal-tab ${mode === 'video' ? 'active' : ''}`}
-                onClick={() => { setMode('video'); setError(''); setSuccess(''); }}
-              >
-                <LinkIcon size={16} />
-                Ajouter une vidéo
-              </button>
-              <button
-                type="button"
-                className={`pmmodal-tab ${mode === 'youtube' ? 'active' : ''}`}
-                onClick={() => { setMode('youtube'); setSyncError(''); setSyncSuccess(''); }}
-              >
-                <Youtube size={16} />
-                Synchroniser YouTube
-              </button>
-            </>
-          )}
           <button
             type="button"
-            className={`pmmodal-tab ${mode === 'telecharger' ? 'active' : ''}`}
-            onClick={() => { setMode('telecharger'); setDlError(''); }}
+            className={`pmmodal-tab ${mode === 'video' ? 'active' : ''}`}
+            onClick={() => { setMode('video'); setError(''); setSuccess(''); }}
           >
-            <FolderDown size={16} />
-            Télécharger vidéos
+            <LinkIcon size={16} />
+            Ajouter une vidéo
+          </button>
+          <button
+            type="button"
+            className={`pmmodal-tab ${mode === 'youtube' ? 'active' : ''}`}
+            onClick={() => { setMode('youtube'); setSyncError(''); setSyncSuccess(''); }}
+          >
+            <Youtube size={16} />
+            Synchroniser YouTube
           </button>
         </div>
 
@@ -458,80 +365,6 @@ export function PublishMediaModal({ isOpen, onClose, pasteurId, onPublished, tel
               </button>
             </div>
           </form>
-        )}
-
-        {/* Mode : Télécharger en masse les fichiers vidéo (yt-dlp) des
-            prédications déjà synchronisées, regroupés dans un seul zip
-            (dossiers par année de publication à l'intérieur). */}
-        {mode === 'telecharger' && (
-          <div className="pmmodal-form">
-            <div className="pmmodal-youtube-info">
-              <FolderDown size={32} />
-              <div>
-                <h4>Télécharger les vidéos</h4>
-                <p>
-                  Télécharge le fichier de chaque prédication déjà synchronisée depuis YouTube
-                  (onglet précédent) et les regroupe dans un seul fichier .zip (dossiers par année
-                  de publication à l'intérieur). Peut prendre longtemps pour une chaîne complète —
-                  la progression reste visible même si vous fermez cette fenêtre, et le zip se met
-                  à jour au fur et à mesure : vous pouvez le télécharger sur votre ordinateur avant
-                  la fin pour récupérer les vidéos déjà traitées. En cas de coupure (réseau,
-                  redémarrage du serveur), relancez simplement : les vidéos déjà récupérées ne sont
-                  pas retéléchargées, seule la suite reprend.
-                </p>
-              </div>
-            </div>
-
-            {dlJob && (
-              <div className="pmmodal-dl-progress">
-                <div className="pmmodal-dl-progress-bar">
-                  <div
-                    className="pmmodal-dl-progress-fill"
-                    style={{
-                      width: dlJob.total_videos
-                        ? `${Math.min(100, (dlJob.videos_traitees / dlJob.total_videos) * 100)}%`
-                        : dlJob.statut === 'EN_COURS' ? '5%' : '100%',
-                    }}
-                  />
-                </div>
-                <p className="pmmodal-dl-progress-text">
-                  {dlJob.statut === 'EN_COURS' && (
-                    <><Loader2 size={14} className="pmmodal-spin" /> {dlJob.videos_traitees}/{dlJob.total_videos || '?'} vidéo(s) traitée(s)…</>
-                  )}
-                  {dlJob.statut === 'TERMINE' && (dlJob.message || `${dlJob.videos_traitees} vidéo(s) traitée(s).`)}
-                  {dlJob.statut === 'ERREUR' && (dlJob.message || 'Le téléchargement a échoué.')}
-                </p>
-                {dlJob.fichier_zip && (
-                  <a
-                    href={dlJob.fichier_zip}
-                    className="pmmodal-btn pmmodal-btn-confirm"
-                    style={{ alignSelf: 'flex-start', textDecoration: 'none' }}
-                  >
-                    <FolderDown size={16} />
-                    {dlJob.statut === 'EN_COURS' ? 'Télécharger le zip (progression actuelle)' : 'Télécharger le zip'}
-                  </a>
-                )}
-              </div>
-            )}
-
-            {dlError && <div className="pmmodal-error">{dlError}</div>}
-
-            <div className="pmmodal-footer">
-              <button type="button" className="pmmodal-btn pmmodal-btn-cancel" onClick={handleClose}>
-                Fermer
-              </button>
-              <button
-                type="button"
-                className="pmmodal-btn pmmodal-btn-youtube"
-                onClick={handleTelechargerVideos}
-                disabled={dlLoading}
-                title={dlJob?.statut === 'EN_COURS' ? 'Relance sans perdre la progression : les vidéos déjà récupérées ne sont pas retéléchargées.' : undefined}
-              >
-                <FolderDown size={16} />
-                {dlLoading ? 'Démarrage…' : dlJob?.statut === 'EN_COURS' ? 'Semble bloqué ? Relancer' : 'Lancer le téléchargement'}
-              </button>
-            </div>
-          </div>
         )}
       </div>
     </div>

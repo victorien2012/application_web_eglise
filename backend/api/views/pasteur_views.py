@@ -17,16 +17,14 @@ from api.models import (
     Pasteur,
     Predication,
     ProfilUtilisateur,
-    TelechargementYoutube,
 )
-from api.serializers import PasteurSerializer, PredicationSerializer, TelechargementYoutubeSerializer
+from api.serializers import PasteurSerializer, PredicationSerializer
 from api.services.email_service import (
     envoyer_email_rejet_pasteur,
     envoyer_email_validation_pasteur,
 )
 from api.services.youtube_service import (
     lancer_import_youtube_async,
-    lancer_telechargement_videos_async,
     motif_blocage_import,
     resoudre_channel_id_youtube,
 )
@@ -177,90 +175,11 @@ class PasteurViewSet(viewsets.ModelViewSet):
 
         return Response({"detail": "La chaîne a été retirée avec succès."}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser],
-            url_path='admin_telecharger_videos_youtube')
-    def admin_telecharger_videos_youtube(self, request, pk=None):
-        """Lance le telechargement en masse des fichiers video (yt-dlp) de
-        toutes les predications synchronisees depuis YouTube pour ce pasteur,
-        et les attache au stockage de la plateforme (organise par annee).
-
-        Complementaire a admin_synchroniser_youtube, qui ne recupere que les
-        metadonnees : il faut d'abord synchroniser la chaine pour que les
-        predications existent, avant de pouvoir telecharger leurs fichiers.
-
-        A la difference de admin_synchroniser_youtube, pas de restriction
-        cree_par_admin : le telechargement est une action de sauvegarde/
-        archivage cote plateforme, pas une publication de contenu — un admin
-        doit pouvoir l'utiliser aussi pour un pasteur inscrit lui-meme, des
-        lors que sa chaine a deja ete synchronisee (par lui ou par l'admin).
-        """
-        try:
-            pasteur = Pasteur.objects.get(id=pk)
-        except Pasteur.DoesNotExist:
-            return Response(
-                {"detail": "Pasteur introuvable."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        if not Predication.objects.filter(
-            pasteur=pasteur, type_media='VIDEO',
-        ).exclude(youtube_id__isnull=True).exclude(youtube_id='').exists():
-            return Response(
-                {"detail": "Aucune vidéo synchronisée pour ce pasteur. "
-                           "Synchronisez d'abord la chaîne YouTube."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Un job EN_COURS tres recent est probablement reellement actif :
-        # on refuse d'en lancer un second en parallele (deux processus
-        # yt-dlp ecrivant dans le meme dossier de travail pourraient se
-        # marcher dessus). Passe ce delai, le job precedent est plus
-        # vraisemblablement bloque (thread mort suite a une interruption) :
-        # on laisse relancer, la reprise (voir telecharger_videos_youtube)
-        # evite de retelecharger ce qui l'a deja ete.
-        job_actif = TelechargementYoutube.objects.filter(
-            pasteur=pasteur, statut='EN_COURS',
-        ).order_by('-cree_le').first()
-        if job_actif and (timezone.now() - job_actif.cree_le) < timedelta(seconds=20):
-            return Response(
-                {"detail": "Un téléchargement est déjà en cours pour ce pasteur. Patientez quelques secondes."},
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        job = TelechargementYoutube.objects.create(pasteur=pasteur)
-        lancer_telechargement_videos_async(job.id, pasteur.id)
-
-        return Response(
-            TelechargementYoutubeSerializer(job, context={'request': request}).data,
-            status=status.HTTP_202_ACCEPTED,
-        )
-
-    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAdminUser],
-            url_path='admin_statut_telechargement_youtube')
-    def admin_statut_telechargement_youtube(self, request, pk=None):
-        """Retourne le dernier telechargement en masse lance pour ce pasteur
-        — sonde par le frontend pour afficher la progression."""
-        try:
-            pasteur = Pasteur.objects.get(id=pk)
-        except Pasteur.DoesNotExist:
-            return Response(
-                {"detail": "Pasteur introuvable."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        job = TelechargementYoutube.objects.filter(pasteur=pasteur).order_by('-cree_le').first()
-        if not job:
-            return Response(
-                {"detail": "Aucun téléchargement en cours ou passé."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        return Response(TelechargementYoutubeSerializer(job, context={'request': request}).data)
-
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy', 'synchroniser_youtube']:
             return [permissions.IsAuthenticated()]
         if self.action in [
             'valider', 'a_valider', 'admin_synchroniser_youtube', 'creer_compte_admin',
-            'admin_telecharger_videos_youtube', 'admin_statut_telechargement_youtube',
         ]:
             return [permissions.IsAdminUser()]
         return [permissions.AllowAny()]

@@ -9,7 +9,6 @@ from api.models import (
     Predication,
     Serie,
     Document,
-    TelechargementYoutube,
 )
 from .utilisateurs import PasteurMinimalSerializer
 
@@ -304,13 +303,3 @@ class DocumentEcritureSerializer(serializers.ModelSerializer):
 
     def validate_image_couverture(self, value):
         return valider_fichier_uploade(value, self.EXTENSIONS_IMAGE, self.TAILLE_MAX_IMAGE_MO)
-
-
-class TelechargementYoutubeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TelechargementYoutube
-        fields = [
-            'id', 'statut', 'total_videos', 'videos_traitees',
-            'videos_echouees', 'fichier_zip', 'message', 'cree_le', 'termine_le',
-        ]
-        read_only_fields = fields
